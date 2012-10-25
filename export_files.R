@@ -1,7 +1,5 @@
 #NB Some of following code is copied/ edited from a script by Michael Kemp for a course held in Amsterdam in 2010
 
-#random edit
-
 #Set the work directory
 setwd("F:/Documents/Work/LBBG_GPS/GIS/GPS_track_files")
 
@@ -29,89 +27,90 @@ gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time
 #for testing purposes we only take the first 100 lines
 #gps <- gps[1:100,]
 
-
+#a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
 gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
 
-## Split the date and time variables into two separate vectors (code from M. Kemp)
+
+## Split the date and time variables into two separate vectors, for date and time sepprately (code from M. Kemp)
 gps$date <- unlist(strsplit(as.character(gps$date_time), split=' ')) [seq(1,((length(gps$date_time)*2)-1), by=2)]
 gps$time <- unlist(strsplit(as.character(gps$date_time), split=' ')) [seq(2,((length(gps$date_time)*2)), by=2)]
 
+#if we want to check which columns are present
 names(gps)
 
-#code to recognise trips, and add this column
-gps$trip <- ifelse(gps$nest_gc_dist < 0.5, 0,1)    #label points more than 500 m from nest location
+#code to recognise trips, and adds this column, labelling with 0 if 'at the nest' and 1 if over 500 m from nest location
+gps$trip <- ifelse(gps$nest_gc_dist < 0.5, 0,1)
+
+#*We want to label the positions for each trip with a unique trip id
+#first we make some vectors of next, previous point etc, to find start and end points of trips
 trip1 <- gps$trip +1
 #make vector of next point value
 trip2 <- (2* c(gps$trip[2:length(gps$trip)],0))+1
 #make vector of prev point value
 trip3 <- (3* c(0,gps$trip[1:(length(gps$trip)-1)]))+1
-gps$loc_type <- trip1*trip2*trip3   #label points, 0 - trip, 1 - start, 2 - end, 3 - nest
-gps$loc_calc <- gps$loc_type
+
+
+#label by type of point: 0 - trip, 1 - start, 2 - end, 3 - nest
+gps$loc_type <- trip1*trip2*trip3   #product of above three vectors
+gps$loc_calc <- gps$loc_type        #keep a copy of above calculation
+#Reduce to the four possibilties
 gps$loc_type[(gps$loc_type == 1)  | (gps$loc_type == 12)] <- 0
 gps$loc_type[gps$loc_type == 3] <- 1
 gps$loc_type[gps$loc_type == 4] <- 2
 gps$loc_type[(gps$loc_type == 24) | (gps$loc_type == 6) | (gps$loc_type == 8) | (gps$loc_type == 2)]<- 3
-#summary(factor(gps$loc_type))
-#summary(factor(gps$loc_calc))
 
-total <- length(gps$loc_type[1:50])
-
-
-#could improve by running for each individual seppratly, and parallelising that task. Would no longer have unique numbers for trips, but might still be useable.
-#could also cut out non trip points
-#at simplest, could filter out the start points of trips, number these
-#then somehow add this number to the rest of a trip
-names(gps)
+#make column for trip id, start with value 0, which will be null value - i.e. not a trip (points at the nest)
 gps$trip_id <- 0
-unique(gps$device_info_serial)
 
-#?subset
-#summary(gps$loc_type != 0  & gps$device_info_serial == 519)
-d<- 1
-gps$trip_id <- 0
-#globalenv()
+#unique(gps$device_info_serial)  #device numbers
+#d<- 1   #for testing
 
+#Function 'trip.lab' will produce a vector of trip number for each device
+#d - device_info_serial
+#gps - the gps dataframe
 trip.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
-  #d is the device id
-  pb <- winProgressBar(title = paste( "progress bar for device",d), min = 0,max = n, width = 300)   #a progress bar to monitor progress
+
+  #a windows progress bar to monitor progress
+  pb <- winProgressBar(title = paste( "progress bar for device",d), min = 0,max = n, width = 300)   
+  
+  #make a subset of 'gps' containing just data for device, d, away from the nest.
   sub01 <- subset(gps,loc_type != 0 & device_info_serial == d,select=c(loc_type,trip_id))
-  n <- length(sub01$loc_type)
-  x <- 0
+  
+  n <- length(sub01$loc_type) #the number gps positions
+  x <- 0   #x will keep note of trip number, we start at zero.
+  #loop through all gps points, labelling them with trip id (x)
   for(i in 1:n){
-    setWinProgressBar(pb, i, title=paste( round(i/n*100, 0),"% done"))
-    if(sub01$loc_type[i] == 1) x <- x+1
-    sub01$trip_id[i] <- x
+    setWinProgressBar(pb, i, title=paste( round(i/n*100, 0),"% done")) #refresh the progress bar, so that we can keep note of progress.
+    if(sub01$loc_type[i] == 1) x <- x+1      #if start of a trip, increment x by one
+    sub01$trip_id[i] <- x                    #allocated value of x for trip_id for position 'i'.
   }
-  #  summary(gps$loc_type != 0 & gps$device_info_serial == 531)
-  # length(sub01$trip_id)
-  assign(paste("device", d, sep=""),sub01$trip_id)
-  a <- paste("device", d, sep="")
-  close(pb)
-  return(get(a))
+
+  close(pb)    #close the windows progress bar
+  return(sub01$trip_id)            #output a vector for the bird of trip id
 }
 
-trip.lab(531)
 
-
-sub01 <- subset(gps,loc_type != 0 & device_info_serial == 531,select=c(loc_type,trip_id))
-n <- length(sub01$loc_type)
-#n <- n/100
-pb <- winProgressBar(title =  "progress bar", min = 0,max = n, width = 300)
-
-x <- 0
-gps$trip_id <- 0
-for(i in 1:n){
-  setWinProgressBar(pb, i, title=paste( round(i/n*100, 0),"% done"))
-  if(sub01$loc_type[i] == 1) x <- x+1
-  sub01$trip_id[i] <- x
-}
-close(pb)
-
-
+#do this tack in parallel, here we have 8 threads, so I make a cluster of 8 threads with which to run the analysis
 require(foreach)
 require(doParallel)
 cl <- makeCluster(8) #use x cores
 registerDoParallel(cl)
+
+
+
+assign(paste("device", d, sep=""),trip.lab(d))   #make a vector of trip_id called 'deviceX', where X is the device number
+
+
+
+
+
+a <- paste("device", d, sep="")
+
+trip.lab(531)
+
+
+
+
 
 #first make a list of available devices
 devices <- sort(unique(gps$device_info_serial))
@@ -123,6 +122,19 @@ system.time({foreach(i = seq(along = devices )) %dopar%
 
 
 stopCluster(cl)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #***************************************
