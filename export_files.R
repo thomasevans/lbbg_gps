@@ -65,6 +65,8 @@ gps$trip_id <- 0
 #unique(gps$device_info_serial)  #device numbers
 #d<- 1   #for testing
 
+
+#***********start of function: trip.lab
 #Function 'trip.lab' will produce a vector of trip number for each device
 #d - device_info_serial
 #gps - the gps dataframe
@@ -88,27 +90,7 @@ trip.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
   close(pb)    #close the windows progress bar
   return(sub01$trip_id)            #output a vector for the bird of trip id
 }
-
-
-#do this tack in parallel, here we have 8 threads, so I make a cluster of 8 threads with which to run the analysis
-require(foreach)
-require(doParallel)
-cl <- makeCluster(8) #use x cores
-registerDoParallel(cl)
-
-
-
-assign(paste("device", d, sep=""),trip.lab(d))   #make a vector of trip_id called 'deviceX', where X is the device number
-
-
-
-
-
-a <- paste("device", d, sep="")
-
-trip.lab(531)
-
-
+#**********End of this function: trip.lab
 
 
 
@@ -116,12 +98,30 @@ trip.lab(531)
 devices <- sort(unique(gps$device_info_serial))
 
 
+#*Calculate trip id for each device
+#do this tack in parallel, here we have 8 threads, so I make a cluster of 8 threads with which to run the analysis
+require(foreach)
+require(doParallel)
+cl <- makeCluster(8) #use x cores
+registerDoParallel(cl)
+
 system.time({foreach(i = seq(along = devices )) %dopar%
-  out.data(i,gps=gps,devices=devices)}, gcFirst = TRUE)
+  #make a vector of trip_id called 'deviceX', where X is the device number
+  assign(paste("device", d, sep=""),trip.lab(d))},gcFIRST = TRUE)
 #run for each individual and time how long this takes.
-
-
 stopCluster(cl)
+
+
+#get above data, and put it into vector a
+a <- get(paste("device", d, sep=""))    
+
+
+#pseudocode
+#for each bird add max trip id from previous bird to current trip ids
+#then make normal length vector (will have to use filter thing: "gps$loc_type != 0 & gps$device_info_serial == d")
+#add this vector to the global vector (other values are zero - so won't lose anything)
+#add this labelled id back to the gps dataframe
+#then add this as an output column in below file outputs
 
 
 
