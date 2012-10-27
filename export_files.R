@@ -1,4 +1,4 @@
-#NB Some of following code is copied/ edited from a script by Michael Kemp for a course held in Amsterdam in 2010
+#NB Some of following code is based on a script by Michael Kemp for a course held in Amsterdam in 2010
 
 #Set the work directory
 setwd("F:/Documents/Work/LBBG_GPS/GIS/GPS_track_files")
@@ -72,13 +72,16 @@ gps$trip_id <- 0
 #gps - the gps dataframe
 trip.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
 
-  #a windows progress bar to monitor progress
-  pb <- winProgressBar(title = paste( "progress bar for device",d), min = 0,max = n, width = 300)   
-  
+    
   #make a subset of 'gps' containing just data for device, d, away from the nest.
   sub01 <- subset(gps,loc_type != 0 & device_info_serial == d,select=c(loc_type,trip_id))
   
   n <- length(sub01$loc_type) #the number gps positions
+  
+  
+  #a windows progress bar to monitor progress
+  pb <- winProgressBar(title = paste( "progress bar for device",d), min = 0,max = n, width = 300)
+  
   x <- 0   #x will keep note of trip number, we start at zero.
   #loop through all gps points, labelling them with trip id (x)
   for(i in 1:n){
@@ -97,21 +100,34 @@ trip.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
 #first make a list of available devices
 devices <- sort(unique(gps$device_info_serial))
 
-
+
 #*Calculate trip id for each device
 #do this tack in parallel, here we have 8 threads, so I make a cluster of 8 threads with which to run the analysis
 require(foreach)
 require(doParallel)
 cl <- makeCluster(8) #use x cores
 registerDoParallel(cl)
-
+#i <- 1
+tripn.list <- list()
 system.time({foreach(i = seq(along = devices )) %dopar%
   #make a vector of trip_id called 'deviceX', where X is the device number
-  assign(paste("device", d, sep=""),trip.lab(d))},gcFIRST = TRUE)
+ # d <- 
+ # a <- paste("device", d, sep="")
+  assign(paste("device", devices[i], sep=""),trip.lab(devices[i],gps))
+ # assign(paste("device", d, sep=""),0)
+  tripn.list[[i]] <- get(paste("device", devices[i], sep=""))})
+#  })
 #run for each individual and time how long this takes.
+
+#close cluster
 stopCluster(cl)
+#tripn.list[[devices[i]]]
 
 
+?foreach
+#assign(paste("device", 531, sep=""),trip.lab(531,gps))
+
+d <- 528
 #get above data, and put it into vector a
 a <- get(paste("device", d, sep=""))    
 
