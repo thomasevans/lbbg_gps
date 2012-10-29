@@ -144,25 +144,6 @@ gps$trip_id <- all.points
 
 
 
-
-gps$trip_id[10000:10500]
-gps$trip_id[76100:76150]
-gps$trip_id[300000:3000500]
-
-#debugging - look at columns, where do things go wrong?
-cbind(gps$trip_id[76100:76150],gps$loc_type[76100:76150],gps$trip[76100:76150],loc_calc[76100:76150],gps$nest_gc_dist[76100:76150])
-names(gps)
-
-summary(loc_calc==12)
-summary(loc_calc==3)
-summary(loc_calc==4)
-
-summary(gps$loc_type == 0)
-summary(gps$loc_type == 1)
-summary(gps$loc_type == 2)
-summary(gps$loc_type == 3)
-
-names(gps)
 #next need to add the gps$trip_id, gps$loc_type to some of the various outputs
 #then should start a new script which makes a table of trips, and calculates varios summary functions for these, e.g. perhaps labelling migration trips too.
 #could also move all functions into a new R file, and then source this at the beggining of each script - would clean things up here a bit.
