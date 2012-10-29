@@ -138,8 +138,12 @@ system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
 #close cluster
 stopCluster(cl)
 
+
+
+
+
 #get above data, and put it into vector a
-a <- get(paste("device", d, sep=""))    
+#a <- get(paste("device", d, sep=""))    
 
 
 #pseudocode
@@ -149,11 +153,20 @@ a <- get(paste("device", d, sep=""))
 #add this labelled id back to the gps dataframe
 #then add this as an output column in below file outputs
 
+all.points <- c(1:length(gps$device_info_serial))
+z <- 0
+x <- 0
+for(i in seq(along = devices )){
+  z <- max(x)
+  x <- unlist(lst[[i]]) + z  
+  d <- devices[i]
+  all.points[gps$loc_type != 0 & gps$device_info_serial == d] <- x
+  }
 
+gps$tripn <- all.points
 
-
-
-
+unique(all.points)
+  
 
 
 
