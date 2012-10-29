@@ -1,12 +1,14 @@
+#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+#You are welcome to use parts of this code, but please give credit when using it extensively.
 #NB Some of following code is based on a script by Michael Kemp for a course held in Amsterdam in 2010
 
-#Set the work directory
+#Set the working directory
 setwd("F:/Documents/Work/LBBG_GPS/GIS/GPS_track_files")
 
 #To link to database
 library(RODBC)
 
-#to get spatial functions
+#To get spatial functions
 library(fossil)
 
 #Establish a connection to the database
@@ -52,7 +54,7 @@ trip3 <- (3* c(0,gps$trip[1:(length(gps$trip)-1)]))+1
 
 #label by type of point: 0 - trip, 1 - start, 2 - end, 3 - nest
 gps$loc_type <- trip1*trip2*trip3   #product of above three vectors
-gps$loc_calc <- gps$loc_type        #keep a copy of above calculation
+loc_calc <- gps$loc_type        #keep a copy of above calculation
 #Reduce to the four possibilties
 gps$loc_type[(gps$loc_type == 1)  | (gps$loc_type == 12)] <- 0
 gps$loc_type[gps$loc_type == 3] <- 1
@@ -62,16 +64,12 @@ gps$loc_type[(gps$loc_type == 24) | (gps$loc_type == 6) | (gps$loc_type == 8) | 
 #make column for trip id, start with value 0, which will be null value - i.e. not a trip (points at the nest)
 gps$trip_id <- 0
 
-#unique(gps$device_info_serial)  #device numbers
-#d<- 1   #for testing
-
 
 #***********start of function: trip.lab
 #Function 'trip.lab' will produce a vector of trip number for each device
 #d - device_info_serial
 #gps - the gps dataframe
 trip.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
-
     
   #make a subset of 'gps' containing just data for device, d, away from the nest.
   sub01 <- subset(gps,loc_type != 0 & device_info_serial == d,select=c(loc_type,trip_id))
@@ -96,77 +94,52 @@ trip.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
 #**********End of this function: trip.lab
 
 
-
 #first make a list of available devices
 devices <- sort(unique(gps$device_info_serial))
 
 
 #*Calculate trip id for each device
-#do this tack in parallel, here we have 8 threads, so I make a cluster of 8 threads with which to run the analysis
+#do this in parallel
+#first load neccessary packages
 require(foreach)
 require(doParallel)
-#cl <- makeCluster(8) #use x cores
 cl <- makeCluster(parallel::detectCores())     #use x cores, general solution for any windows machine.
-registerDoParallel(cl)
-#i <- 1
-#x <- c(1:20)
-#as.character("519")
-#lst <- as.list(devices)    #to initiate the list, we make a list of n devices vectors
-clusterExport(cl, c("trip.lab", "devices", "gps","lst"))   #this maybe neccessary so that the clusetered instances or R have the required vairables/ functions in their scope, i.e. those functions and vairables which are referred to within the 'foreach' function.
-#lst[[1]] <- x
-#for(i in seq(along = devices )lst[[i]] <- as.character(devices[i]) = 0
+registerDoParallel(cl)   #start the parellel session of R; the 'slaves', which will run the analysis.
+
+clusterExport(cl, c("trip.lab", "devices", "gps"))   #this maybe neccessary so that the clustered instances or R have the required vairables/ functions in their scope, i.e. those functions and vairables which are referred to within the 'foreach' function.
+
 #NB see: http://stackoverflow.com/questions/9404881/writing-to-global-variables-in-using-dosnow-and-doing-parallelization-in-r
 #There a solution is offered for exporting vairables from foreach to the global environment.
+
+#work out trip numbers for each device id, then add these to a list of lists (lst)
+#Use system.time to time how long this takes - so far has taken around 10-15 minutes on 8 thread machine.
 system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
- # require(foreach)   #seems that this package must be called within foreach, to ensure that it is loaded in the parallel instancies of R! See: 
-             
-  #make a vector of trip_id called 'deviceX', where X is the device number
- # i <- d <- 8
- # a <- paste("device", d, sep="")
+  #calculate the trip numbers for the device i. i.e. the function which we wish to run for each device.     
   x <- trip.lab(devices[i],gps)
- # assign(paste("device", d, sep=""),0)
-         #    x <- c(1:20)
-  #lst[[i]] <- x
   list(x) #output x as list
- # names(lst[[i]]) <- paste("device", devices[i], sep="")} #this doesn't behave as expected. Instead of labelling list 'i', it seems to make a second list (list of lists) under i.
-             #perhaps it is then neccessary to somehow pass this list back to the global environment lst list? Maybe need to define the environment from which lst is e.g. somthing like: globaleviron.lst[[i]]
-}
-             })
-#  })
-#run for each individual and time how long this takes.
+  } #end of foreach functions
+}) #end of things being timed by system.time
 
 #close cluster
 stopCluster(cl)
 
-
-
-
-
-#get above data, and put it into vector a
-#a <- get(paste("device", d, sep=""))    
-
-
-#pseudocode
-#for each bird add max trip id from previous bird to current trip ids
-#then make normal length vector (will have to use filter thing: "gps$loc_type != 0 & gps$device_info_serial == d")
-#add this vector to the global vector (other values are zero - so won't lose anything)
-#add this labelled id back to the gps dataframe
-#then add this as an output column in below file outputs
-
+#make a vector to which the trip numbers will be added for all individuals.
 all.points <- c(1:length(gps$device_info_serial))
-z <- 0
-x <- 0
+all.points <- 0*all.points   #make this all zero (i.e. the default value - where there is no trip)
+z <- 0    #a vairable which will store the maximum trip number from the previous device
+x <- 0    #a new vector of trip numbers
+
+#Loop through all devices, making trip numbers unique, by adding number of highest numbered #existing trip, then adding this to the all.points vector, this being filtered, so that only #points in real trips get value.
 for(i in seq(along = devices )){
-  z <- max(x)
-  x <- unlist(lst[[i]]) + z  
-  d <- devices[i]
-  all.points[gps$loc_type != 0 & gps$device_info_serial == d] <- x
+  z <- max(x)    #highest current trip number
+  x <- unlist(lst[[i]]) + z   #add z to vector of current device trip numbers
+  d <- devices[i]       #device id
+  all.points[gps$loc_type != 0 & gps$device_info_serial == d] <- x    #add vector x to the vector of all gps points
   }
 
+#then add the vector 'all.points' to the 'gps' dataframe.
 gps$tripn <- all.points
 
-unique(all.points)
-  
 
 
 
