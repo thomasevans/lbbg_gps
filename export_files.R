@@ -56,14 +56,15 @@ trip3 <- (3* c(0,gps$trip[1:(length(gps$trip)-1)]))+1
 gps$loc_type <- trip1*trip2*trip3   #product of above three vectors
 loc_calc <- gps$loc_type        #keep a copy of above calculation
 #Reduce to the four possibilties
-gps$loc_type[(gps$loc_type == 1)  | (gps$loc_type == 12)] <- 0
-gps$loc_type[gps$loc_type == 3] <- 1
-gps$loc_type[gps$loc_type == 4] <- 2
+gps$loc_type[(gps$loc_type == 1)  ] <- 0
+gps$loc_type[gps$loc_type == 3 | (gps$loc_type == 12)] <- 1
 gps$loc_type[(gps$loc_type == 24) | (gps$loc_type == 6) | (gps$loc_type == 8) | (gps$loc_type == 2)]<- 3
+gps$loc_type[gps$loc_type == 4] <- 2
 
 #make column for trip id, start with value 0, which will be null value - i.e. not a trip (points at the nest)
 gps$trip_id <- 0
 
+summary(loc_calc==2)
 
 #***********start of function: trip.lab
 #Function 'trip.lab' will produce a vector of trip number for each device
@@ -83,7 +84,7 @@ trip.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
   x <- 0   #x will keep note of trip number, we start at zero.
   #loop through all gps points, labelling them with trip id (x)
   for(i in 1:n){
-    setWinProgressBar(pb, i, title=paste( round(i/n*100, 0),"% done")) #refresh the progress bar, so that we can keep note of progress.
+    setWinProgressBar(pb, i, title=paste( round(i/n*100, 0),"% done for ", d)) #refresh the progress bar, so that we can keep note of progress.
     if(sub01$loc_type[i] == 1) x <- x+1      #if start of a trip, increment x by one
     sub01$trip_id[i] <- x                    #allocated value of x for trip_id for position 'i'.
   }
@@ -138,9 +139,33 @@ for(i in seq(along = devices )){
   }
 
 #then add the vector 'all.points' to the 'gps' dataframe.
-gps$tripn <- all.points
+gps$trip_id <- all.points
 
 
+
+
+
+gps$trip_id[10000:10500]
+gps$trip_id[76100:76150]
+gps$trip_id[300000:3000500]
+
+#debugging - look at columns, where do things go wrong?
+cbind(gps$trip_id[76100:76150],gps$loc_type[76100:76150],gps$trip[76100:76150],loc_calc[76100:76150],gps$nest_gc_dist[76100:76150])
+names(gps)
+
+summary(loc_calc==12)
+summary(loc_calc==3)
+summary(loc_calc==4)
+
+summary(gps$loc_type == 0)
+summary(gps$loc_type == 1)
+summary(gps$loc_type == 2)
+summary(gps$loc_type == 3)
+
+names(gps)
+#next need to add the gps$trip_id, gps$loc_type to some of the various outputs
+#then should start a new script which makes a table of trips, and calculates varios summary functions for these, e.g. perhaps labelling migration trips too.
+#could also move all functions into a new R file, and then source this at the beggining of each script - would clean things up here a bit.
 
 
 
@@ -210,7 +235,8 @@ out.data <- function(xi,gps=get("gps", envir=environment(out.data)),devices=get(
 
 require(foreach)
 require(doParallel)
-cl <- makeCluster(8) #use x cores
+cl <- makeCluster(parallel::detectCores())     #use x cores, general solution for any windows machine.
+
 registerDoParallel(cl)
 
 system.time({foreach(i = seq(along = devices )) %dopar%
