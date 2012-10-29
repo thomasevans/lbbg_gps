@@ -105,29 +105,39 @@ devices <- sort(unique(gps$device_info_serial))
 #do this tack in parallel, here we have 8 threads, so I make a cluster of 8 threads with which to run the analysis
 require(foreach)
 require(doParallel)
-cl <- makeCluster(8) #use x cores
+#cl <- makeCluster(8) #use x cores
+cl <- makeCluster(parallel::detectCores())     #use x cores, general solution for any windows machine.
 registerDoParallel(cl)
 #i <- 1
-tripn.list <- list()
-system.time({foreach(i = seq(along = devices )) %dopar%
+#x <- c(1:20)
+#as.character("519")
+#lst <- as.list(devices)    #to initiate the list, we make a list of n devices vectors
+clusterExport(cl, c("trip.lab", "devices", "gps","lst"))   #this maybe neccessary so that the clusetered instances or R have the required vairables/ functions in their scope, i.e. those functions and vairables which are referred to within the 'foreach' function.
+#lst[[1]] <- x
+#for(i in seq(along = devices )lst[[i]] <- as.character(devices[i]) = 0
+#NB see: http://stackoverflow.com/questions/9404881/writing-to-global-variables-in-using-dosnow-and-doing-parallelization-in-r
+#There a solution is offered for exporting vairables from foreach to the global environment.
+system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
+ # require(foreach)   #seems that this package must be called within foreach, to ensure that it is loaded in the parallel instancies of R! See: 
+             
   #make a vector of trip_id called 'deviceX', where X is the device number
- # d <- 
+ # i <- d <- 8
  # a <- paste("device", d, sep="")
-  assign(paste("device", devices[i], sep=""),trip.lab(devices[i],gps))
+  x <- trip.lab(devices[i],gps)
  # assign(paste("device", d, sep=""),0)
-  tripn.list[[i]] <- get(paste("device", devices[i], sep=""))})
+         #    x <- c(1:20)
+  #lst[[i]] <- x
+  list(x) #output x as list
+ # names(lst[[i]]) <- paste("device", devices[i], sep="")} #this doesn't behave as expected. Instead of labelling list 'i', it seems to make a second list (list of lists) under i.
+             #perhaps it is then neccessary to somehow pass this list back to the global environment lst list? Maybe need to define the environment from which lst is e.g. somthing like: globaleviron.lst[[i]]
+}
+             })
 #  })
 #run for each individual and time how long this takes.
 
 #close cluster
 stopCluster(cl)
-#tripn.list[[devices[i]]]
 
-
-?foreach
-#assign(paste("device", 531, sep=""),trip.lab(531,gps))
-
-d <- 528
 #get above data, and put it into vector a
 a <- get(paste("device", d, sep=""))    
 
