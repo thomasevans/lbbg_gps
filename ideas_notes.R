@@ -1,6 +1,12 @@
 #a place to collect ideas, before using them
 
 
+#have a look at speeds, could say speeds over about 2.5 ms-1 represent flight
+hist(gps$inst_ground_speed[gps$inst_ground_speed < 100],xlim=c(0,20),breaks=100)
+axis(1,at=seq(0,20,by=1))
+
+
+
 
 
 #some data visualisation ideas
