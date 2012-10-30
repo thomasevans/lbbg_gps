@@ -20,7 +20,7 @@ gps <- sqlQuery(gps.db, query="SELECT DISTINCT c.*, g.longitude, g.latitude, g.a
                 ,as.is=TRUE)
 
 #for testing purposes we only take the first x lines
-gps <- gps[1:100000,]
+#gps <- gps[1:100000,]
 
 #a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
 gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
@@ -108,3 +108,11 @@ trips$end_time <- as.POSIXct(as.POSIXlt(trips$end_time,origin=startdate, tz= "GM
 
 #conver the start_time back to datetime format
 trips$start_time <- as.POSIXct(as.POSIXlt(trips$start_time,origin=startdate, tz= "GMT",format="%Y-%m-%d %H:%M:%S"))
+
+
+#export trip information to the database
+#will be neccessary to edit table in Access after to define data-types and primary keys
+sqlSave(gps.db, trips, tablename = "lund_trips", append = FALSE,
+        rownames = FALSE, colnames = FALSE, verbose = FALSE,
+        safer = TRUE, addPK = FALSE,
+        fast = TRUE, test = FALSE, nastring = NULL,varTypes=c(start_time="Date",end_time="Date"))
