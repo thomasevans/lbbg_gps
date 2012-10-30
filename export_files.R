@@ -150,20 +150,16 @@ gps$trip_id <- all.points
 
 
 
-#output the new data columns to the 'cal_mov_paramaters' spreadsheet
-
-#put it all together in data_frame, with device_info_serial and date_time for primary keys. They either export direct to access, or to CSV etc, and 
-export_table <- as.data.frame(cbind(gps$device_info_serial,gps$date_time,bearing_next,bearing_prev,calculated_speed,diff_speed,gc_dist,nest_bear,inst_ground_speed,p2p_dist,time_interval_s,turning_angle))
-names(export_table) <- c("device_info_serial","date_time","bearing_next","bearing_prev","calculated_speed","diff_speed","nest_gc_dist","nest_bear","inst_ground_speed","p2p_dist","time_interval_s","turning_angle")
+#output the new data columns to the 'cal_mov_paramaters' database table
+#put it all together in data_frame, with device_info_serial and date_time for primary keys.
+export_table <- as.data.frame(cbind(gps$device_info_serial,gps$date_time,gps$trip,gps$loc_type,gps$trip_id))
+#give names for columns
+names(export_table) <- c("device_info_serial","date_time","pos_type","loc_type","trip_id")
+#add date_time to dataframe
 export_table$date_time <- gps$date_time
-#str(export_table)
-#export these calculated values to the database
-#will be neccessary to edit table in Access after to define data-types and primary keys
-sqlSave(gps.db, export_table, tablename = "cal_mov_paramaters", append = FALSE,
-        rownames = FALSE, colnames = FALSE, verbose = FALSE,
-        safer = TRUE, addPK = FALSE,
-        fast = TRUE, test = FALSE, nastring = NULL,varTypes=c(date_time="Date"))
-
+#export these calculated values to the database, updating existing 'cal_mov_paramaters' table.
+#first added the three new columns to the table useing access
+sqlUpdate(gps.db, export_table, tablename = "cal_mov_paramaters",index = c("device_info_serial","date_time"),fast=TRUE)
 
 
 
