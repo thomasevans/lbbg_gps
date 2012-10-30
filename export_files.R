@@ -161,68 +161,68 @@ gps$trip_id <- all.points
 #first make a list of available devices
 devices <- sort(unique(gps$device_info_serial))
 
-
+#Give each gps position a unique id
 gps$index <- seq(along = gps$device_info_serial)
 
-#for testing, set value xi
-#xi <- 1 
 
+
+#function to output range of data files
+#produce three files, a shape file for Arcgis including a spatial reference. A csv file of all the data for that device (all data columns). A second csv file in the unicsv format of GPS Babel; this file can later be converted to various other files, such as kml.
 out.data <- function(xi,gps=get("gps", envir=environment(out.data)),devices=get("devices", envir=environment(out.data))){
   require(sp)
   require(rgdal)
   
+  #first make a subset of the gps dataframe, containing data for device xi only.
   gps_sub <- subset(gps, gps$device_info_serial == devices[xi])
-  # names(gps_sub)
-  #long_lat <- cbind(gps_sub$longitude,gps_sub$latitude)
   
-  #for testing
-  # gps_sub <- gps_sub[1:20,]
-  #gps_sub <- 
-  
-  #just take the first x lines of this for testing - faster!
+  #name for output file
   outfile <- paste("track_",devices[xi],sep = "")
-  # ?SpatialPointsDataFrame
+  
   #write to a shape file for ArcGIS
+  #first cbind long and lat, for a spatial object
   xy <- cbind(gps_sub$longitude,gps_sub$latitude)
-  #   names(xy) <- c("x","y")
+  #make a spatial points object
   coords <- SpatialPoints(cbind(gps_sub$longitude,gps_sub$latitude))
   
-  
-  
+  #now use above spatial points object (coords) and subset of gps to make a spatial points dataframe
   sp_df <- SpatialPointsDataFrame(coords,gps_sub,proj4string=CRS("+proj=longlat +datum=WGS84"))
-  #a bit of a hack - give it a spatial reference
+  #a bit of a hack (because I think the above function should achieve this, but I can't get it to work!) - give it a spatial reference
   proj4string(sp_df)  <- CRS("+proj=longlat +datum=WGS84")
-  # write out a new shapefile (including .prj component)
+  
+  # write out dataframe to a new shapefile (including projection, .prj, component)
   writeOGR(sp_df, ".", outfile, driver="ESRI Shapefile")
-  names(sp_df)
+  
   #  write to a csv file, for use in Excel etc.
   write.csv(gps_sub,file=paste(outfile,".csv",sep=""))
   
   #write a second csv file to be input to GPSbabel, using 'unicsv' column names and format (see: http://www.gpsbabel.org/htmldoc-development/fmt_unicsv.html)
   #first produce a dataframe in appropriate order
-  #names(gps_sub)
   unicsv <- cbind(gps_sub$altitude, gps_sub$device_info_serial,gps_sub$date,gps_sub$time,gps_sub$calculated_speed,gps_sub$latitude,gps_sub$longitude,gps_sub$index,gps_sub$nest_gc_dist,gps_sub$inst_ground_speed)
   unicsv <- as.data.frame(unicsv)   #as dataframe
   names(unicsv) <- c("alt","comment","utc_d","utc_t","geschw","lat","lon","name","prox","speed")
   #to avoid errors in kml conversion, remove NAs and replace with zeroes
   unicsv[is.na(unicsv[,,])] <- 0
-  #summary(is.na(unicsv[,,]))
   write.csv(unicsv,file=paste(outfile,"_gpsbabel",".csv",sep=""))
-  
-  
+    
   return()
 }
+#*end of out.data function
+#****************************************************
 
 
+#to run the 'out.data' function in parallel, to speed things up
+#first neccessary packages
 require(foreach)
 require(doParallel)
-cl <- makeCluster(parallel::detectCores())     #use x cores, general solution for any windows machine.
+#use x cores, general solution for any windows machine.
+cl <- makeCluster(parallel::detectCores()) 
 
+#register the cluster
 registerDoParallel(cl)
 
+#run out.data for each individual and time how long this takes.
 system.time({foreach(i = seq(along = devices )) %dopar%
   out.data(i,gps=gps,devices=devices)}, gcFirst = TRUE)
-#run for each individual and time how long this takes.
 
-
+#close the cluster
 stopCluster(cl)
