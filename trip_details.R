@@ -1,5 +1,5 @@
 #********************************
-#This script extracts data from the database, then for each trip, produces a summary, for example, greatest distance and bearing at that point, trip duration, start time, end time, number of points, gps interval
+#This script extracts data from the database, then for each trip, produces a summary, for example, greatest distance, trip duration, start time, end time, number of points, gps interval
 
 
 #To link to database
@@ -33,25 +33,22 @@ trip_id <- sort(unique(gps$trip_id))
 f <- length(trip_id)
 trip_id <- trip_id[2:f]   #remove zero (i.e. non trip points)
 
-#get a list of available devices:
-devices <- sort(unique(gps$device_info_serial))
-
 
 #***********start of function: trip.info
 #Function 'trip.info' produces a lists of lists of information on trips
 #t - trip_id, the trip number
 #gps - the gps dataframe
 trip.info <- function(t, gps=gps){
- # t <- 2
+
   #make a subset of 'gps' containing just data for trip, t.
   sub01 <- subset(gps,trip_id == t)
-#  names(gps)
   n <- length(sub01$date_time)         #the number of gps points for this trip
+  
+  #calculate various paramaters for trips
   start_time <- min(sub01$date_time)   #start time
   end_time  <-  max(sub01$date_time)  #end time
   duration <- as.numeric(difftime(end_time,start_time,units="secs"))   #get trip duration in seconds
   dist_max  <-  max(sub01$nest_gc_dist)   #greatest distance reached from nest
-
   dist_total <- sum(sub01$p2p_dist[2:n])   #total distance travelled, exclude first point p2p distance, as this includes distance to point before trip 'strated'.
   interval_mean <- mean(sub01$time_interval_s)   #mean log interval
   interval_min <- min(sub01$time_interval_s)     #min log interval, may be useful for highlighting trips where high resolution GPS data is available (i.e. where the conditional log mode was used). It might make more sense to floor or round this value.
@@ -75,17 +72,18 @@ clusterExport(cl, c("gps","trip.info"))   #this maybe neccessary so that the clu
 
 #NB see: http://stackoverflow.com/questions/9404881/writing-to-global-variables-in-using-dosnow-and-doing-parallelization-in-r
 #There a solution is offered for exporting vairables from foreach to the global environment.
+
+#mast a list object to recieve the data
 lst <- list()
 
 
 #get paramaters for each trip
-#Use system.time to time how long this takes - so far has taken around 10-15 minutes on 8 thread machine.
+#Use system.time to time how long this takes.
 system.time({lst <- foreach(i = seq(along = trip_id )) %dopar%{
   #calculate the trip numbers for the device i. i.e. the function which we wish to run for each device.     
   x <- trip.info(trip_id[i],gps)
   x <- t(x)
-  list(x)
-  #list(x) #output x as list
+  list(x)   #output data as list (this will be appended to the global list, lst.
 } #end of foreach functions
 }) #end of things being timed by system.time
 
@@ -111,7 +109,7 @@ trips$start_time <- as.POSIXct(as.POSIXlt(trips$start_time,origin=startdate, tz=
 
 
 #export trip information to the database
-#will be neccessary to edit table in Access after to define data-types and primary keys
+#will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
 sqlSave(gps.db, trips, tablename = "lund_trips", append = FALSE,
         rownames = FALSE, colnames = FALSE, verbose = FALSE,
         safer = TRUE, addPK = FALSE,
