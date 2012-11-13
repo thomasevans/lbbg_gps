@@ -42,3 +42,37 @@ gps.original <- gps
 gps <- gps[1:50000,]
 
 
+#code to recognise flight, and adds this column, labelling with 0 if not flight and 1 if over 3.5 ms-1 (flight)
+gps$flight_class <- ifelse(gps$inst_ground_speed > 3.5, 1,0)
+#gps$flight_class <- as.factor(gps$flight_class)
+#gps$flight_class <- as.numeric(gps$flight_class)
+
+#'We want to label flights with a unique id
+#first we make some vectors of next, previous point etc, to find start and end points of flights
+flight1 <- gps$flight_class +1
+#make vector of next point value
+flight2 <- (2* c(gps$flight_class[2:length(gps$flight_class)],0))+1
+#make vector of prev point value
+flight3 <- (3* c(0,gps$flight_class[1:(length(gps$flight_class)-1)]))+1
+
+
+#label by type of point: 0 - flight, 1 - start, 2 - end, 3 - not flight
+gps$flight_class_2 <- flight1*flight2*flight3   #product of above three vectors
+
+summary(as.factor(gps$flight_class_2))
+
+
+
+
+
+loc_calc <- gps$loc_type        #keep a copy of above calculation
+#Reduce to the four possibilties
+gps$flight_class_2[(flight_class_2 == 1)  ] <- 0
+gps$flight_class_2[flight_class_2 == 3 | (flight_class_2 == 12)] <- 1
+gps$flight_class_2[(flight_class_2 == 24) | (flight_class_2 == 6) | (gps$loc_type == 8) | (flight_class_2 == 2)]<- 3
+gps$flight_class_2[flight_class_2 == 4] <- 2
+
+#make column for trip id, start with value 0, which will be null value - i.e. not a trip (points at the nest)
+gps$trip_id <- 0
+
+
