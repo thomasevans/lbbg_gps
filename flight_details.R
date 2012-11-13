@@ -4,11 +4,6 @@
 #'The flights should be numbered for each foraging trip. Perhaps also labelling the first and final flight of a foraging trip - which may contitute 'commuting' flight.
 
 
-#'First we workout a sensible cutoff value, beyond which gps points will be classified as flight. Clearly some flight points are below this, but this will hopfully include most points
-hist(gps$inst_ground_speed[gps$inst_ground_speed < 30  & gps$inst_ground_speed > 1 ],breaks=200, xlim=c(0,30),main="Histogram of instantaneous recored speed",xlab="Instaneous ground speed (GPS) - m/s")
-abline(v=3.5,lwd=3,lty=3)
-
-
 
 #To link to database
 library(RODBC)
@@ -20,15 +15,30 @@ gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
 sqlTables(gps.db)
 
 #for all of data_base, except pre-deployment and null records
-gps <- sqlQuery(gps.db, query="SELECT DISTINCT c.*, g.longitude, g.latitude, g.altitude
+gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude, g.latitude, g.x_speed, g.y_speed, g.z_speed, g.positiondop, g.speed_accuracy, c.bearing_next, c.bearing_prev, c.nest_gc_dist, c.nest_bear, c.inst_ground_speed, c.p2p_dist, c.time_interval_s, c.turning_angle
   FROM gps_uva_tracking_limited AS g, cal_mov_paramaters AS c
   WHERE g.device_info_serial = c.device_info_serial
     AND g.date_time = c.date_time
-    ORDER BY c.device_info_serial ASC, c.date_time ASC ;"
+    ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
                 ,as.is=TRUE)
+
+#check structure of object - does it contain what we expect it to?
+str(gps)
+
+#a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
+gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
+
+
+#'First we workout a sensible cutoff value, beyond which gps points will be classified as flight. Clearly some flight points are below this, but this will hopfully include most points
+hist(gps$inst_ground_speed[gps$inst_ground_speed < 30  & gps$inst_ground_speed > 1 ],breaks=200, xlim=c(0,30),main="Histogram of instantaneous recored speed",xlab="Instaneous ground speed (GPS) - m/s")
+abline(v=3.5,lwd=3,lty=3)
+
+
 
 #preserve a copy of original, before taking a subset for testing.
 gps.original <- gps
 
 #for testing purposes we only take the first x lines
 gps <- gps[1:50000,]
+
+
