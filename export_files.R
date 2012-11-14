@@ -98,7 +98,6 @@ trip.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
 #first make a list of available devices
 devices <- sort(unique(gps$device_info_serial))
 
-
 #*Calculate trip id for each device
 #do this in parallel
 #first load neccessary packages

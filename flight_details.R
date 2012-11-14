@@ -71,6 +71,49 @@ gps$flight_class_2[(fly_type == 24) | (fly_type == 6) | (fly_type == 8) | (fly_t
 gps$flight_class_2[fly_type == 4] <- 2
 
 #make column for trip id, start with value 0, which will be null value - i.e. not a trip (points at the nest)
-gps$trip_id <- 0
+gps$flight_id <- 0
+
+
+
+
+
+
+
+#prototype function from trip details. Need to modify now for flights.
+
+#***********start of function: flight.lab
+#Function 'flight.lab' will produce a vector of flight number for each device, thus allowing the for loop to be ran in parallel (quicker).
+#d - device_info_serial
+#gps - the gps dataframe
+
+#summary(as.factor(gps$device_info_serial))
+#for testing
+d <- 519
+
+trip.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
+  
+  #first make a subset of 'gps' containing just data for device, d, away from the nest.
+  sub01 <- subset(gps, flight_class_2 != 0 & device_info_serial == d,select=c(flight_class_2,flight_id))
+  
+  n <- length(sub01$flight_class_2) #the number of gps positions
+  
+  
+  #a windows progress bar to monitor progress
+  pb <- winProgressBar(title = paste( "progress bar for device",d), min = 0,max = n, width = 300)
+  
+  x <- 0   #x will keep note of trip number, we start at zero.
+  #loop through all gps points, labelling them with trip id (x)
+  for(i in 1:n){
+    setWinProgressBar(pb, i, title=paste( round(i/n*100, 0),"% done for ", d)) #refresh the progress bar, so that we can keep note of progress.
+    if(sub01$loc_type[i] == 1) x <- x+1      #if start of a trip, increment x by one
+    sub01$trip_id[i] <- x                    #allocated value of x for trip_id for position 'i'.
+  }
+  
+  close(pb)    #close the windows progress bar
+  return(sub01$trip_id)            #output a vector for the bird of trip id
+}
+#**********End of this function: trip.lab
+
+
 
 
