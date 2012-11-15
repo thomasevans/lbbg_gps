@@ -88,9 +88,9 @@ gps$flight_id <- 0
 
 #summary(as.factor(gps$device_info_serial))
 #for testing
-d <- 519
+#d <- 519
 
-trip.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
+flight.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
   
   #first make a subset of 'gps' containing just data for device, d, away from the nest.
   sub01 <- subset(gps, flight_class_2 != 0 & device_info_serial == d,select=c(flight_class_2,flight_id))
@@ -104,15 +104,70 @@ trip.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
   x <- 0   #x will keep note of trip number, we start at zero.
   #loop through all gps points, labelling them with trip id (x)
   for(i in 1:n){
-    setWinProgressBar(pb, i, title=paste( round(i/n*100, 0),"% done for ", d)) #refresh the progress bar, so that we can keep note of progress.
-    if(sub01$loc_type[i] == 1) x <- x+1      #if start of a trip, increment x by one
-    sub01$trip_id[i] <- x                    #allocated value of x for trip_id for position 'i'.
+    setWinProgressBar(pb, i, title=paste("device ", d, " is ", round(i/n*100, 0),"% done")) #refresh the progress bar, so that we can keep note of progress.
+    if(sub01$flight_class_2[i] == 1) x <- x+1      #if start of a trip, increment x by one
+    sub01$flight_id[i] <- x                    #allocated value of x for trip_id for position 'i'.
   }
   
   close(pb)    #close the windows progress bar
-  return(sub01$trip_id)            #output a vector for the bird of trip id
+  return(sub01$flight_id)            #output a vector for the bird of trip id
 }
-#**********End of this function: trip.lab
+#**********End of this function: flight.lab
+
+
+
+
+#cribbed form trip_lab script
+
+#first make a list of available devices
+devices <- sort(unique(gps$device_info_serial))
+
+#*Calculate trip id for each device
+#do this in parallel
+#first load neccessary packages
+require(foreach)
+require(doParallel)
+cl <- makeCluster(parallel::detectCores())     #use x cores, general solution for any windows machine.
+registerDoParallel(cl)   #start the parellel session of R; the 'slaves', which will run the analysis.
+
+clusterExport(cl, c("devices", "gps"))   #this maybe neccessary so that the clustered instances or R have the required vairables/ functions in their scope, i.e. those functions and vairables which are referred to within the 'foreach' function.
+
+#NB see: http://stackoverflow.com/questions/9404881/writing-to-global-variables-in-using-dosnow-and-doing-parallelization-in-r
+#There a solution is offered for exporting vairables from foreach to the global environment.
+
+#work out flight numbers for each device id, then add these to a list of lists (lst)
+#Use system.time to time how long this takes - so far has taken around 10-15 minutes on 8 thread machine.
+system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
+  #calculate the trip numbers for the device i. i.e. the function which we wish to run for each device.     
+  x <- flight.lab(devices[i],gps)
+  list(x) #output x as list
+} #end of foreach functions
+}) #end of things being timed by system.time
+
+#close cluster
+stopCluster(cl)
+
+#make a vector to which the trip numbers will be added for all individuals.
+all.points <- rep(0,length(gps$device_info_serial))   #make this all zero (i.e. the default value - where there is no flight)
+z <- 0    #a vairable which will store the maximum flight number from the previous device
+x <- 0    #a new vector of flight numbers
+
+#Loop through all devices, making flight numbers unique, by adding number of highest numbered existing flight, then adding this to the all.points vector, this being filtered, so that only points in real trips get value.
+for(i in seq(along = devices )){
+  z <- max(x)    #highest current flight_id number
+  x <- unlist(lst[[i]]) + z   #add z to vector of current device trip numbers
+  d <- devices[i]       #device id
+  all.points[gps$flight_class_2 != 0 & (is.na(gps$flight_class_2) != TRUE) & gps$device_info_serial == d] <- x    #add vector x to the vector of all gps points
+}
+
+summary(gps$flight_class_2 != 0 | gps$flight_class_2 != NA & gps$device_info_serial == d)
+
+summary(as.factor(gps$flight_class_2))
+summary(gps$flight_class_2 != NA)
+summary(is.na(gps$flight_class_2) != TRUE)
+
+#then add the vector 'all.points' to the 'gps' dataframe.
+gps$trip_id <- all.points
 
 
 
