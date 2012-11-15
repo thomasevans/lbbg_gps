@@ -30,16 +30,16 @@ gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
 
 
 #'First we workout a sensible cutoff value, beyond which gps points will be classified as flight. Clearly some flight points are below this, but this will hopfully include most points
-hist(gps$inst_ground_speed[gps$inst_ground_speed < 30  & gps$inst_ground_speed > 1 ],breaks=200, xlim=c(0,30),main="Histogram of instantaneous recored speed",xlab="Instaneous ground speed (GPS) - m/s")
-abline(v=3.5,lwd=3,lty=3)
+#hist(gps$inst_ground_speed[gps$inst_ground_speed < 30  & gps$inst_ground_speed > 1 ],breaks=200, xlim=c(0,30),main="Histogram of instantaneous recored speed",xlab="Instaneous ground speed (GPS) - m/s")
+#abline(v=3.5,lwd=3,lty=3)
 
 
 
 #preserve a copy of original, before taking a subset for testing.
-gps.original <- gps
-
+#gps.original <- gps
+#gps <- gps.original
 #for testing purposes we only take the first x lines
-gps <- gps[1:50000,]
+#gps <- gps[1:50000,]
 
 
 #code to recognise flight, and adds this column, labelling with 0 if not flight and 1 if over 3.5 ms-1 (flight)
@@ -59,7 +59,7 @@ flight3 <- (3* c(0,gps$flight_class[1:(length(gps$flight_class)-1)]))+1
 #label by type of point: 0 - not flight, 1 - start, 2 - end, 3 - flight
 gps$flight_class_2 <- flight1*flight2*flight3   #product of above three vectors, produces unique values for each possible point type.
 
-summary(as.factor(gps$flight_class_2))  #inspect this
+#summary(as.factor(gps$flight_class_2))  #inspect this
 
 
 fly_type <- gps$flight_class_2        #keep a copy of above calculation
@@ -160,15 +160,31 @@ for(i in seq(along = devices )){
   all.points[gps$flight_class_2 != 0 & (is.na(gps$flight_class_2) != TRUE) & gps$device_info_serial == d] <- x    #add vector x to the vector of all gps points
 }
 
-summary(gps$flight_class_2 != 0 | gps$flight_class_2 != NA & gps$device_info_serial == d)
-
-summary(as.factor(gps$flight_class_2))
-summary(gps$flight_class_2 != NA)
-summary(is.na(gps$flight_class_2) != TRUE)
-
 #then add the vector 'all.points' to the 'gps' dataframe.
-gps$trip_id <- all.points
+gps$flight_id <- all.points
 
 
 
 
+#now we have labelled all gps points with unique flight numbers we should now calculate various summary information for each flight.
+#This could either be done in the same script, or we could first add the flight number and flight status columns to the 'cal_mov_paramaters' DB table, then make a new script which queries this table and calculates flight information, then outputs this data to a new db table specifically for flight information.
+#To avoid over long and complicated scripts it is probably best to break this down, so first output the newly calculated column to the db, then start a new script for the flight calculations.
+
+
+names(gps)
+
+gps$flight_class_2[1:100]
+gps$trip_id[1:100]
+gps$flight_id[1:100]
+
+#output the new data columns to the 'cal_mov_paramaters' database table
+#add neccessary columns to db table first. Here 'flight_class' and 'flight_id', which are both integers.
+#put it all together in data_frame, with device_info_serial and date_time for primary keys.
+export_table <- as.data.frame(cbind(gps$device_info_serial,gps$date_time,gps$flight_class_2,gps$flight_id))
+#give names for columns
+names(export_table) <- c("device_info_serial","date_time","flight_class","flight_id")
+#add date_time to dataframe, somehow datetime loses its class in the above opperation - this is a workaround.
+export_table$date_time <- gps$date_time
+#export these calculated values to the database, updating existing 'cal_mov_paramaters' table.
+#first added the three new columns to the table useing access
+sqlUpdate(gps.db, export_table, tablename = "cal_mov_paramaters",index = c("device_info_serial","date_time"),fast=TRUE)
