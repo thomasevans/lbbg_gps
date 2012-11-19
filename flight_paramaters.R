@@ -15,4 +15,108 @@ str(gps)
 
 #*****************************In the eventual version, I want to do this using the database connection instead. In the mean time I use the previously saved GPS data.
 
+#database functions
 
+#To link to database
+library(RODBC)
+
+#to get spatial functions
+library(fossil)
+
+#Establish a connection to the database
+gps.db <- odbcConnectAccess2007('GPS_db.accdb')
+
+
+
+#Query the gull db to extract bird_id, nest_id, and nest locations
+nest_loc <- sqlQuery(gps.db, query="SELECT DISTINCT n.ring_number, n.nest_id, n.latitude, n.longitude, t.device_info_serial
+FROM gps_uva_nest_limited AS n, gps_uva_track_session_limited AS t
+WHERE n.ring_number = t.ring_number
+ORDER BY n.ring_number ASC;")
+
+#function to produce two vectors of latitude and longitude positions
+lookup_nest <- function(device_info){
+  x <- nest_loc$device_info_serial == device_info
+  lat <- nest_loc$latitude[x]
+  long <- nest_loc$longitude[x]
+  return(c(lat,long))
+}
+
+
+#produce a vector of flight numbers
+flight_id <- sort(unique(gps$flight_id))
+f <- length(flight_id)
+flight_id <- flight_id[2:f]   #remove zero (i.e. non flight points)
+
+
+#***********start of function: flight.info
+#Function 'flight.info' produces a list of lists of information on flights
+#t - flight_id, the flight number
+#gps - the gps dataframe
+flight.info <- function(t, gps=gps){
+  
+  library(fossil)   #required for distance calculations
+  #make a subset of 'gps' containing just data for flight, t.
+  sub01 <- subset(gps,flight_id == t)
+  n <- length(sub01$date_time)         #the number of gps points for this flight
+  
+  #calculate various paramaters for flights
+  start_time <- min(sub01$date_time)   #start time
+  end_time  <-  max(sub01$date_time)  #end time
+  duration <- as.numeric(difftime(end_time,start_time,units="secs"))   #get flight duration in seconds
+  dist_max  <-  max(sub01$nest_gc_dist)   #greatest distance reached from nest
+  dist_total <- sum(sub01$p2p_dist[2:n])   #total distance travelled, exclude first point p2p distance, as this includes distance to point before flight 'started'.
+  interval_mean <- mean(sub01$time_interval_s)   #mean log interval
+  interval_min <- min(sub01$time_interval_s)     #min log interval, may be useful for highlighting flights where high resolution GPS data is available (i.e. where the conditional log mode was used). It might make more sense to floor or round this value.
+  device_info_serial <- sub01$device_info_serial[1]  #get device_info_serial
+  
+  start_long   <-  sub01$longitude[1]
+  start_lat   <-   sub01$latitude[1]
+  eng_long    <-   sub01$longitude[n]
+  end_lat    <-    sub01$latitude[n]
+  
+  #these will only work once the database link is working - alternative could be to input the nest data myself, from my excel records
+  dist_nest_start    <-   deg.dist(lookup_nest(device_info_serial),start_long,start_lat)
+  dist_nest_end      <-   deg.dist(lookup_nest(device_info_serial),start_long,start_lat)
+    
+
+  #Displacement relative to colony/ nest, i.e. difference between final and first distance from nest.
+  dist_nest_dif <- dist_nest_end - dist_nest_start
+  
+    
+    #Some summaries of various values useful in drift analysis and similar calculations
+     
+    dist_a_b    <-    deg.dist(start_long,start_lat,end_long,end_lat)              #require a p2p distance function
+    straigtness <-    dist_total/dist_a_b              #use total distance travelled, and straight-line distance
+    bearing_a_b <-     earth.bear(start_long,start_lat,end_long,end_lat)             #bearing from start position to final position
+    
+    
+    #Some calculations regarding speed
+    speed_a_b  <-  dist_a_b/duration     #resultant speed for distance travelled over time
+  flight_class == 3
+    speed_inst_mean <-   gps$inst_ground_speed[gps$flight_class == 3]/length(  gps$flight_class) #excluding the non-flight points (usually the first and final point
+    speed_inst_med <-   median(gps$inst_ground_speed[gps$flight_class == 3],na.rm = TRUE)
+    speed_inst_var <-   var(gps$inst_ground_speed[gps$flight_class == 3],na.rm = TRUE)
+
+  #Altitude, max, mean, median
+  #Altitude requires database too - so will have to wait
+  alt_max    <- 
+  alt_min
+  alt_mean
+  alt_med    <- median(gps$altitude[gps$flight_class == 3],na.rm = TRUE)
+    
+    
+  
+  
+  
+  #make a vector containing all this data
+  data.out <- c(t,device_info_serial,n,start_time,end_time,duration,dist_max,dist_total,interval_mean,interval_min)  
+  
+  return(data.out)            #output a vector for the bird of flight id
+}
+#**********End of this function: flight.info
+
+
+
+
+#for each trip, look at flights, label with number flight per that trip, and whether first or final, or inbetween. 
