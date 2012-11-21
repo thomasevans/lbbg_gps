@@ -8,23 +8,23 @@
 
 #save(gps, file = "gps.RData")
 #'load in previousl saved GPS data (R data object)
-load("gps.RData")
+#load("gps.RData")
 
 #'Inspect this dataframe
-str(gps)
+#str(gps)
 
 #*****************************In the eventual version, I want to do this using the database connection instead. In the mean time I use the previously saved GPS data.
 
 #database functions
-
 #To link to database
 library(RODBC)
 
-#to get spatial functions
-library(fossil)
-
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
+
+#See what tables are available
+sqlTables(gps.db)
+
 
 
 
@@ -33,6 +33,13 @@ nest_loc <- sqlQuery(gps.db, query="SELECT DISTINCT n.ring_number, n.nest_id, n.
 FROM gps_uva_nest_limited AS n, gps_uva_track_session_limited AS t
 WHERE n.ring_number = t.ring_number
 ORDER BY n.ring_number ASC;")
+
+
+
+#get all the GPS info that we require
+
+
+
 
 #function to produce two vectors of latitude and longitude positions
 lookup_nest <- function(device_info){
