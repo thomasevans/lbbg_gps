@@ -38,6 +38,14 @@ ORDER BY n.ring_number ASC;")
 
 #get all the GPS info that we require
 
+#for all of data_base, except pre-deployment and null records
+gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude, g.latitude, g.x_speed, g.y_speed, g.z_speed, g.positiondop, g.speed_accuracy, c.bearing_next, c.bearing_prev, c.nest_gc_dist, c.nest_bear, c.inst_ground_speed, c.p2p_dist, c.time_interval_s, c.turning_angle, c.flight_class,c.flight_id
+  FROM gps_uva_tracking_limited AS g, cal_mov_paramaters AS c
+  WHERE g.device_info_serial = c.device_info_serial
+    AND g.date_time = c.date_time
+    ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
+                ,as.is=TRUE)
+
 
 
 
