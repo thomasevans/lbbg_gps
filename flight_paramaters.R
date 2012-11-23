@@ -39,13 +39,21 @@ ORDER BY n.ring_number ASC;")
 #get all the GPS info that we require
 
 #for all of data_base, except pre-deployment and null records
-gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude, g.latitude, g.x_speed, g.y_speed, g.z_speed, g.positiondop, g.speed_accuracy, c.bearing_next, c.bearing_prev, c.nest_gc_dist, c.nest_bear, c.inst_ground_speed, c.p2p_dist, c.time_interval_s, c.turning_angle, c.flight_class,c.flight_id
+gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude, g.latitude, g.x_speed, g.y_speed, g.z_speed, g.positiondop, g.speed_accuracy, c.bearing_next, c.bearing_prev, c.nest_gc_dist, c.nest_bear, c.inst_ground_speed, c.p2p_dist, c.time_interval_s, c.turning_angle, c.flight_class,c.flight_id, g.altitude
   FROM gps_uva_tracking_limited AS g, cal_mov_paramaters AS c
   WHERE g.device_info_serial = c.device_info_serial
     AND g.date_time = c.date_time
     ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
                 ,as.is=TRUE)
 
+
+
+
+#preserve a copy of original, before taking a subset for testing.
+gps.original <- gps
+#gps <- gps.original
+#for testing purposes we only take the first x lines
+gps <- gps[1:50000,]
 
 
 
@@ -63,11 +71,11 @@ flight_id <- sort(unique(gps$flight_id))
 f <- length(flight_id)
 flight_id <- flight_id[2:f]   #remove zero (i.e. non flight points)
 
-
 #***********start of function: flight.info
 #Function 'flight.info' produces a list of lists of information on flights
 #t - flight_id, the flight number
 #gps - the gps dataframe
+t <- 59
 flight.info <- function(t, gps=gps){
   
   library(fossil)   #required for distance calculations
@@ -87,12 +95,15 @@ flight.info <- function(t, gps=gps){
   
   start_long   <-  sub01$longitude[1]
   start_lat   <-   sub01$latitude[1]
-  eng_long    <-   sub01$longitude[n]
+  end_long    <-   sub01$longitude[n]
   end_lat    <-    sub01$latitude[n]
-  
+  #str(lookup_nest(device_info_serial))
   #these will only work once the database link is working - alternative could be to input the nest data myself, from my excel records
-  dist_nest_start    <-   deg.dist(lookup_nest(device_info_serial),start_long,start_lat)
-  dist_nest_end      <-   deg.dist(lookup_nest(device_info_serial),start_long,start_lat)
+  nest <- lookup_nest(device_info_serial)
+#nest[2]
+  #unlist(nest)
+  dist_nest_start    <-   1000*deg.dist(nest[2],nest[1],start_long,start_lat)
+  dist_nest_end      <-   1000*deg.dist(nest[2],nest[1],end_long,end_lat)
     
 
   #Displacement relative to colony/ nest, i.e. difference between final and first distance from nest.
@@ -100,29 +111,28 @@ flight.info <- function(t, gps=gps){
   
     
     #Some summaries of various values useful in drift analysis and similar calculations
-     
-    dist_a_b    <-    deg.dist(start_long,start_lat,end_long,end_lat)              #require a p2p distance function
+     ?deg.dist
+    dist_a_b    <-    1000*deg.dist(start_long,start_lat,end_long,end_lat)              #require a p2p distance function
     straigtness <-    dist_total/dist_a_b              #use total distance travelled, and straight-line distance
     bearing_a_b <-     earth.bear(start_long,start_lat,end_long,end_lat)             #bearing from start position to final position
     
     
     #Some calculations regarding speed
     speed_a_b  <-  dist_a_b/duration     #resultant speed for distance travelled over time
-  flight_class == 3
-    speed_inst_mean <-   gps$inst_ground_speed[gps$flight_class == 3]/length(  gps$flight_class) #excluding the non-flight points (usually the first and final point
-    speed_inst_med <-   median(gps$inst_ground_speed[gps$flight_class == 3],na.rm = TRUE)
-    speed_inst_var <-   var(gps$inst_ground_speed[gps$flight_class == 3],na.rm = TRUE)
-
+  #flight_class == 3
+    speed_inst_mean <-   mean(sub01$inst_ground_speed[sub01$flight_class == 3],na.rm = TRUE) #excluding the non-flight points (usually the first and final point
+    speed_inst_med <-   median(sub01$inst_ground_speed[sub01$flight_class == 3],na.rm = TRUE)
+    speed_inst_var <-   var(sub01$inst_ground_speed[sub01$flight_class == 3],na.rm = TRUE)
+#names(gps)
   #Altitude, max, mean, median
-  #Altitude requires database too - so will have to wait
-  alt_max    <- max(gps$altitude[gps$flight_class == 3],na.rm = TRUE)
-  alt_min    <- min(median(gps$altitude[gps$flight_class == 3],na.rm = TRUE))
-  alt_mean   <- mean(median(gps$altitude[gps$flight_class == 3],na.rm = TRUE))
-  alt_med    <- median(gps$altitude[gps$flight_class == 3],na.rm = TRUE)
+  alt_max    <- max(sub01$altitude[sub01$flight_class == 3],na.rm = TRUE)
+  alt_min    <- min(median(sub01$altitude[sub01$flight_class == 3],na.rm = TRUE))
+  alt_mean   <- mean(median(sub01$altitude[sub01$flight_class == 3],na.rm = TRUE))
+  alt_med    <- median(sub01$altitude[sub01$flight_class == 3],na.rm = TRUE)
     
   
   #make a vector containing all this data
-  data.out <- c(t,n,start_time,end_time,duration,dist_max,dist_total,interval_mean,interval_min,device_info_serial,start_long,start_lat,eng_long,end_lat,dist_nest_start,dist_nest_end,dist_nest_dif,dist_a_b,straigtness,bearing_a_b,speed_a_b,flight_class,speed_inst_mean,speed_inst_med,speed_inst_var,alt_max,alt_min,alt_mean,alt_med)  
+  data.out <- c(t,n,start_time,end_time,duration,dist_max,dist_total,interval_mean,interval_min,device_info_serial,start_long,start_lat,end_long,end_lat,dist_nest_start,dist_nest_end,dist_nest_dif,dist_a_b,straigtness,bearing_a_b,speed_a_b,speed_inst_mean,speed_inst_med,speed_inst_var,alt_max,alt_min,alt_mean,alt_med)  
   
   return(data.out)            #output a vector for the bird of flight id
 }
@@ -156,14 +166,17 @@ system.time({lst <- foreach(i = seq(along = flight_id )) %dopar%{
 
 #close cluster
 stopCluster(cl)
-
+#length(names(flights))
 #names for the dataframe
-names.flights <- c("flight_id","points","start_time","end_time","duration","dist_max","dist_total","interval_mean","interval_min","device_info_serial","start_long","start_lat","eng_long","end_lat","dist_nest_start","dist_nest_end","dist_nest_dif","dist_a_b","straigtness","bearing_a_b","speed_a_b","flight_class","speed_inst_mean","speed_inst_med","speed_inst_var","alt_max","alt_min","alt_mean","alt_med")
+names.flights <- c("flight_id","points","start_time","end_time","duration","dist_max","dist_total","interval_mean","interval_min","device_info_serial","start_long","start_lat","end_long","end_lat","dist_nest_start","dist_nest_end","dist_nest_dif","dist_a_b","straigtness","bearing_a_b","speed_a_b","speed_inst_mean","speed_inst_med","speed_inst_var","alt_max","alt_min","alt_mean","alt_med")
 
 #make a dataframe from the list generated by the above function.
-flights <- data.frame(matrix(unlist(lst), nrow=length(trip_id), byrow=T))
+flights <- data.frame(matrix(unlist(lst), nrow=length(flight_id), byrow=T))
+#length(names(flights))
+#length(names.flights)
+#str(flights)
 names(flights) <- names.flights
-
+#str(lst)
 
 #origin of UNIX date_time, required for coversion back to datetime objects for start_time and end_time
 startdate <- "1970-01-01"
@@ -174,8 +187,14 @@ flights$end_time <- as.POSIXct(as.POSIXlt(flights$end_time,origin=startdate, tz=
 
 #conver the start_time back to datetime format
 flights$start_time <- as.POSIXct(as.POSIXlt(flights$start_time,origin=startdate, tz= "GMT",format="%Y-%m-%d %H:%M:%S"))
-
-
+#length(lst)
+#lst[[1]]
+#n <- 0
+#for(i in 1:100){
+#n[i] <- length(unlist(lst[[i]]))
+#}
+#n
+#hist(n)
 
 #for each trip, look at flights, label with number flight per that trip, and whether first or final, or inbetween. 
 #Querry database to get trip information:
