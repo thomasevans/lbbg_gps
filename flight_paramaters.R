@@ -46,6 +46,8 @@ gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time
     ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
                 ,as.is=TRUE)
 
+#a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
+gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
 
 
 
@@ -53,7 +55,7 @@ gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time
 gps.original <- gps
 #gps <- gps.original
 #for testing purposes we only take the first x lines
-gps <- gps[1:50000,]
+#gps <- gps[1:50000,]
 
 
 
@@ -186,26 +188,34 @@ flights$end_time <- as.POSIXct(as.POSIXlt(flights$end_time,origin=startdate, tz=
 flights$start_time <- as.POSIXct(as.POSIXlt(flights$start_time,origin=startdate, tz= "GMT",format="%Y-%m-%d %H:%M:%S"))
 
 
+
+
 #for each trip, look at flights, label with number flight per that trip, and whether first or final, or inbetween. 
 #Querry database to get trip information:
-trips <- sqlQuery(gps.db, query="SELECT DISTINCT c.*
-  FROM gps_uva_tracking_limited AS g, cal_mov_paramaters AS c
-  WHERE g.device_info_serial = c.device_info_serial
-    AND g.date_time = c.date_time
-    ORDER BY c.device_info_serial ASC, c.date_time ASC ;"
+trips <- sqlQuery(gps.db, query="SELECT DISTINCT l.*
+  FROM lund_trips AS l
+  ORDER BY l.trip_id ASC ;"
                 ,as.is=TRUE)
-trips.original <- trips
-trips <- trips[1:50000,]
+#a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
+trips$start_time <- as.POSIXct(trips$start_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
+trips$end_time <- as.POSIXct(trips$end_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
 
 
-flights$trip_id <- 0
-trip_id <- unique(trips$trip_id)
-trip_id <- trip_id[1:length(trip_id)]
-for(i in seq= along(trip_id)){
-  sub01 <- subset(flights,start_time >= trips$start_time & start_time <= trips$end_time)
-  x <- seq(along(sub01$flight_id))
-  flights$trip_id[flights,start_time >= trips$start_time & start_time <= trips$end_time)] <- i
-  flights$trip_flight_n <- x
+
+#i <- 25
+
+#summary((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device))
+
+flights$trip_id <- flights$trip_flight_n <- rep(NA,length(flights$device_info_serial))
+
+
+#flights$trip_id <- 20
+for(i in seq(along=trips$trip_id)){
+  device <- trips$device_info_serial[i]
+  sub01 <- subset(flights,start_time >= trips$start_time[i] & start_time <= trips$end_time[i] & device_info_serial==device)
+  x <- seq(along=sub01$flight_id)
+  flights$trip_id[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device))] <- i
+  flights$trip_flight_n[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device))]  <- x
 }
 
 #output this data to the database
