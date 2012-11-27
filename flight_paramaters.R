@@ -115,7 +115,7 @@ flight.info <- function(t, gps=gps){
     #Some summaries of various values useful in drift analysis and similar calculations
      ?deg.dist
     dist_a_b    <-    1000*deg.dist(start_long,start_lat,end_long,end_lat)              #require a p2p distance function
-    straigtness <-    dist_total/dist_a_b              #use total distance travelled, and straight-line distance
+    straigtness <-    dist_a_b/dist_total              #use total distance travelled, and straight-line distance
     bearing_a_b <-     earth.bear(start_long,start_lat,end_long,end_lat)             #bearing from start position to final position
     
     
