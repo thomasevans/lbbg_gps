@@ -49,10 +49,10 @@ hist(flights$speed_inst_med[flights$dist_a_b  <  50000    &  flights$trip_flight
 
 
 
-hist(flights$bearing_a_b[flights$dist_a_b  <  50000    &  flights$trip_flight_n == 1  & flights$dist_a_b  >  1000], main="Median instantaneous ground speed on outward flights",xlab="Speed (ms-1)", col="grey")
+hist(flights$bearing_a_b[flights$dist_a_b  <  50000    &  flights$trip_flight_n == 1  & flights$dist_a_b  >  1000], main="Flight bearing",xlab="Flight bearing (degrees)", col="grey")
 
 
 library(circular)
-plot.circular((rad(flights$bearing_a_b[flights$dist_a_b  <  50000    &  flights$trip_flight_n == 1  & flights$dist_a_b  >  1000])+pi), stack=TRUE, bins=300, shrink=1.5,main= "Circular plot of above with radians", col="black")
+plot.circular((rad(flights$bearing_a_b[flights$dist_a_b  <  50000    &  flights$trip_flight_n == 1  & flights$dist_a_b  >  1000])+pi), stack=TRUE, bins=300, shrink=1.5,main= "Circular plot of above with radians", col="black", rotation="clockwise")
 
 hist(flights$alt_max[flights$dist_a_b  <  50000    &  flights$trip_flight_n == 1  & flights$dist_a_b  >  1000  & flights$alt_max < 600 &  flights$alt_max > -20],breaks=40, main="Maximum altitude reached",xlab="Altitude (m)", col="grey")

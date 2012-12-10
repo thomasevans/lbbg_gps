@@ -208,7 +208,8 @@ trips$end_time <- as.POSIXct(trips$end_time, tz="GMT",format="%Y-%m-%d %H:%M:%S"
 
 flights$trip_id <- flights$trip_flight_n <- rep(NA,length(flights$device_info_serial))
 
-
+flights$trip_flight_type <- 0
+i <- 21
 #flights$trip_id <- 20
 for(i in seq(along=trips$trip_id)){
   device <- trips$device_info_serial[i]
@@ -216,6 +217,10 @@ for(i in seq(along=trips$trip_id)){
   x <- seq(along=sub01$flight_id)
   flights$trip_id[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device))] <- i
   flights$trip_flight_n[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device))]  <- x
+  #then label flights within each trip, by 'outward' for flight #1, 'inward' for final flight and 'normal' for all others.
+  flights$trip_flight_type[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device))] <- "normal"
+  flights$trip_flight_type[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device)) & flights$trip_flight_n == 1] <- "outward"
+  flights$trip_flight_type[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device)) & flights$trip_flight_n == max(x)] <- "inward"
 }
 
 #output this data to the database
