@@ -1,3 +1,7 @@
+#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+#You are welcome to use parts of this code, but please give credit when using it extensively.
+
+
 #'A script to analyse each flight, with various paramaters, such as maximum altitude.
 #'First the database will be queried too pull out the data columns we needd for our analysis.
 #'Second. Various paramateerrs and information about the flights will be calculated.

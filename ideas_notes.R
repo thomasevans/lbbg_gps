@@ -1,3 +1,7 @@
+#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+#You are welcome to use parts of this code, but please give credit when using it extensively.
+
+
 #a place to collect ideas, before using them
 
 

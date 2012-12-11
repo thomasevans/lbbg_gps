@@ -1,3 +1,6 @@
+#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+#You are welcome to use parts of this code, but please give credit when using it extensively.
+
 #NB Some of following code is copied/ edited from a script by Michael Kemp for a course held in Amsterdam in 2010
 
 #Set the work directory

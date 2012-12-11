@@ -1,3 +1,7 @@
+#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+#You are welcome to use parts of this code, but please give credit when using it extensively.
+
+
 #'A script to process data on individual flights.
 #'It will summarise flights by distance travelled, altitude, speed etc.
 #'They will also be labelled by foraging trip and device_info_serial.

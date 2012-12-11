@@ -1,3 +1,7 @@
+#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+#You are welcome to use parts of this code, but please give credit when using it extensively.
+
+
 #********************************
 #This script extracts data from the database, then for each trip, produces a summary, for example, greatest distance, trip duration, start time, end time, number of points, gps interval
 
