@@ -209,8 +209,10 @@ trips$end_time <- as.POSIXct(trips$end_time, tz="GMT",format="%Y-%m-%d %H:%M:%S"
 flights$trip_id <- flights$trip_flight_n <- rep(NA,length(flights$device_info_serial))
 
 flights$trip_flight_type <- 0
-i <- 21
+#i <- 21 #for testing
 #flights$trip_id <- 20
+
+
 for(i in seq(along=trips$trip_id)){
   device <- trips$device_info_serial[i]
   sub01 <- subset(flights,start_time >= trips$start_time[i] & start_time <= trips$end_time[i] & device_info_serial==device)
@@ -222,6 +224,17 @@ for(i in seq(along=trips$trip_id)){
   flights$trip_flight_type[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device)) & flights$trip_flight_n == 1] <- "outward"
   flights$trip_flight_type[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device)) & flights$trip_flight_n == max(x)] <- "inward"
 }
+
+#Check that this has worked and looks sensible.
+#summary(as.factor(flights$trip_flight_type))
+
+
+#names(flights)
+#hist(flights$points[flights$points > 2 & flights$points < 600])
+#length(flights$points[flights$trip_flight_type == "inward" & flights$points > 1])
+#length(flights$points[flights$trip_flight_type == "inward" & flights$points > 5])
+
+
 
 #output this data to the database
 
