@@ -276,17 +276,40 @@ flights_weather <- cbind(flights_weather, wind.calculated)
 
 #Wind direction and speed#############
 
+uwind10 <- 1
+vwind10 <- -1
+
 wind.dir.speed <- function(uwind10, vwind10){
   wind.speed <- sqrt((uwind10 * uwind10) + (vwind10 * vwind10))
-  wind.dir   <- atan(uwind10/vwind10)
-  wind.dir   <- wind.dir * 2 * pi
+  wind.dir   <- atan(abs(uwind10/vwind10))
+  wind.dir   <- wind.dir * 180 / pi
   
-  return(uwind.new,vwind.new,wind.new)
-}        #end of wind.shear function
+  bear.correction<-  function(x,y){
+    if(x > 0 && y < 0){
+      return(90)
+    }else if(x < 0 && y < 0){
+      return(180)
+    }else  if(x < 0 && y > 0){
+      return(270)
+    }else   return(0)
+  }
+  z <- bear.correction(uwind10,vwind10)
+  wind.dir <- wind.dir + z
+  
+  x <- cbind(wind.speed,wind.dir)
+  return(x)
+}
 
-wind.calculated    <- sapply(flights_weather$uwnd.10m, wind.shear,
-                             vwind10 = flights_weather$vwnd.10m,
-                             ht.med = flights$alt_med)
-hist(wind.dir)
+#I recieved help with mapply from StackOverflow: http://stackoverflow.com/questions/14196696/sapply-with-custom-function-series-of-if-statements
+wind.info <- t(mapply (wind.dir.speed, flights_weather$uwnd.10m,
+                      flights_weather$vwnd.10m))
 
-atan2(66,-66) * pi * 2
+# drops <- c("wind.speed","wind.dir")
+# flights_weather <- flights_weather[,!(names(flights_weather) %in% drops)]
+
+
+wind.info <- as.data.frame(wind.info)
+names(wind.info) <- c("wind.speed","wind.dir")
+flights_weather <- cbind(flights_weather, wind.info)
+
+
