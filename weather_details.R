@@ -276,8 +276,8 @@ flights_weather <- cbind(flights_weather, wind.calculated)
 
 #Wind direction and speed#############
 
-uwind10 <- 1
-vwind10 <- -1
+#uwind10 <- 1
+#vwind10 <- -1
 
 wind.dir.speed <- function(uwind10, vwind10){
   wind.speed <- sqrt((uwind10 * uwind10) + (vwind10 * vwind10))
