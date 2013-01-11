@@ -304,7 +304,7 @@ wind.dir.speed <- function(uwind10, vwind10){
 wind.info <- t(mapply (wind.dir.speed, flights_weather$uwnd.10m,
                       flights_weather$vwnd.10m))
 
-# drops <- c("wind.speed","wind.dir")
+# drops <- c("wind.origin")
 # flights_weather <- flights_weather[,!(names(flights_weather) %in% drops)]
 
 
@@ -312,4 +312,47 @@ wind.info <- as.data.frame(wind.info)
 names(wind.info) <- c("wind.speed","wind.dir")
 flights_weather <- cbind(flights_weather, wind.info)
 
+wind.head <- ((flights_weather$wind.dir+180) %% 360)
+flights_weather <- cbind(flights_weather, wind.head)
 
+
+
+#Fast directional flight classificiation############
+#Sepperate out fast directional flight from not obviously
+#directional flight. Required for drift analysis where we
+#only want to analyse directional flight.
+
+
+
+
+
+
+#Wind effect/ drift analysis########################
+
+#Wind drift analysis:
+#Equation:  y = (w.sin(b))/Va
+#y  - angle between track and heading (drift)
+#w  - wind speed
+#b  - angle between track and wind (with 0 a tail wind)
+#Va - air speed (need to assume this)
+
+#need to calculate 'b', and look up 'Va'.
+
+
+#Speed graphs####################
+
+names(flights_weather)
+
+names(flights)
+
+hist(flights$speed_inst_med[flights$trip_flight_type == "inward"])
+mean(flights$speed_inst_med[flights$trip_flight_type == "inward"], na.rm = TRUE)
+sd(flights$speed_inst_med[flights$trip_flight_type == "inward"], na.rm = TRUE)
+hist(flights$speed_a_b[flights$trip_flight_type == "inward"])
+mean(flights$speed_a_b[flights$trip_flight_type == "inward"], na.rm = TRUE)
+sd(flights$speed_a_b[flights$trip_flight_type == "inward"], na.rm = TRUE)
+unique(as.factor(flights$trip_flight_type))
+
+hist(flights$speed_inst_med[flights$trip_flight_type == "inward" & flights$speed_a_b > 3])
+mean(flights$speed_inst_med[flights$trip_flight_type == "inward" & flights$speed_a_b > 3], na.rm = TRUE)
+sd(flights$speed_inst_med[flights$trip_flight_type == "inward" & flights$speed_a_b > 3], na.rm = TRUE)
