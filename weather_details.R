@@ -338,6 +338,10 @@ flights_weather <- cbind(flights_weather, wind.head)
 
 #need to calculate 'b', and look up 'Va'.
 
+names(flights)
+
+hist(flights$straigtness[flights$straigtness < 1.1], xlim = c(0,2))
+
 
 #Speed graphs####################
 

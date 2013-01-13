@@ -1,3 +1,4 @@
+#Header##############
 #Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
 #You are welcome to use parts of this code, but please give credit when using it extensively.
 
@@ -19,7 +20,7 @@
 
 #*****************************In the eventual version, I want to do this using the database connection instead. In the mean time I use the previously saved GPS data.
 
-#database functions
+#database functions###################
 #To link to database
 library(RODBC)
 
@@ -37,7 +38,6 @@ nest_loc <- sqlQuery(gps.db, query="SELECT DISTINCT n.ring_number, n.nest_id, n.
 FROM gps_uva_nest_limited AS n, gps_uva_track_session_limited AS t
 WHERE n.ring_number = t.ring_number
 ORDER BY n.ring_number ASC;")
-
 
 
 #get all the GPS info that we require
@@ -62,7 +62,7 @@ gps.original <- gps
 #gps <- gps[1:50000,]
 
 
-
+#nest postion#######################
 #function to produce two vectors of latitude and longitude positions
 lookup_nest <- function(device_info){
   x <- nest_loc$device_info_serial == device_info
@@ -72,19 +72,26 @@ lookup_nest <- function(device_info){
 }
 
 
-#produce a vector of flight numbers
+#produce a vector of flight numbers##############
 flight_id <- sort(unique(gps$flight_id))
 f <- length(flight_id)
 flight_id <- flight_id[2:f]   #remove zero (i.e. non flight points)
 
-#***********start of function: flight.info
+#start of function: flight.info######################
 #Function 'flight.info' produces a list of lists of information on flights
 #t - flight_id, the flight number
 #gps - the gps dataframe
 t <- 59
+
+#names(gps)
+#gps$positiondop[1:100]
+#gps$speed_accuracy[1:100]
+#gps$bearing_next[1:100]
+
 flight.info <- function(t, gps=gps){
   
   library(fossil)   #required for distance calculations
+  library(circular) #required for some circular calculations
   #make a subset of 'gps' containing just data for flight, t.
   sub01 <- subset(gps,flight_id == t)
   n <- length(sub01$date_time)         #the number of gps points for this flight
@@ -117,7 +124,7 @@ flight.info <- function(t, gps=gps){
   
     
     #Some summaries of various values useful in drift analysis and similar calculations
-     ?deg.dist
+ #    ?deg.dist
     dist_a_b    <-    1000*deg.dist(start_long,start_lat,end_long,end_lat)              #require a p2p distance function
     straigtness <-    dist_a_b/dist_total              #use total distance travelled, and straight-line distance
     bearing_a_b <-     earth.bear(start_long,start_lat,end_long,end_lat)             #bearing from start position to final position
@@ -136,6 +143,11 @@ flight.info <- function(t, gps=gps){
   alt_mean   <- mean(median(sub01$altitude[sub01$flight_class == 3],na.rm = TRUE))
   alt_med    <- median(sub01$altitude[sub01$flight_class == 3],na.rm = TRUE)
     
+  # 'circular' package functions#############
+  #get value of rho
+  rho        <- rho.circular(sub01$bearing_next, na.rm = TRUE)
+  ang_dev    <- angular.deviation(sub01$bearing_next, na.rm = TRUE)
+  ang_var    <- angular.variance(sub01$bearing_next, na.rm = TRUE)
   
   #make a vector containing all this data
   data.out <- c(t,n,start_time,end_time,duration,dist_max,dist_total,interval_mean,interval_min,device_info_serial,start_long,start_lat,end_long,end_lat,dist_nest_start,dist_nest_end,dist_nest_dif,dist_a_b,straigtness,bearing_a_b,speed_a_b,speed_inst_mean,speed_inst_med,speed_inst_var,alt_max,alt_min,alt_mean,alt_med)  
@@ -146,7 +158,7 @@ flight.info <- function(t, gps=gps){
 
 
 
-
+#Run function 'flight.info' in parallel########
 require(foreach)
 require(doParallel)
 cl <- makeCluster(parallel::detectCores())     #use x cores, general solution for any windows machine.
@@ -156,7 +168,7 @@ clusterExport(cl, c("gps","flight.info"))   #this maybe neccessary so that the c
 #NB see: http://stackoverflow.com/questions/9404881/writing-to-global-variables-in-using-dosnow-and-doing-parallelization-in-r
 #There a solution is offered for exporting vairables from foreach to the global environment.
 
-#mast a list object to recieve the data
+#make a list object to recieve the data
 lst <- list()
 
 
@@ -173,6 +185,9 @@ system.time({lst <- foreach(i = seq(along = flight_id )) %dopar%{
 #close cluster
 stopCluster(cl)
 #length(names(flights))
+
+
+#Create dataframe of flights########
 #names for the dataframe
 names.flights <- c("flight_id","points","start_time","end_time","duration","dist_max","dist_total","interval_mean","interval_min","device_info_serial","start_long","start_lat","end_long","end_lat","dist_nest_start","dist_nest_end","dist_nest_dif","dist_a_b","straigtness","bearing_a_b","speed_a_b","speed_inst_mean","speed_inst_med","speed_inst_var","alt_max","alt_min","alt_mean","alt_med")
 
@@ -193,7 +208,7 @@ flights$start_time <- as.POSIXct(as.POSIXlt(flights$start_time,origin=startdate,
 
 
 
-
+#Label flight type and number for each trip######
 #for each trip, look at flights, label with number flight per that trip, and whether first or final, or inbetween. 
 #Querry database to get trip information:
 trips <- sqlQuery(gps.db, query="SELECT DISTINCT l.*
@@ -240,7 +255,7 @@ for(i in seq(along=trips$trip_id)){
 
 
 
-#output this data to the database
+#output data to database##################
 
 #export trip information to the database
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
