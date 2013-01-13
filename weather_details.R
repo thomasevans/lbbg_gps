@@ -341,8 +341,15 @@ flights_weather <- cbind(flights_weather, wind.head)
 names(flights)
 
 hist(flights$straigtness[flights$straigtness < 1.1], xlim = c(0,2))
-
-
+hist(flights$rho)
+hist(flights$ang_dev)
+hist(flights$ang_var)
+plot(flights$rho[flights$straigtness < 1.1]~flights$straigtness[flights$straigtness < 1.1])
+names(flights)
+plot(flights$rho ~ flights$speed_inst_med,xlim=c(3,25))
+plot(flights$rho ~ flights$points)
+plot(flights$rho ~ flights$ang_dev)
+plot(flights$rho ~ flights$ang_var)
 #Speed graphs####################
 
 names(flights_weather)
