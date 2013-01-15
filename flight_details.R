@@ -25,9 +25,11 @@ gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time
     AND g.date_time = c.date_time
     ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
                 ,as.is=TRUE)
+#names(gps)
+#hist(gps$p2p_dist[gps$p2p_dist < .1])
 
 #check structure of object - does it contain what we expect it to?
-str(gps)
+#str(gps)
 
 #a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
 gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")

@@ -95,22 +95,33 @@ colnames(nest_pos) <- c("lat","long")
 gc_dist <- deg.dist(gps$latitude,gps$longitude,nest_pos$lat,nest_pos$long)
 
 
-#calculating distance between consequative points
+#calculating distance between consequative points#####
+
+# gps$latitude[-1]
+# gps$latitude[2:length(gps$latitude]
+# all.equal(gps$latitude[2:length(gps$latitude)],gps$latitude[-1])
+# ?all.equal
+
 lat.next <- gps$latitude[-1]
-gps$latitude[-1]
-gps$latitude[2:length(gps$latitude]
-all.equal(gps$latitude[2:length(gps$latitude)],gps$latitude[-1])
-
-
-?all.equal
-
 long.next <- gps$longitude[-1]
+
+# gps$latitude[-100][1]
+# gps$latitude[][1]
+# gps$latitude[-100]
+# 
+# 
+# cbind(lat.next,gps$latitude[-length(gps$latitude)])
+
+# length(gps$latitude[-100])
+# length(gps$latitude[])
+# all.equal(gps$latitude[-100][1:10],gps$latitude[1:10])
+
 p2p_dist <- deg.dist(gps$latitude[-length(gps$latitude)],gps$longitude[-length(gps$latitude)],lat.next,long.next)*1000
 p2p_dist<- c(0,p2p_dist)  #adding a line at the beggining with 0 for first point, and so producing vector with correct length.
 #NB this will calculate distance between all consequtive points, irrespective if these are from different birds.
 
 
-#calculate time between fixes in seconds
+#calculate time between fixes in seconds############
 time_interval_s <- as.numeric(difftime(gps$date_time[2:length(gps$date_time)],gps$date_time[(1:length(gps$date_time)-1)],units="s"))
 time_interval_s <- c(0,time_interval_s)
 

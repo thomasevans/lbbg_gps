@@ -217,6 +217,18 @@ flights$end_time <- as.POSIXct(as.POSIXlt(flights$end_time,origin=startdate, tz=
 flights$start_time <- as.POSIXct(as.POSIXlt(flights$start_time,origin=startdate, tz= "GMT",format="%Y-%m-%d %H:%M:%S"))
 
 
+# names(flights)
+# hist(flights$dist_total, breaks = 20, freq = FALSE)
+# median(flights$dist_total[flights$trip_flight_type == "inward"], na.rm = TRUE)
+# median(flights$dist_total[flights$trip_flight_type == "outward"], na.rm = TRUE)
+# median(flights$dist_total[flights$trip_flight_type == "normal"], na.rm = TRUE)
+# 
+# hist(flights$dist_total[flights$trip_flight_type == "outward" & flights$dist_total < 50000], breaks = 20)
+# names(flights)
+# hist(flights$straigtness[flights$trip_flight_type == "outward" & flights$dist_total > 100000])
+# 
+# flights <- flights_original
+# flights$dist_total[1:100]
 
 #Label flight type and number for each trip######
 #for each trip, look at flights, label with number flight per that trip, and whether first or final, or inbetween. 
