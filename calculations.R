@@ -13,7 +13,7 @@ library(RODBC)
 library(fossil)
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 
 #See what tables are available
@@ -43,7 +43,6 @@ gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.*
                 ,as.is=TRUE)
 
 gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
-
 
 
 #check structure of resulting dataframe
@@ -96,13 +95,15 @@ colnames(nest_pos) <- c("lat","long")
 gc_dist <- deg.dist(gps$latitude,gps$longitude,nest_pos$lat,nest_pos$long)
 
 
-hist(gc_dist)
-nest_pos[1:100]
-
-
-
 #calculating distance between consequative points
 lat.next <- gps$latitude[-1]
+gps$latitude[-1]
+gps$latitude[2:length(gps$latitude]
+all.equal(gps$latitude[2:length(gps$latitude)],gps$latitude[-1])
+
+
+?all.equal
+
 long.next <- gps$longitude[-1]
 p2p_dist <- deg.dist(gps$latitude[-length(gps$latitude)],gps$longitude[-length(gps$latitude)],lat.next,long.next)*1000
 p2p_dist<- c(0,p2p_dist)  #adding a line at the beggining with 0 for first point, and so producing vector with correct length.

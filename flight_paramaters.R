@@ -96,25 +96,22 @@ flight.info <- function(t, gps=gps){
   sub01 <- subset(gps,flight_id == t)
   n <- length(sub01$date_time)         #the number of gps points for this flight
   
-  #calculate various paramaters for flights
+#calculate various paramaters for flights#################
   start_time <- min(sub01$date_time)   #start time
   end_time  <-  max(sub01$date_time)  #end time
   duration <- as.numeric(difftime(end_time,start_time,units="secs"))   #get flight duration in seconds
   dist_max  <-  max(sub01$nest_gc_dist)   #greatest distance reached from nest
   dist_total <- sum(sub01$p2p_dist[2:n])   #total distance travelled, exclude first point p2p distance, as this includes distance to point before flight 'started'.
   interval_mean <- mean(sub01$time_interval_s)   #mean log interval
-  interval_min <- min(sub01$time_interval_s)     #min log interval, may be useful for highlighting flights where high resolution GPS data is available (i.e. where the conditional log mode was used). It might make more sense to floor or round this value.
+  interval_min  <- min(sub01$time_interval_s)     #min log interval, may be useful for highlighting flights where high resolution GPS data is available (i.e. where the conditional log mode was used). It might make more sense to floor or round this value.
   device_info_serial <- sub01$device_info_serial[1]  #get device_info_serial
   
   start_long   <-  sub01$longitude[1]
   start_lat   <-   sub01$latitude[1]
   end_long    <-   sub01$longitude[n]
   end_lat    <-    sub01$latitude[n]
-  #str(lookup_nest(device_info_serial))
-  #these will only work once the database link is working - alternative could be to input the nest data myself, from my excel records
   nest <- lookup_nest(device_info_serial)
-#nest[2]
-  #unlist(nest)
+#?deg.dist
   dist_nest_start    <-   1000*deg.dist(nest[2],nest[1],start_long,start_lat)
   dist_nest_end      <-   1000*deg.dist(nest[2],nest[1],end_long,end_lat)
     
@@ -123,20 +120,20 @@ flight.info <- function(t, gps=gps){
   dist_nest_dif <- dist_nest_end - dist_nest_start
   
     
-    #Some summaries of various values useful in drift analysis and similar calculations
- #    ?deg.dist
+#Some summaries of various values useful in drift analysis and similar calculations#############################
     dist_a_b    <-    1000*deg.dist(start_long,start_lat,end_long,end_lat)              #require a p2p distance function
     straigtness <-    dist_a_b/dist_total              #use total distance travelled, and straight-line distance
     bearing_a_b <-     earth.bear(start_long,start_lat,end_long,end_lat)             #bearing from start position to final position
     
     
-    #Some calculations regarding speed
+#Some calculations regarding speed###################
     speed_a_b  <-  dist_a_b/duration     #resultant speed for distance travelled over time
   #flight_class == 3
     speed_inst_mean <-   mean(sub01$inst_ground_speed[sub01$flight_class == 3],na.rm = TRUE) #excluding the non-flight points (usually the first and final point
     speed_inst_med <-   median(sub01$inst_ground_speed[sub01$flight_class == 3],na.rm = TRUE)
     speed_inst_var <-   var(sub01$inst_ground_speed[sub01$flight_class == 3],na.rm = TRUE)
 #names(gps)
+  
   #Altitude, max, mean, median
   alt_max    <- max(sub01$altitude[sub01$flight_class == 3],
                     na.rm = TRUE)

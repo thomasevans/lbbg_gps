@@ -32,6 +32,9 @@ gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time
 #a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
 gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
 
+#for testing
+#gps.original <- gps
+#gps <- gps[1:100,]
 
 ## Split the date and time variables into two separate vectors, for date and time sepprately (code from M. Kemp)
 gps$date <- unlist(strsplit(as.character(gps$date_time), split=' ')) [seq(1,((length(gps$date_time)*2)-1), by=2)]
@@ -64,7 +67,7 @@ gps$loc_type[gps$loc_type == 4] <- 2
 #make column for trip id, start with value 0, which will be null value - i.e. not a trip (points at the nest)
 gps$trip_id <- 0
 
-summary(loc_calc==2)
+#summary(loc_calc==2)
 
 #***********start of function: trip.lab
 #Function 'trip.lab' will produce a vector of trip number for each device

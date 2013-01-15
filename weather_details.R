@@ -350,6 +350,31 @@ plot(flights$rho ~ flights$speed_inst_med,xlim=c(3,25))
 plot(flights$rho ~ flights$points)
 plot(flights$rho ~ flights$ang_dev)
 plot(flights$rho ~ flights$ang_var)
+names(flights)
+
+par(mfrow = c(2,2))
+summary(as.factor(flights$trip_flight_type))
+hist(flights$straigtness[flights$straigtness < 1.5], breaks = 20, main = "all")
+
+hist(flights$straigtness[flights$straigtness < 1.5 & flights$trip_flight_type == "inward"], freq = FALSE, main = "inward")
+mean(flights$straigtness[flights$straigtness < 1.5 & flights$trip_flight_type == "inward"], na.rm = TRUE)
+
+hist(flights$straigtness[flights$straigtness < 1.5 & flights$trip_flight_type == "outward"], freq = FALSE, main = "outward")
+mean(flights$straigtness[flights$straigtness < 1.5 & flights$trip_flight_type == "outward"], na.rm = TRUE)
+
+hist(flights$straigtness[flights$straigtness < 1.5 & flights$trip_flight_type == "normal"], freq = FALSE, main = "other")
+mean(flights$straigtness[flights$straigtness < 1.5 & flights$trip_flight_type == "normal"], na.rm = TRUE)
+
+mean(flights$straigtness[flights$straigtness < 1.5 & flights$straigtness > .3], na.rm = TRUE)
+
+?hist
+plot(flights$straigtness ~ flights$points, ylim = c(0,1.5))
+plot(flights$straigtness ~ flights$interval_mean, xlim = c(0,1000), ylim = c(0,1.5))
+plot(flights$straigtness ~ flights$duration, ylim = c(0,1.5), xlim = c(0,1000))
+
+names(flights)
+
+
 #Speed graphs####################
 
 names(flights_weather)
