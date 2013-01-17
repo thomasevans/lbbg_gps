@@ -55,7 +55,7 @@ hist(flights$speed_inst_med[trip_duration > 60*30 & trip_type == 0 & flights$tri
 mean(flights$speed_inst_med[trip_duration > 60*30 & trip_type == 0 & flights$trip_flight_type == "normal" & flights$speed_inst_med < 30],na.rm=TRUE)
 
 
-#, main = "Median instantaneous ground speed of inward flights"
+# main = "Median instantaneous ground speed of inward flights"
 #speed figure:
 postscript("inward_flight_speed.ps",width=4.6,height=4.6)  #for post script file (good for printed documents)
 hist(flights$speed_inst_med[trip_duration > 60*30 & trip_type == 0 & flights$trip_flight_type == "inward" & flights$speed_inst_med < 30],  xlab =expression(bold(paste("Speed (ms",""^{-1}, ")"))), main="", col = "#4D897C",las=1,cex.lab=1.7,cex.axis=1.5,lwd=3,pin=c(2,2),font.lab=2, xlim=c(0,26))
