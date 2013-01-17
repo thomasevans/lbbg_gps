@@ -375,6 +375,20 @@ plot(flights$straigtness ~ flights$duration, ylim = c(0,1.5), xlim = c(0,1000))
 names(flights)
 
 
+names(flights)
+plot(flights$straigtness[flights$straigtness < 1.5 &  flights$rho < 1.5]
+     ~ flights$rho[flights$straigtness < 1.5 &  flights$rho < 1.5])
+abline(lm(flights$straigtness[flights$straigtness < 1.5 &  flights$rho < 1.5]
+          ~ flights$rho[flights$straigtness < 1.5 &  flights$rho < 1.5]))
+hist(flights$rho[flights$rho < 1.5])
+
+par(mfrow = c(2,2))
+hist(flights$rho)
+hist(flights$rho[flights$trip_flight_type == "outward"], main = "Outward")
+hist(flights$rho[flights$trip_flight_type == "inward"],  main = "Inward")
+hist(flights$rho[flights$trip_flight_type == "normal"],  main = "Others")
+par(mfrow = c(1,1))
+
 #Speed graphs####################
 
 names(flights_weather)
