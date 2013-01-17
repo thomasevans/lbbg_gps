@@ -209,3 +209,27 @@ plot(graph.object)
 
 # Wind speed
 hist(flights_weather$wind.speed)
+
+#flight versus wind direction
+par(mfrow = c(1,1))
+plot(flights$bearing_a_b[outward & trip_duration > 60*30 & trip_type == 0], flights_weather$wind.dir[outward & trip_duration > 60*30 & trip_type == 0], xlab = "flight bearing", mar = c(10,10,4,2 ) + 0.1, ylab = "wind direction")
+
+par(mfrow = c(1,2))
+
+
+dif.angle <- flights$bearing_a_b[inward & trip_duration > 60*30 & trip_type == 0] - flights_weather$wind.dir[inward & trip_duration > 60*30 & trip_type == 0]
+
+dif.angle <- abs(dif.angle) %% 180
+
+hist(dif.angle, xlim= c(0,180), main = "Inward", xlab = "angle from wind", ylab = "frequency")
+
+dif.angle <- flights$bearing_a_b[outward & trip_duration > 60*30 & trip_type == 0] - flights_weather$wind.dir[outward & trip_duration > 60*30 & trip_type == 0]
+
+dif.angle <- abs(dif.angle) %% 180
+
+hist(dif.angle, xlim= c(0,180), main = "Outward", xlab = "angle from wind", ylab = "frequency")
+
+
+
+
+
