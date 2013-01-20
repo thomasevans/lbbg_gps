@@ -5,17 +5,19 @@
 
 
 # Description ##########
-# 
+# Go through all the GPS points, making calculations, and labelling by
+# type, e.g. on trip, at nest, start of trip etc.
+#
 
 
-#Set the working directory
-setwd("F:/Documents/Work/LBBG_GPS/GIS/GPS_track_files")
+# Database and libraries#########
 
-#To link to database
+# To link to database
 library(RODBC)
 
-#To get spatial functions
+# To get spatial functions
 library(fossil)
+
 
 #Establish a connection to the database
 gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
@@ -25,18 +27,26 @@ sqlTables(gps.db)
 
 
 #for all of data_base, except pre-deployment and null records
-gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude, g.latitude,c.calculated_speed,c.nest_gc_dist,c.nest_bear,c.inst_ground_speed,c.p2p_dist,c.time_interval_s,c.turning_angle,g.altitude
-  FROM gps_uva_tracking_limited AS g, cal_mov_paramaters AS c
-  WHERE g.device_info_serial = c.device_info_serial
-    AND g.date_time = c.date_time
-    ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
+gps <- sqlQuery(gps.db,
+          query = "SELECT DISTINCT g.device_info_serial,
+                  g.date_time, g.longitude, g.latitude,
+                  c.calculated_speed, c.nest_gc_dist,
+                  c.nest_bear, c.inst_ground_speed,
+                  c.p2p_dist, c.time_interval_s,
+                  c.turning_angle, g.altitude
+                  FROM gps_uva_tracking_limited AS g,
+                    cal_mov_paramaters AS c
+                  WHERE g.device_info_serial = c.device_info_serial
+                    AND g.date_time = c.date_time
+                  ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
                 ,as.is=TRUE)
 
 #for testing purposes we only take the first 100 lines
 #gps <- gps[1:100,]
 
 #a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
-gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
+gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",
+                            format="%Y-%m-%d %H:%M:%S")
 
 #for testing
 #gps.original <- gps
@@ -47,59 +57,79 @@ gps$date <- unlist(strsplit(as.character(gps$date_time), split=' ')) [seq(1,((le
 gps$time <- unlist(strsplit(as.character(gps$date_time), split=' ')) [seq(2,((length(gps$date_time)*2)), by=2)]
 
 #if we want to check which columns are present
-names(gps)
+#names(gps)
 
-#code to recognise trips, and adds this column, labelling with 0 if 'at the nest' and 1 if over 500 m from nest location
+# Label points by type (trip start, end, nest etc)#####
+# Code to recognise trips, and adds this column, labelling
+# with 0 if 'at the nest' and 1 if over 500 m from nest location
 gps$trip <- ifelse(gps$nest_gc_dist < 0.5, 0,1)
 
-#*We want to label the positions for each trip with a unique trip id
-#first we make some vectors of next, previous point etc, to find start and end points of trips
+# We want to label the positions for each trip with a unique trip id
+# first we make some vectors of next, previous point etc, to find start
+# and end points of trips
 trip1 <- gps$trip +1
+
 #make vector of next point value
 trip2 <- (2* c(gps$trip[2:length(gps$trip)],0))+1
+
 #make vector of prev point value
 trip3 <- (3* c(0,gps$trip[1:(length(gps$trip)-1)]))+1
 
 
 #label by type of point: 0 - trip, 1 - start, 2 - end, 3 - nest
 gps$loc_type <- trip1*trip2*trip3   #product of above three vectors
-loc_calc <- gps$loc_type        #keep a copy of above calculation
+loc_calc     <- gps$loc_type        #keep a copy of above calculation
+
 #Reduce to the four possibilties
-gps$loc_type[(gps$loc_type == 1)  ] <- 0
+gps$loc_type[(gps$loc_type == 1)  ]  <- 0
 gps$loc_type[gps$loc_type == 3 | (gps$loc_type == 12)] <- 1
-gps$loc_type[(gps$loc_type == 24) | (gps$loc_type == 6) | (gps$loc_type == 8) | (gps$loc_type == 2)]<- 3
+gps$loc_type[(gps$loc_type == 24) | (gps$loc_type == 6) 
+             | (gps$loc_type == 8) | (gps$loc_type == 2)]<- 3
 gps$loc_type[gps$loc_type == 4] <- 2
 
-#make column for trip id, start with value 0, which will be null value - i.e. not a trip (points at the nest)
+# make column for trip id, start with value 0, which will be null value
+# - i.e. not a trip (points at the nest)
 gps$trip_id <- 0
 
-#summary(loc_calc==2)
-
-#***********start of function: trip.lab
-#Function 'trip.lab' will produce a vector of trip number for each device
-#d - device_info_serial
-#gps - the gps dataframe
+#start of function: trip.lab
 trip.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
+  # Function 'trip.lab' will produce a vector of trip number for
+  # each device
+  # d - device_info_serial
+  # gps - the gps dataframe
+  
+  # Make a subset of 'gps' containing just data for device, d,
+  # away from the nest.
+  sub01 <- subset(gps, loc_type != 0 & device_info_serial == d,
+                  select = c(loc_type, trip_id))
+  
+  n <- length(sub01$loc_type) #the number of gps positions
     
-  #make a subset of 'gps' containing just data for device, d, away from the nest.
-  sub01 <- subset(gps,loc_type != 0 & device_info_serial == d,select=c(loc_type,trip_id))
-  
-  n <- length(sub01$loc_type) #the number gps positions
-  
-  
   #a windows progress bar to monitor progress
-  pb <- winProgressBar(title = paste( "progress bar for device",d), min = 0,max = n, width = 300)
+  pb <- winProgressBar(title = paste( "progress bar for device",d),
+                       min = 0, max = n, width = 300)
   
-  x <- 0   #x will keep note of trip number, we start at zero.
+  #x will keep note of trip number, we start at zero.
+  x <- 0   
+  
   #loop through all gps points, labelling them with trip id (x)
   for(i in 1:n){
-    setWinProgressBar(pb, i, title=paste( round(i/n*100, 0),"% done for ", d)) #refresh the progress bar, so that we can keep note of progress.
-    if(sub01$loc_type[i] == 1) x <- x+1      #if start of a trip, increment x by one
-    sub01$trip_id[i] <- x                    #allocated value of x for trip_id for position 'i'.
+    #refresh the progress bar, so that we can keep note of progress.
+    setWinProgressBar(pb, i, title=paste( round(i/n*100, 0),
+                                          "% done for ", d))
+    
+    #if start of a trip, increment x by one
+    if(sub01$loc_type[i] == 1) x <- x+1 
+    
+    #allocated value of x for trip_id for position 'i'.
+    sub01$trip_id[i] <- x                    
   }
 
-  close(pb)    #close the windows progress bar
-  return(sub01$trip_id)            #output a vector for the bird of trip id
+  #close the windows progress bar
+  close(pb)    
+  
+  #output a vector for the bird of trip id
+  return(sub01$trip_id)            
 }
 #**********End of this function: trip.lab
 
@@ -107,21 +137,33 @@ trip.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
 #first make a list of available devices
 devices <- sort(unique(gps$device_info_serial))
 
-#*Calculate trip id for each device
-#do this in parallel
-#first load neccessary packages
+# Calculate trip id for each device
+# Do this in parallel
+# First load neccessary packages
 require(foreach)
 require(doParallel)
-cl <- makeCluster(parallel::detectCores())     #use x cores, general solution for any windows machine.
-registerDoParallel(cl)   #start the parellel session of R; the 'slaves', which will run the analysis.
 
-clusterExport(cl, c("trip.lab", "devices", "gps"))   #this maybe neccessary so that the clustered instances or R have the required vairables/ functions in their scope, i.e. those functions and vairables which are referred to within the 'foreach' function.
+#use x cores, general solution for any windows machine.
+cl <- makeCluster(parallel::detectCores())     
+
+# Start the parellel session of R; the 'slaves', which will run
+# the analysis.
+registerDoParallel(cl)   
+
+# This maybe neccessary so that the clustered instances or R have
+# the required vairables/ functions in their scope, i.e. those
+# functions and vairables which are referred to within the 'foreach'
+# function.
+clusterExport(cl, c("trip.lab", "devices", "gps"))   
 
 #NB see: http://stackoverflow.com/questions/9404881/writing-to-global-variables-in-using-dosnow-and-doing-parallelization-in-r
-#There a solution is offered for exporting vairables from foreach to the global environment.
+# There a solution is offered for exporting vairables from foreach
+# to the global environment.
 
-#work out trip numbers for each device id, then add these to a list of lists (lst)
-#Use system.time to time how long this takes - so far has taken around 10-15 minutes on 8 thread machine.
+# Work out trip numbers for each device id, then add these to a
+# list of lists (lst)
+# Use system.time to time how long this takes - so far has taken around
+# 10-15 minutes on 8 thread machine.
 system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
   #calculate the trip numbers for the device i. i.e. the function which we wish to run for each device.     
   x <- trip.lab(devices[i],gps)
