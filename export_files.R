@@ -1,6 +1,12 @@
 #Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
-#You are welcome to use parts of this code, but please give credit when using it extensively.
+#You are welcome to use parts of this code, but please give credit
+#when using it extensively.
 #NB Some of following code is based on a script by Michael Kemp for a course held in Amsterdam in 2010
+
+
+# Description ##########
+# 
+
 
 #Set the working directory
 setwd("F:/Documents/Work/LBBG_GPS/GIS/GPS_track_files")

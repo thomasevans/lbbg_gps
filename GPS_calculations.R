@@ -11,9 +11,6 @@
 
 
 # Libraries and database ################
-#Set the work directory
-setwd("F:/Documents/Work/GPS_DB")
-
 #To link to database
 library(RODBC)
 
@@ -226,7 +223,7 @@ for(i in seq(along = devices )){
 }
 
 
-# Export to database ###
+# Export to database ######
 # Put it all together in data_frame, with device_info_serial and
 # date_time for primary keys. Then export direct to access. 
 export_table <- as.data.frame(cbind(gps$device_info_serial,
