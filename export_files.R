@@ -187,12 +187,20 @@ all.points <- 0*all.points   #make this all zero (i.e. the default value - where
 z <- 0    #a vairable which will store the maximum trip number from the previous device
 x <- 0    #a new vector of trip numbers
 
-#Loop through all devices, making trip numbers unique, by adding number of highest numbered #existing trip, then adding this to the all.points vector, this being filtered, so that only #points in real trips get value.
+# Loop through all devices, making trip numbers unique, by adding
+# number of highest numbered #existing trip, then adding this to
+# the all.points vector, this being filtered, so that only points 
+# in real trips get value.
 for(i in seq(along = devices )){
+ 
   z <- max(x)    #highest current trip number
-  x <- unlist(lst[[i]]) + z   #add z to vector of current device trip numbers
+  
+  #add z to vector of current device trip numbers
+  x <- unlist(lst[[i]]) + z   
   d <- devices[i]       #device id
-  all.points[gps$loc_type != 0 & gps$device_info_serial == d] <- x    #add vector x to the vector of all gps points
+ 
+  #add vector x to the vector of all gps points
+  all.points[gps$loc_type != 0 & gps$device_info_serial == d] <- x    
   }
 
 #then add the vector 'all.points' to the 'gps' dataframe.
@@ -200,29 +208,33 @@ gps$trip_id <- all.points
 
 
 
+# Export to database ####
 
-#next need to add the gps$trip_id, gps$loc_type to some of the various outputs
-#then should start a new script which makes a table of trips, and calculates varios summary functions for these, e.g. perhaps labelling migration trips too.
-#could also move all functions into a new R file, and then source this at the beggining of each script - would clean things up here a bit.
+# Output the new data columns to the 'cal_mov_paramaters' database table
+# put it all together in data_frame, with device_info_serial and
+# date_time for primary keys.
+export_table <- as.data.frame(cbind(gps$device_info_serial,
+                                    gps$date_time, gps$trip,
+                                    gps$loc_type, gps$trip_id))
 
-
-
-#output the new data columns to the 'cal_mov_paramaters' database table
-#put it all together in data_frame, with device_info_serial and date_time for primary keys.
-export_table <- as.data.frame(cbind(gps$device_info_serial,gps$date_time,gps$trip,gps$loc_type,gps$trip_id))
 #give names for columns
-names(export_table) <- c("device_info_serial","date_time","pos_type","loc_type","trip_id")
+names(export_table) <- c("device_info_serial", "date_time",
+                         "pos_type", "loc_type", "trip_id")
+
 #add date_time to dataframe
 export_table$date_time <- gps$date_time
-#export these calculated values to the database, updating existing 'cal_mov_paramaters' table.
-#first added the three new columns to the table useing access
-sqlUpdate(gps.db, export_table, tablename = "cal_mov_paramaters",index = c("device_info_serial","date_time"),fast=TRUE)
+
+# Export these calculated values to the database, updating the
+# existing 'cal_mov_paramaters' table.
+# First added the three new columns to the table useing access
+sqlUpdate(gps.db, export_table, tablename = "cal_mov_paramaters",
+          index = c("device_info_serial", "date_time"), fast=TRUE)
 
 
 
 
-
-
+#Output files ####
+#Output data to shape file, csv, and unicsv (for GPS babel)
 
 
 #***************************************
@@ -238,11 +250,14 @@ gps$index <- seq(along = gps$device_info_serial)
 
 #function to output range of data files
 #produce three files, a shape file for Arcgis including a spatial reference. A csv file of all the data for that device (all data columns). A second csv file in the unicsv format of GPS Babel; this file can later be converted to various other files, such as kml.
-out.data <- function(xi,gps=get("gps", envir=environment(out.data)),devices=get("devices", envir=environment(out.data))){
+out.data <- function(xi,gps=get("gps", envir=environment(out.data)),
+                     devices = get("devices", envir = 
+                                     environment(out.data))){
   require(sp)
   require(rgdal)
   
-  #first make a subset of the gps dataframe, containing data for device xi only.
+  # first make a subset of the gps dataframe, containing data for 
+  # device xi only.
   gps_sub <- subset(gps, gps$device_info_serial == devices[xi])
   
   #name for output file
@@ -254,24 +269,40 @@ out.data <- function(xi,gps=get("gps", envir=environment(out.data)),devices=get(
   #make a spatial points object
   coords <- SpatialPoints(cbind(gps_sub$longitude,gps_sub$latitude))
   
-  #now use above spatial points object (coords) and subset of gps to make a spatial points dataframe
-  sp_df <- SpatialPointsDataFrame(coords,gps_sub,proj4string=CRS("+proj=longlat +datum=WGS84"))
-  #a bit of a hack (because I think the above function should achieve this, but I can't get it to work!) - give it a spatial reference
+  # Now use above spatial points object (coords) and subset of gps
+  # to make a spatial points dataframe
+  sp_df <- SpatialPointsDataFrame(coords, gps_sub, proj4string = 
+                                    CRS("+proj=longlat +datum=WGS84"))
+  
+  # a bit of a hack (because I think the above function should achieve
+  # this, but I can't get it to work!) - give it a spatial reference
   proj4string(sp_df)  <- CRS("+proj=longlat +datum=WGS84")
   
-  # write out dataframe to a new shapefile (including projection, .prj, component)
+  # write out dataframe to a new shapefile (including projection,
+  # .prj, component)
   writeOGR(sp_df, ".", outfile, driver="ESRI Shapefile")
   
   #  write to a csv file, for use in Excel etc.
   write.csv(gps_sub,file=paste(outfile,".csv",sep=""))
   
-  #write a second csv file to be input to GPSbabel, using 'unicsv' column names and format (see: http://www.gpsbabel.org/htmldoc-development/fmt_unicsv.html)
+  #write a second csv file to be input to GPSbabel, using 'unicsv'
+  # column names and format (see: http://www.gpsbabel.org/htmldoc-development/fmt_unicsv.html)
+  
   #first produce a dataframe in appropriate order
-  unicsv <- cbind(gps_sub$altitude, gps_sub$device_info_serial,gps_sub$date,gps_sub$time,gps_sub$calculated_speed,gps_sub$latitude,gps_sub$longitude,gps_sub$index,gps_sub$nest_gc_dist,gps_sub$inst_ground_speed)
+  unicsv <- cbind(gps_sub$altitude, gps_sub$device_info_serial,
+                  gps_sub$date, gps_sub$time,
+                  gps_sub$calculated_speed, gps_sub$latitude,
+                  gps_sub$longitude, gps_sub$index,
+                  gps_sub$nest_gc_dist, gps_sub$inst_ground_speed)
+  
   unicsv <- as.data.frame(unicsv)   #as dataframe
-  names(unicsv) <- c("alt","comment","utc_d","utc_t","geschw","lat","lon","name","prox","speed")
+  
+  names(unicsv) <- c("alt", "comment", "utc_d", "utc_t", "geschw",
+                     "lat", "lon", "name", "prox", "speed")
+  
   #to avoid errors in kml conversion, remove NAs and replace with zeroes
   unicsv[is.na(unicsv[,,])] <- 0
+  
   write.csv(unicsv,file=paste(outfile,"_gpsbabel",".csv",sep=""))
     
   return()
@@ -284,6 +315,7 @@ out.data <- function(xi,gps=get("gps", envir=environment(out.data)),devices=get(
 #first neccessary packages
 require(foreach)
 require(doParallel)
+
 #use x cores, general solution for any windows machine.
 cl <- makeCluster(parallel::detectCores()) 
 
