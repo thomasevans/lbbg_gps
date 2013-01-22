@@ -70,8 +70,10 @@ gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
 #to test
 #i <- 3
 
-gps.sub <- NULL
-names(gps.sub) <- names(gps)
+gps.sub <- gps[1,]
+gps.sub <- gps.sub[-1,]
+
+i <- 5
 
 #Filter GPS data ####
 for(i in seq(along = flight.sub)){
@@ -85,12 +87,9 @@ for(i in seq(along = flight.sub)){
     gps$date_time >= start.time &
     gps$date_time <= end.time)
   gps.f <- gps[filter,]
-  gps.f <- rbind(gps.f, gps.f)
+  gps.sub <- rbind(gps.f, gps.f)
 }
 
+summary(filter)
 
-gps.sub
-
-gps.sub
-
-?save.csv
+length(gps.sub$z_speed)
