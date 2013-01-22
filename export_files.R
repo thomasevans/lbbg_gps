@@ -8,7 +8,10 @@
 # Go through all the GPS points, making calculations, and labelling by
 # type, e.g. on trip, at nest, start of trip etc.
 # Once labelled, we then number all foraging trips uniquely.
-# 
+# These are output to the database.
+# In addition we output three file types for each device.
+# Including shape file for ArcGIS, csv file, and a file for
+# conversion in GPS Babbel.
 
 
 # Database and libraries#########
