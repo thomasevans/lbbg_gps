@@ -7,7 +7,8 @@
 # Description ##########
 # Go through all the GPS points, making calculations, and labelling by
 # type, e.g. on trip, at nest, start of trip etc.
-#
+# Once labelled, we then number all foraging trips uniquely.
+# 
 
 
 # Database and libraries#########
@@ -164,8 +165,10 @@ clusterExport(cl, c("trip.lab", "devices", "gps"))
 # list of lists (lst)
 # Use system.time to time how long this takes - so far has taken around
 # 10-15 minutes on 8 thread machine.
+
 system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
-  #calculate the trip numbers for the device i. i.e. the function which we wish to run for each device.     
+  # calculate the trip numbers for the device i. i.e. the function
+  # which we wish to run for each device.     
   x <- trip.lab(devices[i],gps)
   list(x) #output x as list
   } #end of foreach functions
@@ -174,7 +177,11 @@ system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
 #close cluster
 stopCluster(cl)
 
-#make a vector to which the trip numbers will be added for all individuals.
+
+# Number foraging trips ####
+
+# Make a vector to which the trip numbers will be added for
+# all individuals.
 all.points <- c(1:length(gps$device_info_serial))
 all.points <- 0*all.points   #make this all zero (i.e. the default value - where there is no trip)
 z <- 0    #a vairable which will store the maximum trip number from the previous device
