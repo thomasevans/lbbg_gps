@@ -256,14 +256,36 @@ flights$trip_flight_type <- 0
 
 for(i in seq(along=trips$trip_id)){
   device <- trips$device_info_serial[i]
-  sub01 <- subset(flights,start_time >= trips$start_time[i] & start_time <= trips$end_time[i] & device_info_serial==device)
+  
+  sub01 <- subset(flights,start_time >= trips$start_time[i] & start_time
+                  <= trips$end_time[i] & device_info_serial==device)
+  
   x <- seq(along=sub01$flight_id)
-  flights$trip_id[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device))] <- i
-  flights$trip_flight_n[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device))]  <- x
+  
+  flights$trip_id[((flights$start_time >= trips$start_time[i]) &
+                     (flights$start_time <= trips$end_time[i]) &
+                     (flights$device_info_serial==device))] <- i
+  
+  flights$trip_flight_n[((flights$start_time >= trips$start_time[i]) &
+                           (flights$start_time <= trips$end_time[i]) &
+                           (flights$device_info_serial==device))]  <- x
+  
   #then label flights within each trip, by 'outward' for flight #1, 'inward' for final flight and 'normal' for all others.
-  flights$trip_flight_type[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device))] <- "normal"
-  flights$trip_flight_type[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device)) & flights$trip_flight_n == 1] <- "outward"
-  flights$trip_flight_type[((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device)) & flights$trip_flight_n == max(x)] <- "inward"
+  
+  flights$trip_flight_type[((flights$start_time >= trips$start_time[i]) &
+                              (flights$start_time <= trips$end_time[i]) &
+                              (flights$device_info_serial==device))] <- "normal"
+  
+  flights$trip_flight_type[((flights$start_time >= trips$start_time[i]) &
+                              (flights$start_time <= trips$end_time[i]) &
+                              (flights$device_info_serial==device)) &
+                             flights$trip_flight_n == 1] <- "outward"
+  
+  flights$trip_flight_type[((flights$start_time >= trips$start_time[i])
+                            & (flights$start_time <= trips$end_time[i]) &
+                              (flights$device_info_serial==device)) &
+                             flights$trip_flight_n == max(x)] <- "inward"
+  
 }
 
 #Check that this has worked and looks sensible.
