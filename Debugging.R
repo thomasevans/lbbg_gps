@@ -34,8 +34,8 @@ flights_weather.sub <- flights_weather[flights$flight_id %in% flight.sub ,]
 
 flights.sub <- cbind(flights.sub, flights_weather.sub)
 
-
-
+flights.sub.original <- flights.sub
+flights.sub <- flights.sub.original
 
 #Extract the GPS points for filtered flights#####
 names(flights.sub)
@@ -51,6 +51,8 @@ library(RODBC)
 #Establish a connection to the database
 gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
 
+
+
 #See what tables are available
 sqlTables(gps.db)
 
@@ -61,6 +63,11 @@ gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time
     AND g.date_time = c.date_time
     ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
                 ,as.is=TRUE)
+
+
+#Previously accessed table of GPS data:
+load("gps.RData")
+
 
 #a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
 gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
@@ -74,6 +81,8 @@ gps.sub <- gps[1,]
 gps.sub <- gps.sub[-1,]
 
 i <- 5
+i <- 1
+i <- 9
 
 #Filter GPS data ####
 for(i in seq(along = flight.sub)){
@@ -87,9 +96,55 @@ for(i in seq(along = flight.sub)){
     gps$date_time >= start.time &
     gps$date_time <= end.time)
   gps.f <- gps[filter,]
-  gps.sub <- rbind(gps.f, gps.f)
+  gps.sub <- rbind(gps.sub, gps.f)
 }
+
+
 
 summary(filter)
 
 length(gps.sub$z_speed)
+
+str(flights)
+str(gps.sub)
+str(gps)
+
+load("gps.RData")
+
+flights.sub$start_time <- as.POSIXct(as.character(flights.sub$start_time), tz="GMT",format="%Y-%m-%d %H:%M:%S")
+flights.sub$end_time <- as.POSIXct(as.character(flights.sub$end_time), tz="GMT",format="%Y-%m-%d %H:%M:%S")
+
+
+gps.sub.1 <- gps.sub
+
+
+all.equal(gps.sub,gps.sub.1)
+
+
+
+
+test2[1:5]
+test[1:5]
+flights$start_time
+
+
+test[1:10]
+flights$start_time[1:10]
+
+gps$date_time[1:10]
+gps.sub$date_time[1:10]
+
+gps.sub$date_time[1:10]
+gps.sub.1$date_time[1:10]
+
+length(gps.sub$date_time)
+length(gps.sub.1$date_time)
+
+
+
+
+str(flights2)
+flights2$start_time[1:5]
+
+str(gps)
+gps$date_time[1:5]
