@@ -8,17 +8,6 @@
 #'Second. Various paramateerrs and information about the flights will be calculated.
 #'Third. This will be ouput to a new database table specifially for flights.
 
-#'***********
-#'Owing to some error in making an ODBC connection to the remote PostgreSQL Amsterdam 'flysafe' database with my Windows 8 installation, I am instead working with the binary datafile of object 'gps' produced previouly in 'flight_details'.
-
-#save(gps, file = "gps.RData")
-#'load in previousl saved GPS data (R data object)
-#load("gps.RData")
-
-#'Inspect this dataframe
-#str(gps)
-
-#*****************************In the eventual version, I want to do this using the database connection instead. In the mean time I use the previously saved GPS data.
 
 #database functions###################
 #To link to database
@@ -62,6 +51,7 @@ gps.original <- gps
 #gps <- gps[1:50000,]
 
 
+
 #nest postion#######################
 #function to produce two vectors of latitude and longitude positions
 lookup_nest <- function(device_info){
@@ -88,12 +78,18 @@ flight_id <- flight_id[2:f]   #remove zero (i.e. non flight points)
 #gps$speed_accuracy[1:100]
 #gps$bearing_next[1:100]
 
+#t = 5
+
+
 flight.info <- function(t, gps=gps){
   
   library(fossil)   #required for distance calculations
   library(circular) #required for some circular calculations
   #make a subset of 'gps' containing just data for flight, t.
+  
   sub01 <- subset(gps,flight_id == t)
+  
+  
   n <- length(sub01$date_time)         #the number of gps points for this flight
   
 #calculate various paramaters for flights#################
@@ -111,7 +107,7 @@ flight.info <- function(t, gps=gps){
   end_long    <-   sub01$longitude[n]
   end_lat    <-    sub01$latitude[n]
   nest <- lookup_nest(device_info_serial)
-#?deg.dist
+
   dist_nest_start    <-   1000*deg.dist(nest[2],nest[1],start_long,start_lat)
   dist_nest_end      <-   1000*deg.dist(nest[2],nest[1],end_long,end_lat)
     
@@ -120,7 +116,7 @@ flight.info <- function(t, gps=gps){
   dist_nest_dif <- dist_nest_end - dist_nest_start
   
     
-#Some summaries of various values useful in drift analysis and similar calculations#############################
+#Some summaries of various values useful in drift analysis and similar calculations#######
     dist_a_b    <-    1000*deg.dist(start_long,start_lat,end_long,end_lat)              #require a p2p distance function
     straigtness <-    dist_a_b/dist_total              #use total distance travelled, and straight-line distance
     bearing_a_b <-     earth.bear(start_long,start_lat,end_long,end_lat)             #bearing from start position to final position
@@ -169,9 +165,17 @@ flight.info <- function(t, gps=gps){
 #Run function 'flight.info' in parallel########
 require(foreach)
 require(doParallel)
-cl <- makeCluster(parallel::detectCores())     #use x cores, general solution for any windows machine.
-registerDoParallel(cl)   #start the parellel session of R; the 'slaves', which will run the analysis.
-clusterExport(cl, c("gps","flight.info"))   #this maybe neccessary so that the clustered instances or R have the required vairables/ functions in their scope, i.e. those functions and vairables which are referred to within the 'foreach' function.
+
+#use x cores, general solution for any windows machine.
+cl <- makeCluster(parallel::detectCores())     
+
+#start the parellel session of R; the 'slaves', which will run the analysis.
+registerDoParallel(cl)   
+
+#this maybe neccessary so that the clustered instances or R have the
+#required vairables/ functions in their scope, i.e. those functions
+#and vairables which are referred to within the 'foreach' function.
+clusterExport(cl, c("gps","flight.info"))   
 
 #NB see: http://stackoverflow.com/questions/9404881/writing-to-global-variables-in-using-dosnow-and-doing-parallelization-in-r
 #There a solution is offered for exporting vairables from foreach to the global environment.
@@ -183,10 +187,14 @@ lst <- list()
 #get paramaters for each flight
 #Use system.time to time how long this takes.
 system.time({lst <- foreach(i = seq(along = flight_id )) %dopar%{
-  #calculate the trip numbers for the device i. i.e. the function which we wish to run for each device.     
+  
+  #calculate the trip numbers for the device i. i.e. the function 
+  #which we wish to run for each device.     
   x <- flight.info(flight_id[i],gps)
   x <- t(x)
-  list(x)   #output data as list (this will be appended to the global list, lst.
+  
+  #output data as list (this will be appended to the global list, lst.
+  list(x)   
 } #end of foreach functions
 }) #end of things being timed by system.time
 
@@ -200,8 +208,7 @@ stopCluster(cl)
 names.flights <- c("flight_id", "points", "start_time", "end_time", "duration", "dist_max", "dist_total", "interval_mean", "interval_min", "device_info_serial", "start_long", "start_lat", "end_long", "end_lat", "dist_nest_start", "dist_nest_end", "dist_nest_dif", "dist_a_b", "straigtness", "bearing_a_b", "speed_a_b", "speed_inst_mean", "speed_inst_med", "speed_inst_var", "alt_max", "alt_min", "alt_mean", "alt_med", "rho", "ang_dev", "ang_var")
 
 #make a dataframe from the list generated by the above function.
-flights <- data.frame(matrix(unlist(lst), nrow=length(flight_id), byrow=T))
-
+flights <- data.frame(matrix(unlist(lst), nrow = length(flight_id), byrow = T))
 
 
 names(flights) <- names.flights
@@ -216,6 +223,10 @@ flights$end_time <- as.POSIXct(as.POSIXlt(flights$end_time,origin=startdate, tz=
 #conver the start_time back to datetime format
 flights$start_time <- as.POSIXct(as.POSIXlt(flights$start_time,origin=startdate, tz= "GMT",format="%Y-%m-%d %H:%M:%S"))
 
+
+# str(flights)
+# flights$start_time[1:10]
+# flights$end_time[1:10]
 
 # names(flights)
 # hist(flights$dist_total, breaks = 20, freq = FALSE)
@@ -250,11 +261,11 @@ trips$end_time <- as.POSIXct(trips$end_time, tz="GMT",format="%Y-%m-%d %H:%M:%S"
 flights$trip_id <- flights$trip_flight_n <- rep(NA,length(flights$device_info_serial))
 
 flights$trip_flight_type <- 0
-#i <- 21 #for testing
-#flights$trip_id <- 20
 
+i <- 6
+sub01$start_time
 
-for(i in seq(along=trips$trip_id)){
+for(i in seq(along = trips$trip_id)){
   device <- trips$device_info_serial[i]
   
   sub01 <- subset(flights,start_time >= trips$start_time[i] & start_time

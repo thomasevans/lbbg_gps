@@ -7,7 +7,79 @@
 
 # Plus filter out calculated values for these flights.
 
-names(flights)
+
+
+#Extract the GPS points for filtered flights#####
+# names(flights.sub)
+
+#To get GPS points
+#1. Get GPS data
+#2. Filter by device id and start and end time - do for earch flight
+#3. Combine into single dataframe
+
+#Get GPS data #####
+#To link to database
+library(RODBC)
+
+#Establish a connection to the database
+gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
+
+
+
+#See what tables are available
+sqlTables(gps.db)
+
+#for all of data_base, except pre-deployment and null records
+gps <- sqlQuery(gps.db, query=
+                "SELECT DISTINCT g.device_info_serial,
+                  g.date_time, g.longitude, g.latitude, g.x_speed,
+                  g.y_speed, g.z_speed, g.positiondop, g.speed_accuracy,
+                  c.bearing_next, c.bearing_prev, c.nest_gc_dist,
+                  c.nest_bear, c.inst_ground_speed, c.p2p_dist,
+                  c.time_interval_s, c.turning_angle, c.flight_class,
+                  c.flight_id, g.altitude
+                FROM gps_uva_tracking_limited AS g, cal_mov_paramaters AS c
+                WHERE g.device_info_serial = c.device_info_serial
+                AND g.date_time = c.date_time
+                ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
+                ,as.is=TRUE)
+
+#Get the flight data too
+flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
+FROM lund_flights AS f
+ORDER BY f.flight_id ASC;")
+
+
+
+#Previously accessed table of GPS data:
+save(gps, flights, file = "debugging_init.RData")
+
+load("debugging_init.RData")
+
+
+gps$date_time[1:10]
+
+#a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
+gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
+
+flights$start_time  <-  as.POSIXct(as.character(flights$start_time),
+                                   tz="GMT",format="%Y-%m-%d %H:%M:%S")
+
+flights$end_time    <-  as.POSIXct(as.character(flights$end_time),
+                                   tz="GMT",format="%Y-%m-%d %H:%M:%S")
+
+
+gps.sub <- gps[1,]
+gps.sub <- gps.sub[-1,]
+# 
+# i <- 5
+# i <- 1
+# i <- 9
+
+
+
+
+#names(flights)
 
 #Filter flights####
 #Get a list of flight_id for outward flights of between 30 and 60 minutes
@@ -37,52 +109,6 @@ flights.sub <- cbind(flights.sub, flights_weather.sub)
 flights.sub.original <- flights.sub
 flights.sub <- flights.sub.original
 
-#Extract the GPS points for filtered flights#####
-names(flights.sub)
-#To get GPS points
-#1. Get GPS data
-#2. Filter by device id and start and end time - do for earch flight
-#3. Combine into single dataframe
-
-#Get GPS data #####
-#To link to database
-library(RODBC)
-
-#Establish a connection to the database
-gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
-
-
-
-#See what tables are available
-sqlTables(gps.db)
-
-#for all of data_base, except pre-deployment and null records
-gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude, g.latitude, g.x_speed, g.y_speed, g.z_speed, g.positiondop, g.speed_accuracy, c.bearing_next, c.bearing_prev, c.nest_gc_dist, c.nest_bear, c.inst_ground_speed, c.p2p_dist, c.time_interval_s, c.turning_angle, c.flight_class,c.flight_id, g.altitude
-  FROM gps_uva_tracking_limited AS g, cal_mov_paramaters AS c
-  WHERE g.device_info_serial = c.device_info_serial
-    AND g.date_time = c.date_time
-    ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
-                ,as.is=TRUE)
-
-
-#Previously accessed table of GPS data:
-load("gps.RData")
-
-
-#a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
-gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
-
-#save(gps, file = "gps.data")
-
-#to test
-#i <- 3
-
-gps.sub <- gps[1,]
-gps.sub <- gps.sub[-1,]
-
-i <- 5
-i <- 1
-i <- 9
 
 #Filter GPS data ####
 for(i in seq(along = flight.sub)){
@@ -109,10 +135,7 @@ str(flights)
 str(gps.sub)
 str(gps)
 
-load("gps.RData")
 
-flights.sub$start_time <- as.POSIXct(as.character(flights.sub$start_time), tz="GMT",format="%Y-%m-%d %H:%M:%S")
-flights.sub$end_time <- as.POSIXct(as.character(flights.sub$end_time), tz="GMT",format="%Y-%m-%d %H:%M:%S")
 
 
 gps.sub.1 <- gps.sub
