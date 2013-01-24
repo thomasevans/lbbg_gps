@@ -108,8 +108,8 @@ flight.info <- function(t, gps=gps){
   end_lat    <-    sub01$latitude[n]
   nest <- lookup_nest(device_info_serial)
 
-  dist_nest_start    <-   1000*deg.dist(nest[2],nest[1],start_long,start_lat)
-  dist_nest_end      <-   1000*deg.dist(nest[2],nest[1],end_long,end_lat)
+  dist_nest_start    <-   1000*deg.dist(nest[2], nest[1], start_long, start_lat)
+  dist_nest_end      <-   1000*deg.dist(nest[2], nest[1], end_long, end_lat)
     
 
   #Displacement relative to colony/ nest, i.e. difference between final and first distance from nest.
@@ -117,7 +117,7 @@ flight.info <- function(t, gps=gps){
   
     
 #Some summaries of various values useful in drift analysis and similar calculations#######
-    dist_a_b    <-    1000*deg.dist(start_long,start_lat,end_long,end_lat)              #require a p2p distance function
+    dist_a_b    <-    1000*deg.dist(start_long, start_lat, end_long, end_lat)              #require a p2p distance function
     straigtness <-    dist_a_b/dist_total              #use total distance travelled, and straight-line distance
     bearing_a_b <-     earth.bear(start_long,start_lat,end_long,end_lat)             #bearing from start position to final position
     

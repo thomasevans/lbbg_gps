@@ -85,14 +85,14 @@ colnames(nest_pos) <- c("lat","long")
 
 
 #calculate grand circle distance from nest for each GPS location             
-gc_dist <- deg.dist(gps$latitude,gps$longitude,nest_pos$lat,nest_pos$long)
+gc_dist <- deg.dist(gps$longitude, gps$latitude, nest_pos$long, nest_pos$lat)
 
 
 #calculating distance between consequative points#####
 lat.next  <- gps$latitude[-1]
 long.next <- gps$longitude[-1]
 
-p2p_dist <- deg.dist(gps$latitude[-length(gps$latitude)],gps$longitude[-length(gps$latitude)],lat.next,long.next)*1000
+p2p_dist <- deg.dist(gps$longitude[-length(gps$latitude)], gps$latitude[-length(gps$latitude)], long.next, lat.next)*1000
 p2p_dist<- c(0,p2p_dist)  #adding a line at the beggining with 0 for first point, and so producing vector with correct length.
 #NB this will calculate distance between all consecutive points,
 #irrespective of whether these are from different birds.
