@@ -230,10 +230,11 @@ export_table$date_time <- gps$date_time
 # Export these calculated values to the database, updating the
 # existing 'cal_mov_paramaters' table.
 # First added the three new columns to the table useing access
+# These must be numeric fields
 sqlUpdate(gps.db, export_table, tablename = "cal_mov_paramaters",
           index = c("device_info_serial", "date_time"), fast=TRUE)
 
-
+#str(export_table)
 
 
 #Output files ####

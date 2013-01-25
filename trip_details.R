@@ -29,23 +29,30 @@ gps <- sqlQuery(gps.db, query="SELECT DISTINCT c.*, g.longitude, g.latitude, g.a
 #a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
 gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
 
-#if we want to check which columns are present
-names(gps)
+#gps$date_time[1:10]
 
+#if we want to check which columns are present
+#names(gps)
+str(gps)
 #produce a vector of trip numbers
 trip_id <- sort(unique(gps$trip_id))
 f <- length(trip_id)
 trip_id <- trip_id[2:f]   #remove zero (i.e. non trip points)
 
+# trip_id <- as.numeric(trip_id)
+# str(gps$trip_id)
+# test <- trip.info(t = 1088, gps = gps)
+#rm(t)
+#t <- trip_id[100]
 
 #***********start of function: trip.info
 #Function 'trip.info' produces a lists of lists of information on trips
 #t - trip_id, the trip number
 #gps - the gps dataframe
-trip.info <- function(t, gps=gps){
+trip.info <- function(t, gps = gps){
 
   #make a subset of 'gps' containing just data for trip, t.
-  sub01 <- subset(gps,trip_id == t)
+  sub01 <- subset(gps, trip_id == t)
   n <- length(sub01$date_time)         #the number of gps points for this trip
   
   #calculate various paramaters for trips
