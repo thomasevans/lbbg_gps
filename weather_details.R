@@ -34,7 +34,7 @@ ORDER BY f.flight_id ASC;")
 #make subset of the data
 flights_original <- flights
 flights <- flights_original
-flights <- flights[1:10,]
+#flights <- flights[1:10,]
 
 
 #Get weather data #################################
@@ -54,13 +54,15 @@ flights_weather <- NULL
   tcdc.eatm.sd <- (attr(cloud, which = "standard deviation"))
   flights_weather <- cbind(flights_weather, tcdc.eatm, tcdc.eatm.sd)
 
+#system.time(x <- 400)
+###Need to run everything below here:
 
   #Air tempreture at surface 'air.sig995' (Air tempreture at surface in deg K)
-  air.temp <- NCEP.interp(variable = "air.sig995", level = "surface",
+  system.time(air.temp <- NCEP.interp(variable = "air.sig995", level = "surface",
                        lat = flights$start_lat, lon = flights$start_long,  
                        dt = flights$start_time,
                        reanalysis2 = FALSE, keep.unpacking.info = TRUE,
-                       interp = 'linear')
+                       interp = 'linear'))
 
   #Add values to flights_weather table
   air.sig995 <- (as.numeric(air.temp))
@@ -165,6 +167,41 @@ flights_weather <- cbind(flights_weather,vwnd.10m,vwnd.10m.sd)
 
 
 flights_weather <- as.data.frame(flights_weather)
+
+str(flights_weather)
+
+flights_weather <- cbind(flights$flight_id, flights$start_time, flights$device_info_serial, flights_weather)
+str(flights_weather)
+
+new.names <- names(flights_weather)
+new.names <- new.names[4:length(new.names)]
+new.names <- c("flight_id", "start_time", "device_info_serial", new.names)
+
+names(flights_weather) <- new.names
+
+
+#Output weather data to database #####
+#will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
+sqlSave(gps.db, flights_weather, tablename = "lund_flights_weather",
+        append = FALSE, rownames = FALSE, colnames = FALSE,
+        verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
+        test = FALSE, nastring = NULL, varTypes = 
+          c(start_time = "datetime"))
+
+
+
+# names(flights_weather)
+# 
+# getSqlTypeInfo("ACCESS")
+# 
+# 
+# ?sqlSave
+# 
+# 
+# vignette("RODBC")
+# 
+# 
+
 
 
 

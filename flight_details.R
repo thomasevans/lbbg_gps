@@ -73,7 +73,8 @@ fly_type <- gps$flight_class_2        #keep a copy of above calculation
 #Reduce to the four possibilties
 gps$flight_class_2[(fly_type == 1)  ] <- 0
 gps$flight_class_2[fly_type == 3 ] <- 1
-gps$flight_class_2[(fly_type == 24) | (fly_type == 6) | (fly_type == 8) | (fly_type == 2) | (fly_type == 12)]<- 3
+gps$flight_class_2[(fly_type == 24) | (fly_type == 6) |
+                     (fly_type == 8) | (fly_type == 2) | (fly_type == 12)]<- 3
 gps$flight_class_2[fly_type == 4] <- 2
 
 #make column for trip id, start with value 0, which will be null value - i.e. not a trip (points at the nest)
@@ -85,7 +86,6 @@ gps$flight_id <- 0
 
 
 
-#prototype function from trip details. Need to modify now for flights.
 
 #***********start of function: flight.lab
 #Function 'flight.lab' will produce a vector of flight number for each device, thus allowing the for loop to be ran in parallel (quicker).
@@ -177,11 +177,11 @@ gps$flight_id <- all.points
 #To avoid over long and complicated scripts it is probably best to break this down, so first output the newly calculated column to the db, then start a new script for the flight calculations.
 
 
-names(gps)
-
-gps$flight_class_2[1:100]
-gps$trip_id[1:100]
-gps$flight_id[1:100]
+# names(gps)
+# 
+# gps$flight_class_2[1:100]
+# gps$trip_id[1:100]
+# gps$flight_id[1:100]
 
 #output the new data columns to the 'cal_mov_paramaters' database table
 #add neccessary columns to db table first. Here 'flight_class' and 'flight_id', which are both integers.
@@ -194,3 +194,10 @@ export_table$date_time <- gps$date_time
 #export these calculated values to the database, updating existing 'cal_mov_paramaters' table.
 #first added the three new columns to the table useing access
 sqlUpdate(gps.db, export_table, tablename = "cal_mov_paramaters",index = c("device_info_serial","date_time"),fast=TRUE)
+
+
+# names(export_table)
+# 
+# odbcCloseAll()
+# 
+# ?RODBC
