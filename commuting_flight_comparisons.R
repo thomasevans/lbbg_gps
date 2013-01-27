@@ -17,20 +17,79 @@ gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
 #See what tables are available
 #sqlTables(gps.db)
 
-flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
-FROM lund_flights AS f
-ORDER BY f.flight_id ASC;")
 
+#Get a copy of the flights DB table.
 flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
+                    FROM lund_flights AS f
+                    ORDER BY f.flight_id ASC;")
+
+# Hack to set time zone back to UTC rather than system locale.
+# See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
+
+tm <- as.POSIXlt(flights$start_time)
+tm[1:10]
+attr(tm,"tzone") <- "UTC"
+tm[1:10]
+flights$start_time <- tm
+
+tm <- as.POSIXlt(flights$end_time)
+tm[1:10]
+attr(tm,"tzone") <- "UTC"
+tm[1:10]
+flights$end_time <- tm
+
+
+flights$start_time[1:10]
+
+#str(flights)  #check structure
+
+#Get a copy of the flights_weather DB table.
+flights.weather <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
 FROM lund_flights_weather AS f
 ORDER BY f.flight_id ASC;")
+
+# Hack to set time zone back to UTC rather than system locale.
+# See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
+tm <- as.POSIXlt(flights.weather$start_time)
+#Check how this appears (i.e. time zone)
+tm[1:10]
+attr(tm,"tzone") <- "UTC"
+#Check how appears after change of time-zone - i.e. is the absolute time
+#value unchanged?
+tm[1:10]
+flights.weather$start_time <- tm
+
+
+#Query the gull db to extract bird_id, nest_id, and nest locations
+trips <- sqlQuery(gps.db, query="SELECT DISTINCT t.*
+FROM lund_trips AS t
+ORDER BY t.trip_id ASC;")
+
+#str(trips)
+
+tm <- as.POSIXlt(trips$start_time)
+tm[1:10]
+attr(tm,"tzone") <- "UTC"
+tm[1:10]
+trips$start_time <- tm
+
+tm <- as.POSIXlt(trips$end_time)
+tm[1:10]
+attr(tm,"tzone") <- "UTC"
+tm[1:10]
+trips$end_time <- tm
+
+
 
 #Trip type and duration#######
 trip_type <- 0
 trip_duration <- 0
-for(i in seq(along=flights$trip_id)){
-  trip_type[i] <- trips$trip_type[trips$trip_id == flights$trip_id[i]][1]
-  trip_duration[i] <- trips$duration_s[trips$trip_id == flights$trip_id[i]][1]
+
+for(i in seq(along = flights$trip_id)){
+  trip_type[i] <- trips$trip_type[trips$trip_id ==
+                                    flights$trip_id[i]][1]
+  trip_duration[i] <- trips$duration_s[trips$trip_id ==
+                                         flights$trip_id[i]][1]
 }
 
 
@@ -49,9 +108,12 @@ x1 <- mean(flights$speed_a_b[outward & flights$speed_a_b < 25], na.rm = TRUE)
 abline(v = x1, lwd = 2, lty = 2, col = "red")
 
 hist(flights$speed_a_b[inward & flights$speed_a_b < 25],  xlim = c(0,25), breaks = 20, freq = FALSE, ylim = c(0, 0.30), main = "inward", xlab = "speed a to b in ms -1")
-speed_inst_med
+
 x2 <- mean(flights$speed_a_b[inward & flights$speed_a_b < 25], na.rm = TRUE)
 abline(v = x2, lwd = 2, lty = 2, col = "red")
+
+
+
 
 par(mfrow = c(1,2))
 # Mean speed
@@ -62,6 +124,9 @@ abline(v = x1, lwd = 2, lty = 2, col = "red")
 hist(flights$speed_inst_mean[inward & flights$speed_inst_mean < 25],  xlim = c(0,25), breaks = 20, freq = FALSE, ylim = c(0, 0.20), main = "Inward", xlab = "Speed - mean - ms-1")
 x2 <- mean(flights$speed_inst_mean[inward & flights$speed_inst_mean < 25], na.rm = TRUE)
 abline(v = x2, lwd = 2, lty = 2, col = "red")
+
+
+
 
 
 # Median speed
@@ -79,31 +144,38 @@ abline(v = x2, lwd = 2, lty = 2, col = "red")
 
 # Straightness
 names(flights)
-hist(flights$straigtness[inward & flights$straigtness < 1.2], xlim = c(0,1.2), breaks = 20, freq = FALSE, ylim = c(0, 5), main = "Inward", xlab = "Straightness")
+hist(flights$straigtness[inward & flights$straigtness < 1.2], xlim = c(0,1.2), breaks = 20, freq = FALSE, ylim = c(0, 10), main = "Inward", xlab = "Straightness")
 x1 <- mean(flights$straigtness[inward], na.rm = TRUE)
 abline(v = x1, lwd = 2, lty = 2, col = "red")
 
-hist(flights$straigtness[outward], xlim = c(0,1.2), breaks = 20, freq = FALSE, ylim = c(0, 5), main = "Outward", xlab = "Straightness")
+hist(flights$straigtness[outward], xlim = c(0,1.2), breaks = 40, freq = FALSE, ylim = c(0, 10), main = "Outward", xlab = "Straightness")
 speed_inst_med
 x2 <- mean(flights$straigtness[outward], na.rm = TRUE)
 abline(v = x2, lwd = 2, lty = 2, col = "red")
 
 x1
 x2
+x1 <- sd(flights$straigtness[inward], na.rm = TRUE)
+
+x2 <- sd(flights$straigtness[outward], na.rm = TRUE)
+
 
 summary(flights$straigtness[inward & flights$straigtness < 1.2] == 0)
 
-plot(flights$straigtness[outward] ~ flights$speed_a_b[outward], xlim = c(0, 20))
+
+par(mfrow = c(1,2))
+plot(flights$straigtness[outward] ~ flights$speed_a_b[outward], xlim = c(0, 20), ylim = c(0, 1.1) , xlab = "Speed A - B (ms-1)", ylab = "Straightness")
+plot(flights$straigtness[inward] ~ flights$speed_a_b[inward], xlim = c(0, 20), ylim = c(0, 1.1), xlab = "Speed A - B (ms-1)", ylab = "Straightness")
 
 
 # r-vector, or 'rho'
-hist(flights$rho[inward & flights$straigtness < 1.2], xlim = c(0,1), breaks = 20, freq = FALSE, ylim = c(0, 3), main = "Inward", xlab = "r")
-x1 <- mean(flights$rho[inward], na.rm = TRUE)
+hist(1-flights$rho[inward & flights$straigtness < 1.2], xlim = c(0,1), breaks = 20, freq = FALSE, ylim = c(0, 3), main = "Inward", xlab = "r")
+x1 <- mean(1-flights$rho[inward], na.rm = TRUE)
 abline(v = x1, lwd = 2, lty = 2, col = "red")
 
-hist(flights$rho[outward], xlim = c(0,1), breaks = 20, freq = FALSE, ylim = c(0, 3), main = "Outward", xlab = "r")
+hist(1-flights$rho[outward], xlim = c(0,1), breaks = 20, freq = FALSE, ylim = c(0, 3), main = "Outward", xlab = "r")
 speed_inst_med
-x2 <- mean(flights$rho[outward], na.rm = TRUE)
+x2 <- mean(1-flights$rho[outward], na.rm = TRUE)
 abline(v = x2, lwd = 2, lty = 2, col = "red")
 
 x1
@@ -112,16 +184,16 @@ x2
 
 
 #Dispersion versus speed##########
-plot(flights$rho[inward & flights$straigtness < 1.2] ~ flights$speed_inst_med[inward & flights$straigtness < 1.2], xlim = c(3,22), breaks = 20, freq = FALSE, ylim = c(0, 1), main = "Inward", xlab = "Speed - median - ms-1", ylab = "r")
+plot(1-flights$rho[inward & flights$straigtness < 1.2] ~ flights$speed_inst_med[inward & flights$straigtness < 1.2], xlim = c(3,22), breaks = 20, freq = FALSE, ylim = c(0, 1), main = "Inward", xlab = "Speed - median - ms-1", ylab = "r")
 
-plot(flights$rho[outward & flights$straigtness < 1.2] ~ flights$speed_inst_med[outward & flights$straigtness < 1.2], xlim = c(3,22), breaks = 20, freq = FALSE, ylim = c(0, 1), main = "Ourtward", xlab = "Speed - median - ms-1", ylab = "r")
-
-
+plot(1-flights$rho[outward & flights$straigtness < 1.2] ~ flights$speed_inst_med[outward & flights$straigtness < 1.2], xlim = c(3,22), breaks = 20, freq = FALSE, ylim = c(0, 1), main = "Ourtward", xlab = "Speed - median - ms-1", ylab = "r")
 
 
-plot(flights$rho[inward & flights$straigtness < 1.2] ~ flights$speed_a_b[inward & flights$straigtness < 1.2], xlim = c(0,22), breaks = 20, freq = FALSE, ylim = c(0, 1), main = "Inward", xlab = "Speed - median - ms-1", ylab = "r")
 
-plot(flights$rho[outward & trip_duration > 60*30] ~ flights$speed_a_b[outward & flights$straigtness < 1.2], xlim = c(0,22), breaks = 20, freq = FALSE, ylim = c(0, 1), main = "Ourtward", xlab = "Speed - median - ms-1", ylab = "r")
+
+plot(1-flights$rho[inward & flights$straigtness < 1.2] ~ flights$speed_a_b[inward & flights$straigtness < 1.2], xlim = c(0,22),  ylim = c(0, 1), main = "Inward", xlab = "Speed - median - ms-1", ylab = "r")
+
+plot(1-flights$rho[outward & flights$straigtness < 1.2] ~ flights$speed_a_b[outward & flights$straigtness < 1.2], xlim = c(0,22), ylim = c(0, 1), main = "Outward", xlab = "Speed - median - ms-1", ylab = "r")
 
 
 # Flight duration###########
@@ -131,6 +203,8 @@ hist(flights$duration[trip_duration > 60*30 & inward & flights$duration < 2*60*6
      main = "Inward", xlab = "flight duration (minutes)", col = "grey")
 hist(flights$duration[trip_duration > 60*30 & outward & flights$duration < 2*60*60]/60,
      main = "outward", xlab = "flight duration (minutes)", col = "grey")
+
+
 
 # Flight altitude##############
 par(mfrow=c(1,2))

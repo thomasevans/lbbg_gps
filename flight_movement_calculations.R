@@ -209,6 +209,10 @@ flights.characteristics <- cbind(flights.characteristics, wind.origin)
 
 
 
+# Need to then add function below for drift analysis
+# Then output all to database
+# Then visualise
+
 
 
 
