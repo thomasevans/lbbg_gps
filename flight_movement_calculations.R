@@ -153,40 +153,63 @@ names(flights.characteristics) <- new.names
 #vwind10 <- -1
 
 wind.dir.speed <- function(uwind10, vwind10){
+  # This function calculates the wind speed and direction based the u
+  # v wind vectors
+  
+  #Wind speed Pythanogras theorem
   wind.speed <- sqrt((uwind10 * uwind10) + (vwind10 * vwind10))
-  wind.dir   <- atan(abs(uwind10/vwind10))
-  wind.dir   <- wind.dir * 180 / pi
   
-  bear.correction<-  function(x,y){
-    if(x > 0 && y < 0){
-      return(90)
-    }else if(x < 0 && y < 0){
-      return(180)
-    }else  if(x < 0 && y > 0){
-      return(270)
-    }else   return(0)
-  }
-  z <- bear.correction(uwind10,vwind10)
-  wind.dir <- wind.dir + z
+  # Calculate direction in radians (0 - 90 deg)
+  dir <- atan(abs(uwind10/ vwind10))
   
-  x <- cbind(wind.speed,wind.dir)
+  # Direction in degrees (0 - 90)
+  dir <- dir * 180 / pi
+  
+  # Make into bearing from North
+  if(uwind10 > 0 && vwind10 < 0){
+    wind.dir <- (dir + 90)
+  }else if(uwind10 < 0 && vwind10 < 0){
+    wind.dir <- (dir + 180)
+  }else  if(uwind10 < 0 && vwind10 > 0){
+    wind.dir <- (dir + 270)
+  }else   wind.dir <- (dir)
+  
+  x <- cbind(wind.speed, wind.dir)
   return(x)
 }
 
-#I recieved help with mapply from StackOverflow: http://stackoverflow.com/questions/14196696/sapply-with-custom-function-series-of-if-statements
-wind.info <- t(mapply (wind.dir.speed, flights_weather$uwnd.10m,
-                       flights_weather$vwnd.10m))
+# Testing
+# wind.dir.speed(1,1)
+# wind.dir.speed(1,-1)
+# wind.dir.speed(-1,-1)
+# wind.dir.speed(-1,1)
 
-# drops <- c("wind.origin")
-# flights_weather <- flights_weather[,!(names(flights_weather) %in% drops)]
+# Calculate wind speed (at 10m) and direction (bearing from north)
+# for all flights
+# I recieved help with mapply from StackOverflow: http://stackoverflow.com/questions/14196696/sapply-with-custom-function-series-of-if-statements
+wind.info <- t(mapply(wind.dir.speed, flights.weather$uwnd10m,
+                       flights.weather$vwnd10m))
 
-
+# Make dataframe
 wind.info <- as.data.frame(wind.info)
-names(wind.info) <- c("wind.speed","wind.dir")
-flights_weather <- cbind(flights_weather, wind.info)
 
-wind.head <- ((flights_weather$wind.dir+180) %% 360)
-flights_weather <- cbind(flights_weather, wind.head)
+# Give names to columns
+names(wind.info) <- c("wind.speed", "wind.dir")
+
+# Add calculated wind info to flight.characteristics 
+flights.characteristics <- cbind(flights.characteristics, wind.info)
+
+wind.origin <- ((flights.characteristics$wind.dir+180) %% 360)
+
+# hist(wind.head)
+# hist(flights.characteristics$wind.dir)
+
+# Add wind origin direction to table.
+flights.characteristics <- cbind(flights.characteristics, wind.origin)
+
+
+
+
 
 
 
@@ -210,72 +233,3 @@ flights_weather <- cbind(flights_weather, wind.head)
 #Va - air speed (need to assume this)
 
 #need to calculate 'b', and look up 'Va'.
-
-names(flights)
-
-hist(flights$straigtness[flights$straigtness < 1.1], xlim = c(0,2))
-hist(flights$rho)
-hist(flights$ang_dev)
-hist(flights$ang_var)
-plot(flights$rho[flights$straigtness < 1.1]~flights$straigtness[flights$straigtness < 1.1])
-names(flights)
-plot(flights$rho ~ flights$speed_inst_med,xlim=c(3,25))
-plot(flights$rho ~ flights$points)
-plot(flights$rho ~ flights$ang_dev)
-plot(flights$rho ~ flights$ang_var)
-names(flights)
-
-par(mfrow = c(2,2))
-summary(as.factor(flights$trip_flight_type))
-hist(flights$straigtness[flights$straigtness < 1.5], breaks = 20, main = "all")
-
-hist(flights$straigtness[flights$straigtness < 1.5 & flights$trip_flight_type == "inward"], freq = FALSE, main = "inward")
-mean(flights$straigtness[flights$straigtness < 1.5 & flights$trip_flight_type == "inward"], na.rm = TRUE)
-
-hist(flights$straigtness[flights$straigtness < 1.5 & flights$trip_flight_type == "outward"], freq = FALSE, main = "outward")
-mean(flights$straigtness[flights$straigtness < 1.5 & flights$trip_flight_type == "outward"], na.rm = TRUE)
-
-hist(flights$straigtness[flights$straigtness < 1.5 & flights$trip_flight_type == "normal"], freq = FALSE, main = "other")
-mean(flights$straigtness[flights$straigtness < 1.5 & flights$trip_flight_type == "normal"], na.rm = TRUE)
-
-mean(flights$straigtness[flights$straigtness < 1.5 & flights$straigtness > .3], na.rm = TRUE)
-
-?hist
-plot(flights$straigtness ~ flights$points, ylim = c(0,1.5))
-plot(flights$straigtness ~ flights$interval_mean, xlim = c(0,1000), ylim = c(0,1.5))
-plot(flights$straigtness ~ flights$duration, ylim = c(0,1.5), xlim = c(0,1000))
-
-names(flights)
-
-
-names(flights)
-plot(flights$straigtness[flights$straigtness < 1.5 &  flights$rho < 1.5]
-     ~ flights$rho[flights$straigtness < 1.5 &  flights$rho < 1.5])
-abline(lm(flights$straigtness[flights$straigtness < 1.5 &  flights$rho < 1.5]
-          ~ flights$rho[flights$straigtness < 1.5 &  flights$rho < 1.5]))
-hist(flights$rho[flights$rho < 1.5])
-
-par(mfrow = c(2,2))
-hist(flights$rho)
-hist(flights$rho[flights$trip_flight_type == "outward"], main = "Outward")
-hist(flights$rho[flights$trip_flight_type == "inward"],  main = "Inward")
-hist(flights$rho[flights$trip_flight_type == "normal"],  main = "Others")
-par(mfrow = c(1,1))
-
-#Speed graphs####################
-
-names(flights_weather)
-
-names(flights)
-
-hist(flights$speed_inst_med[flights$trip_flight_type == "inward"])
-mean(flights$speed_inst_med[flights$trip_flight_type == "inward"], na.rm = TRUE)
-sd(flights$speed_inst_med[flights$trip_flight_type == "inward"], na.rm = TRUE)
-hist(flights$speed_a_b[flights$trip_flight_type == "inward"])
-mean(flights$speed_a_b[flights$trip_flight_type == "inward"], na.rm = TRUE)
-sd(flights$speed_a_b[flights$trip_flight_type == "inward"], na.rm = TRUE)
-unique(as.factor(flights$trip_flight_type))
-
-hist(flights$speed_inst_med[flights$trip_flight_type == "inward" & flights$speed_a_b > 3])
-mean(flights$speed_inst_med[flights$trip_flight_type == "inward" & flights$speed_a_b > 3], na.rm = TRUE)
-sd(flights$speed_inst_med[flights$trip_flight_type == "inward" & flights$speed_a_b > 3], na.rm = TRUE)

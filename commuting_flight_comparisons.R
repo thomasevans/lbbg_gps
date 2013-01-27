@@ -21,8 +21,9 @@ flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
 FROM lund_flights AS f
 ORDER BY f.flight_id ASC;")
 
-flights_weather <- ???????
-
+flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
+FROM lund_flights_weather AS f
+ORDER BY f.flight_id ASC;")
 
 #Trip type and duration#######
 trip_type <- 0
