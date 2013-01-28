@@ -217,16 +217,6 @@ flights.characteristics <- cbind(flights.characteristics, wind.origin)
 
 
 
-#Fast directional flight classificiation############
-#Sepperate out fast directional flight from not obviously
-#directional flight. Required for drift analysis where we
-#only want to analyse directional flight.
-
-
-
-
-
-
 #Wind effect/ drift analysis########################
 
 #Wind drift analysis:
@@ -237,3 +227,22 @@ flights.characteristics <- cbind(flights.characteristics, wind.origin)
 #Va - air speed (need to assume this)
 
 #need to calculate 'b', and look up 'Va'.
+
+
+
+
+
+
+
+# Output to database #####
+
+
+
+
+#Fast directional flight classificiation############
+#**Perhaps save this for a sepperate script doing direct comparisons.
+
+#Sepperate out fast directional flight from not obviously
+#directional flight. Required for drift analysis where we
+#only want to analyse directional flight.
+

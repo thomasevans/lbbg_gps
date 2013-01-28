@@ -276,33 +276,34 @@ aspect.plot(bearings.out,p.bins=45, p.shrink = 5, main = "")
 # Weather conditions###############
 
 # Wind direction
-names(flights_weather)
 
 library(oce)
-graph.object <- as.windrose(uwnd.10m, vwnd.10m, dtheta = 15, debug=getOption("oceDebug"))
+graph.object <- as.windrose(flights.weather$uwnd10m, flights.weather$vwnd10m, dtheta = 15, debug=getOption("oceDebug"))
 plot(graph.object)
 
 # Wind speed
-hist(flights_weather$wind.speed)
-
+hist(flights.characteristics$wind.10m.flt.ht, col = "dark grey", xlab = "Wind speed in ms-1, for wind calculated for 10 m altitude")
+str(flights.characteristics)
 #flight versus wind direction
 par(mfrow = c(1,1))
-plot(flights$bearing_a_b[outward & trip_duration > 60*30 & trip_type == 0], flights_weather$wind.dir[outward & trip_duration > 60*30 & trip_type == 0], xlab = "flight bearing", mar = c(10,10,4,2 ) + 0.1, ylab = "wind direction")
+plot(flights$bearing_a_b[outward & trip_duration > 60*30 & trip_type == 0], flights.characteristics$wind.10m.flt.ht[outward & trip_duration > 60*30 & trip_type == 0], xlab = "flight bearing", mar = c(10,10,4,2 ) + 0.1, ylab = "wind direction")
 
+
+
+# Flight direction, wind difference ####
 par(mfrow = c(1,2))
 
-
-dif.angle <- flights$bearing_a_b[inward & trip_duration > 60*30 & trip_type == 0] - flights_weather$wind.dir[inward & trip_duration > 60*30 & trip_type == 0]
-
-dif.angle <- abs(dif.angle) %% 180
-
-hist(dif.angle, xlim= c(0,180), main = "Inward", xlab = "angle from wind", ylab = "frequency")
-
-dif.angle <- flights$bearing_a_b[outward & trip_duration > 60*30 & trip_type == 0] - flights_weather$wind.dir[outward & trip_duration > 60*30 & trip_type == 0]
+dif.angle <- flights$bearing_a_b[inward & trip_duration > 60*30 & trip_type == 0] - flights.characteristics$wind.dir[inward & trip_duration > 60*30 & trip_type == 0]
 
 dif.angle <- abs(dif.angle) %% 180
 
-hist(dif.angle, xlim= c(0,180), main = "Outward", xlab = "angle from wind", ylab = "frequency")
+hist(dif.angle, xlim= c(0,180), main = "Inward", xlab = "angle from wind", ylab = "frequency", col = "dark grey")
+
+dif.angle <- flights$bearing_a_b[outward & trip_duration > 60*30 & trip_type == 0] - flights.characteristics$wind.dir[outward & trip_duration > 60*30 & trip_type == 0]
+
+dif.angle <- abs(dif.angle) %% 180
+
+hist(dif.angle, xlim= c(0, 180), main = "Outward", xlab = "angle from wind", ylab = "frequency", col = "dark grey")
 
 
 
