@@ -295,16 +295,22 @@ par(mfrow = c(1,2))
 
 dif.angle <- flights$bearing_a_b[inward & trip_duration > 60*30 & trip_type == 0] - flights.characteristics$wind.dir[inward & trip_duration > 60*30 & trip_type == 0]
 
-dif.angle <- abs(dif.angle) %% 180
+angle.dif <- function(x){
+  if(x > 180) {return (360 - x)}
+  else return (x)
+}
 
-hist(dif.angle, xlim= c(0,180), main = "Inward", xlab = "angle from wind", ylab = "frequency", col = "dark grey")
+dif.angle <- sapply(abs(dif.angle), angle.dif)
+
+hist(dif.angle, xlim= c(0,180), main = "Inward", xlab = "angle from wind", ylab = "frequency", col = "dark grey", xaxt = "n")
+axis(1, at = c(0, 45, 90, 135, 180), lab = c("0", "45", "90", "135", "180"))
 
 dif.angle <- flights$bearing_a_b[outward & trip_duration > 60*30 & trip_type == 0] - flights.characteristics$wind.dir[outward & trip_duration > 60*30 & trip_type == 0]
 
-dif.angle <- abs(dif.angle) %% 180
+dif.angle <- sapply(abs(dif.angle), angle.dif)
 
-hist(dif.angle, xlim= c(0, 180), main = "Outward", xlab = "angle from wind", ylab = "frequency", col = "dark grey")
-
+hist(dif.angle, xlim= c(0, 190), main = "Outward", xlab = "angle from wind", ylab = "frequency", col = "dark grey", xaxt = "n")
+axis(1, at = c(0, 45, 90, 135, 180), lab = c("0", "45", "90", "135", "180"))
 
 
 

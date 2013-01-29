@@ -228,6 +228,40 @@ flights.characteristics <- cbind(flights.characteristics, wind.origin)
 
 #need to calculate 'b', and look up 'Va'.
 
+# names(flights.characteristics)
+# names(flights.weather)
+# names(flights)
+
+# Airspeed - we can try a range from 10, 12, 14 perhaps, covering likely value range.
+# Values for Karlsö, according to current analysis appear a bit low.
+
+
+# Calculate angle between Track and Wind vector (alpha)
+# str(flights.characteristics)
+# flights.characteristics$wind.dir #wind bearing
+# flights$bearing_a_b  #flight bearing
+
+alpha  <- (flights.characteristics$wind.dir - flights$bearing_a_b)
+hist(alpha)
+
+alpha  <- abs(alpha)
+hist(alpha)
+
+angle.dif <- function(x){
+  if(x > 180) {return (360 - x)}
+  else return (x)
+}
+
+test  <- sapply(alpha, angle.dif)
+
+
+hist(test)
+
+beta
+
+alpha <- (flights.characteristics$wind.10m.flt.ht * sin( 
+  ?sin
+
 
 
 
