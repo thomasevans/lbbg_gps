@@ -207,6 +207,15 @@ wind.origin <- ((flights.characteristics$wind.dir+180) %% 360)
 # Add wind origin direction to table.
 flights.characteristics <- cbind(flights.characteristics, wind.origin)
 
+#str(flights.characteristics)
+
+#Output weather data to database #####
+#will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
+sqlSave(gps.db, flights.characteristics, tablename = "lund_flights_characteristics",
+        append = FALSE, rownames = FALSE, colnames = FALSE,
+        verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
+        test = FALSE, nastring = NULL, varTypes = 
+          c(start_time = "datetime"))
 
 
 # Need to then add function below for drift analysis
