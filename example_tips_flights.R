@@ -32,8 +32,8 @@ sqlTables(gps.db)
 trips <- sqlQuery(gps.db, query="SELECT DISTINCT t.*
 FROM lund_trips AS t
                   ORDER BY t.trip_id ASC;")
-
-str(trips)
+# 
+# str(trips)
 
 
 # Hack to set time zone back to UTC rather than system locale.
@@ -65,26 +65,22 @@ trips$end_time <- tm
 #Choose a subset of trips, that we will use as examples.
 trips.cond   <-  subset(trips, trips$interval_min < 800 &
                           trips$duration_s > (1.5 * 60 * 60))
+# 
+# names(trips.cond)
+# length(trips.cond$trip_id)
 
-names(trips.cond)
-length(trips.cond$trip_id)
-
-#If we want repeatable results, we choose where to start our pseudo random series
+# If we want repeatable results, we choose where to start our
+# pseudo random series
 set.seed(1)
+stop("***Warning, using fixed seed for random number generation***")
 
-x <- sample(1:length(trips.cond$trip_id), 5, replace=F)
+x <- sample(1:length(trips.cond$trip_id), 10, replace=F)
 
 trips.sample <- trips.cond[x,]
 
-str(trips.sample)
+# str(trips.sample)
 
 #Extract flights and gps points ######
-
-#For testing, get some initial values
-id     <-  4
-i      <-  trips.sample$device_info_serial[id]
-start.t  <-  trips.sample$start_time[id]
-end.t    <-  trips.sample$end_time[id]
 
 #Extract GPS points
 gps.extract <- function(i, start.t, end.t){
@@ -147,20 +143,119 @@ flights.extract <- function(i, start.t, end.t){
 
 # test <- flights.extract(i, start.t, end.t)
 
-gps.sub <- gps.extract(i, start.t, end.t)
-flights.sub <- flights.extract(i, start.t, end.t)
+# Mapping trip #####
+# Function defenition
+map.trip <- function(id){
+  #Function to make a map for foraging trip
+  
+  
+  i      <-  trips.sample$device_info_serial[id]
+  start.t  <-  trips.sample$start_time[id]
+  end.t    <-  trips.sample$end_time[id]
+  
+  gps.sub <- gps.extract(i, start.t, end.t)
+  flights.sub <- flights.extract(i, start.t, end.t)
+  
+  
+  # Set map limits
+  c.xlim <- range(gps.sub$longitude)
+  dif    <- c.xlim[2] - c.xlim[1]
+  dif    <- dif *.15
+  c.xlim <- c((c.xlim[1] - dif), (c.xlim[2] + dif))
+  
+  c.ylim <- range(gps.sub$latitude)
+  dif    <- c.ylim[2] - c.ylim[1]
+  dif    <- dif *.15
+  c.ylim <- c((c.ylim[1] - dif), (c.ylim[2] + dif))
+  
+  # Plot base map
+  load("SWE_adm0.RData")
+  
+  par( mar = c(5, 4, 4, 2))
+  plot(gadm, xlim = c.xlim,
+       ylim = c.ylim, col="light green", bg = "white")
+  # ?par
+  
+  # names(flights.sub)
+  # Add points
+  
+  #Flight points
+  # i <- 2
+  for( i in seq(along = flights.sub$trip_flight_type)){
+    flight.type <- flights.sub$trip_flight_type[i]
+    if(flight.type == "outward"){
+      points(gps.sub$longitude[gps.sub$flight_id ==
+                                 flights.sub$flight_id[i]],
+             gps.sub$latitude[gps.sub$flight_id ==
+                                flights.sub$flight_id[i]],
+             col = "blue", pch = 19)} else 
+               if(flight.type == "inward"){
+                 points(gps.sub$longitude[gps.sub$flight_id ==
+                                            flights.sub$flight_id[i]],
+                        gps.sub$latitude[gps.sub$flight_id ==
+                                           flights.sub$flight_id[i]],
+                        col = "red", pch = 19)}  else 
+                        {
+                          points(gps.sub$longitude[gps.sub$flight_id ==
+                                                     flights.sub$flight_id[i]],
+                                 gps.sub$latitude[gps.sub$flight_id ==
+                                                    flights.sub$flight_id[i]],
+                                 col = "dark grey", pch = 19)}
+  }
+  
+  # Other points
+  points(gps.sub$longitude[gps.sub$flight_id == 0],
+         gps.sub$latitude[gps.sub$flight_id == 0],
+         col = "black")
+  
+  
+  # Add lines
+  
+  #First grey for all
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = "grey")
+  
+  for( i in seq ( along = (unique(gps.sub$flight_id)))){
+  
+    y <- unique(gps.sub$flight_id)[i]
+    if(y != 0){
+    x <- subset(gps.sub, flight_id == y,
+                select=c(longitude, latitude))
+    z <- length(x$longitude)
+    n <- length(gps.sub$longitude)
+    segments(x$longitude[-1], x$latitude[-1],
+             x$longitude[1:z-1], x$latitude[1:z-1],
+             col = "black")
+    }
+  }
+  
+  # Scale bar and axis
+  map.scale(ratio = FALSE)
+  box()
+  axis(side=(1),las=1)
+  axis(side=(2),las=1)
+  
+}
+
+plot
+
+# For testing, get some initial values
+i     <-  1
+
+pdf("test_map.pdf")
+for(i in seq(along = (trips.sample$trip_id))){
+map.trip(i)
+}
+dev.off()
 
 
-#Mapping trip #####
 
-#For testing, get some initial values
-id     <-  2
-i      <-  trips.sample$device_info_serial[id]
-start.t  <-  trips.sample$start_time[id]
-end.t    <-  trips.sample$end_time[id]
 
-gps.sub <- gps.extract(i, start.t, end.t)
-flights.sub <- flights.extract(i, start.t, end.t)
+
+
+
 
 
 # Map tracks ###########
@@ -182,8 +277,8 @@ for( i in seq ( along = (unique(gps.sub$flight_id)))){
            gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
            col = "grey")
   
-  segments(x$longitude[-1], x$latitude[-1], x$longitude[1:z-1], x$latitude[1:z-1],
-           col = as.numeric(y))
+  segments(x$longitude[-1], x$latitude[-1], x$longitude[1:z-1],
+           x$latitude[1:z-1], col = as.numeric(y))
 }
 
 # names(gps.sub)
@@ -209,8 +304,8 @@ dif    <- c.ylim[2] - c.ylim[1]
 dif    <- dif *.15
 c.ylim <- c((c.ylim[1] - dif), (c.ylim[2] + dif))
 
-c.xlim <- c(16, 19)
-c.ylim <- c(57, 58)
+# c.xlim <- c(16, 19)
+# c.ylim <- c(57, 58)
 
 # vignette(mapdata)
 # data(worldHiresMapEnv)
@@ -229,20 +324,18 @@ points(gps.sub$longitude[gps.sub$flight_id != 0],
        col = as.numeric(gps.sub$flight_id[gps.sub$flight_id != 0]))
 
 
-?sp
 #Ideas ####
 #Could use map thing, like did for GLS data before (then would
 #have coastlines etc.
 plot(gadm, xlim = c.xlim,
      ylim = c.ylim, col="light green", bg = "white")
 
+# Load data for Sweden maps from: http://gadm.org/
+# Data saved in working directory
+# File location: http://www.filefactory.com/file/k8k5k3d3ofz/n/SWE_adm0_RData
 load("SWE_adm0.RData")
 
-str(gadm)
-?map
 
 map(database = gadm, regions = ".", xlim = c.xlim,
     ylim = c.ylim, fill=TRUE, col="light green", bg = "white",
     bty="7", myborder = 0)
-
-getwd()
