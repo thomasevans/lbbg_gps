@@ -168,6 +168,7 @@ plot(gps.sub$longitude, gps.sub$latitude, col = as.numeric(gps.sub$flight_id))
 
 #Non-flight points
 points(gps.sub$longitude[gps.sub$flight_id == 0], gps.sub$latitude[gps.sub$flight_id == 0], col = "black")
+points(gps.sub$longitude, gps.sub$latitude, col = as.numeric(gps.sub$flight_id))
 
 #Then do dot-to-dot lines
 for( i in seq ( along = (unique(gps.sub$flight_id)))){
@@ -176,14 +177,72 @@ for( i in seq ( along = (unique(gps.sub$flight_id)))){
   x <- subset(gps.sub, flight_id == y, select=c(longitude,latitude))
   z <- length(x$longitude)
   
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = "grey")
+  
   segments(x$longitude[-1], x$latitude[-1], x$longitude[1:z-1], x$latitude[1:z-1],
            col = as.numeric(y))
 }
 
-names(gps.sub)
-unique(gps.sub$flight_class)
+# names(gps.sub)
+# unique(gps.sub$flight_class)
 
+
+
+# library(graphics)
+# library(maptools)
+# library(RColorBrewer)
+# library(classInt)
+library(maps)
+library(mapdata)
+
+# Set map boundaries
+c.xlim <- range(gps.sub$longitude)
+dif    <- c.xlim[2] - c.xlim[1]
+dif    <- dif *.15
+c.xlim <- c((c.xlim[1] - dif), (c.xlim[2] + dif))
+
+c.ylim <- range(gps.sub$latitude)
+dif    <- c.ylim[2] - c.ylim[1]
+dif    <- dif *.15
+c.ylim <- c((c.ylim[1] - dif), (c.ylim[2] + dif))
+
+c.xlim <- c(16, 19)
+c.ylim <- c(57, 58)
+
+# vignette(mapdata)
+# data(worldHiresMapEnv)
+# Draw base map
+map(database = "worldHires", regions = ".", xlim = c.xlim,
+    ylim = c.ylim, fill=TRUE, col="light green", bg = "white",
+    bty="7", myborder = 0)
+
+# Add GPS fixes
+# Non-flight
+points(gps.sub$longitude[gps.sub$flight_id == 0], gps.sub$latitude[gps.sub$flight_id == 0], col = "black")
+
+# Flight
+points(gps.sub$longitude[gps.sub$flight_id != 0],
+       gps.sub$latitude[gps.sub$flight_id != 0],
+       col = as.numeric(gps.sub$flight_id[gps.sub$flight_id != 0]))
+
+
+?sp
 #Ideas ####
 #Could use map thing, like did for GLS data before (then would
 #have coastlines etc.
+plot(gadm, xlim = c.xlim,
+     ylim = c.ylim, col="light green", bg = "white")
 
+load("SWE_adm0.RData")
+
+str(gadm)
+?map
+
+map(database = gadm, regions = ".", xlim = c.xlim,
+    ylim = c.ylim, fill=TRUE, col="light green", bg = "white",
+    bty="7", myborder = 0)
+
+getwd()
