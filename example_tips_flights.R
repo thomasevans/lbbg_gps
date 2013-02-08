@@ -74,7 +74,7 @@ trips.cond   <-  subset(trips, trips$interval_min < 800 &
 set.seed(1)
 stop("***Warning, using fixed seed for random number generation***")
 
-x <- sample(1:length(trips.cond$trip_id), 10, replace=F)
+x <- sample(1:length(trips.cond$trip_id), 100, replace=F)
 
 trips.sample <- trips.cond[x,]
 
@@ -128,8 +128,8 @@ flights.extract <- function(i, start.t, end.t){
   #Accepts the aguments given to the function, to extract the
   #values requested.
   q1c <- paste(" lf.device_info_serial = ", i, " AND ",
-               "lf.start_time >= #", start.t, 
-               "# AND lf.start_time <= #", end.t, "# ", sep = "")
+               "(lf.start_time >= #", start.t, 
+               "# OR lf.start_time <= #", end.t, "#) ", sep = "")
   
   #Get flight information
   flight.sub <- sqlQuery(gps.db, query= gsub("\n", " ", paste(q1a, q1c, q1b, sep=""))
@@ -142,13 +142,19 @@ flights.extract <- function(i, start.t, end.t){
 
 
 # test <- flights.extract(i, start.t, end.t)
+i <- 39
+id <- 39
+map.trip(39)
+
 
 # Mapping trip #####
 # Function defenition
 map.trip <- function(id){
   #Function to make a map for foraging trip
   
+  library(maps)
   
+  #First subset the data that we require  
   i      <-  trips.sample$device_info_serial[id]
   start.t  <-  trips.sample$start_time[id]
   end.t    <-  trips.sample$end_time[id]
@@ -236,15 +242,33 @@ map.trip <- function(id){
   box()
   axis(side=(1),las=1)
   axis(side=(2),las=1)
+#   ?text
+  mtext(paste("Device: ", trips.sample$device_info_serial[id],
+                  "    Trip: ", trips.sample$trip_id[id])
+       , side = 3, line = 2, cex = 1)
+  mtext(paste("Departure time: ", min(gps.sub$date_time), " UTC")
+        , side = 3, line = 1, cex = 1)
   
+    dur <- as.difftime(trips.sample$duration_s[id], units= "secs")
+    dur <- as.numeric(dur, units="hours")
+    mtext(paste("Trip duration: ",
+                format(round(dur, 2), nsmall = 2) , " hours")
+          , side = 3, line = 0, cex = 1)
+#   ?grconvertX
+  legend(c.xlim[1] + (c.xlim[1]/10), c.ylim[1] + (c.ylim[1]/10), pch=1, "2010-2011", col="red",bg="white")
+#   ?legend
 }
-
-plot
+#   names(trips.sample)
+#   ?difftime
+  
+#   ?mtext
+#   ?main
+# plot
 
 # For testing, get some initial values
-i     <-  1
+# i     <-  1
 
-pdf("test_map.pdf")
+pdf("example_trips_3.pdf")
 for(i in seq(along = (trips.sample$trip_id))){
 map.trip(i)
 }
@@ -252,7 +276,11 @@ dev.off()
 
 
 
-
+pdf("example_trips_3.pdf")
+for(i in 20:30){
+  map.trip(i)
+}
+dev.off()
 
 
 
