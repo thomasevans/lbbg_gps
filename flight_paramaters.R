@@ -266,10 +266,14 @@ i <- 6
 sub01$start_time
 
 for(i in seq(along = trips$trip_id)){
+  
+  #Get device id
   device <- trips$device_info_serial[i]
   
-  sub01 <- subset(flights,start_time >= trips$start_time[i] & start_time
-                  <= trips$end_time[i] & device_info_serial==device)
+  #Make subset of flights for each trip
+  sub01 <- subset(flights, start_time >= trips$start_time[i]
+                  & start_time <= trips$end_time[i]
+                  & device_info_serial == device)
   
   x <- seq(along=sub01$flight_id)
   

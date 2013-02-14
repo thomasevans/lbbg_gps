@@ -142,9 +142,9 @@ flights.extract <- function(i, start.t, end.t){
 
 
 # test <- flights.extract(i, start.t, end.t)
-i <- 39
-id <- 39
-map.trip(39)
+i <- 100
+id <- 100
+map.trip(100)
 
 
 # Mapping trip #####
@@ -255,8 +255,13 @@ map.trip <- function(id){
                 format(round(dur, 2), nsmall = 2) , " hours")
           , side = 3, line = 0, cex = 1)
 #   ?grconvertX
-  legend(c.xlim[1] + (c.xlim[1]/10), c.ylim[1] + (c.ylim[1]/10), pch=1, "2010-2011", col="red",bg="white")
+  legend("topleft", pch=c(19, 19, 19, 1),
+         c("IN", "OUT", "OTHER", "NON-FLIGHT"),
+         col = c("red", "blue", "dark grey", "black"),
+         )
 #   ?legend
+#   ?legend
+  
 }
 #   names(trips.sample)
 #   ?difftime
@@ -268,7 +273,7 @@ map.trip <- function(id){
 # For testing, get some initial values
 # i     <-  1
 
-pdf("example_trips_3.pdf")
+pdf("example_trips_4.pdf")
 for(i in seq(along = (trips.sample$trip_id))){
 map.trip(i)
 }
@@ -281,8 +286,6 @@ for(i in 20:30){
   map.trip(i)
 }
 dev.off()
-
-
 
 
 

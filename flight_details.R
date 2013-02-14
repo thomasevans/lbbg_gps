@@ -77,7 +77,7 @@ gps$flight_class_2[(fly_type == 24) | (fly_type == 6) |
                      (fly_type == 8) | (fly_type == 2) | (fly_type == 12)]<- 3
 gps$flight_class_2[fly_type == 4] <- 2
 
-#make column for trip id, start with value 0, which will be null value - i.e. not a trip (points at the nest)
+#make column for flight id, start with value 0, which will be null value - i.e. not a trip (points at the nest)
 gps$flight_id <- 0
 
 
@@ -112,11 +112,11 @@ flight.lab <- function(d, gps=get("gps", envir=environment(trip.lab))){
   for(i in 1:n){
     setWinProgressBar(pb, i, title=paste("device ", d, " is ", round(i/n*100, 0),"% done")) #refresh the progress bar, so that we can keep note of progress.
     if(sub01$flight_class_2[i] == 1) x <- x+1      #if start of a trip, increment x by one
-    sub01$flight_id[i] <- x                    #allocated value of x for trip_id for position 'i'.
+    sub01$flight_id[i] <- x                    #allocated value of x for flight_id for position 'i'.
   }
   
   close(pb)    #close the windows progress bar
-  return(sub01$flight_id)            #output a vector for the bird of trip id
+  return(sub01$flight_id)            #output a vector for the bird of flight id
 }
 #**********End of this function: flight.lab
 
@@ -186,7 +186,9 @@ gps$flight_id <- all.points
 #output the new data columns to the 'cal_mov_paramaters' database table
 #add neccessary columns to db table first. Here 'flight_class' and 'flight_id', which are both integers.
 #put it all together in data_frame, with device_info_serial and date_time for primary keys.
-export_table <- as.data.frame(cbind(gps$device_info_serial,gps$date_time,gps$flight_class_2,gps$flight_id))
+export_table <- as.data.frame(cbind(
+  gps$device_info_serial, gps$date_time, gps$flight_class_2,
+  gps$flight_id))
 #give names for columns
 names(export_table) <- c("device_info_serial","date_time","flight_class","flight_id")
 #add date_time to dataframe, somehow datetime loses its class in the above opperation - this is a workaround.
