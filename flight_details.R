@@ -76,6 +76,8 @@ flight3 <- (3* c(0,gps$flight_class[1:(length(gps$flight_class)-1)]))+1
 # Product of above three vectors, produces unique values for each
 # possible point type.
 gps$flight_class_2 <- flight1 * flight2 * flight3
+
+#unique(gps$flight_class_2)
 #summary(as.factor(gps$flight_class_2))  #inspect this
 
 # Keep a copy of above calculation
@@ -84,21 +86,22 @@ fly_type <- gps$flight_class_2
 
 # Reduce to the four possibilties 
 # (not flight, flight, or start or end points of flight).
-gps$flight_class_2[(fly_type == 1)  ]          <- 0
-gps$flight_class_2[fly_type == 3 ]             <- 1
-gps$flight_class_2[(fly_type == 24) |
-                     (fly_type == 6) | (fly_type == 8) |
-                     (fly_type == 2) | (fly_type == 12)] <- 3
-gps$flight_class_2[fly_type == 4] <- 2
+# 0 - not flight, 1 - start, 2 - end, 3 - flight
+gps$flight_class_2[ fly_type == 1 ]            <- 0
+gps$flight_class_2[ fly_type == 3 ]            <- 1
+gps$flight_class_2[ (fly_type == 2) | (fly_type == 6)
+                  | (fly_type == 24)| (fly_type == 8)
+                  | (fly_type == 12)]     <- 3
+gps$flight_class_2[ fly_type == 4 ]       <- 2
 
+# unique(gps$flight_class_2)
+
+
+
+
+# Number flights ####
 #make column for flight id, start with value 0, which will be null value - i.e. not a trip (points at the nest)
 gps$flight_id <- 0
-
-
-
-
-
-
 
 
 #***********start of function: flight.lab
