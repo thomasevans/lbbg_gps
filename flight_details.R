@@ -1,14 +1,14 @@
 #Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
 #You are welcome to use parts of this code, but please give credit when using it extensively.
 
-
+# Description ####
 #'A script to process data on individual flights.
 #'It will summarise flights by distance travelled, altitude, speed etc.
 #'They will also be labelled by foraging trip and device_info_serial.
 #'The flights should be numbered for each foraging trip. Perhaps also labelling the first and final flight of a foraging trip - which may contitute 'commuting' flight.
 
 
-
+# Database functions ####
 #To link to database
 library(RODBC)
 
@@ -25,8 +25,7 @@ gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time
     AND g.date_time = c.date_time
     ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
                 ,as.is=TRUE)
-#names(gps)
-#hist(gps$p2p_dist[gps$p2p_dist < .1])
+
 
 #check structure of object - does it contain what we expect it to?
 #str(gps)
@@ -35,46 +34,61 @@ gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time
 gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
 
 
-#'First we workout a sensible cutoff value, beyond which gps points will be classified as flight. Clearly some flight points are below this, but this will hopfully include most points
-#hist(gps$inst_ground_speed[gps$inst_ground_speed < 30  & gps$inst_ground_speed > 1 ],breaks=200, xlim=c(0,30),main="Histogram of instantaneous recored speed",xlab="Instaneous ground speed (GPS) - m/s")
-#abline(v=3.5,lwd=3,lty=3)
+
+# Cutoff for flight ####
+# First we workout a sensible cutoff value, beyond which gps points
+# will be classified as flight. Clearly some flight points are below
+# this, but this will hopfully include most points.
+# hist(gps$inst_ground_speed[gps$inst_ground_speed < 30  & gps$inst_ground_speed > 1 ],breaks=200, xlim=c(0,30),main="Histogram of instantaneous recored speed",xlab="Instaneous ground speed (GPS) - m/s")
+# abline(v=3.5,lwd=3,lty=3)
 
 
+# Testing with subset ####
+# Preserve a copy of original, before taking a subset for testing.
+gps.original <- gps
+gps <- gps.original
+#for testing purposes we take the first x lines
+gps <- gps[1:50000,]
 
-#preserve a copy of original, before taking a subset for testing.
-#gps.original <- gps
-#gps <- gps.original
-#for testing purposes we only take the first x lines
-#gps <- gps[1:50000,]
+
+# Recognise and label flight ####
+# Code to recognise flight, and adds this column,
+# labelling with 0 if not flight and 1 if over 3.5 ms-1 (flight)
+gps$flight_class <- ifelse(gps$inst_ground_speed > 3.5, 1, 0)
 
 
-#code to recognise flight, and adds this column, labelling with 0 if not flight and 1 if over 3.5 ms-1 (flight)
-gps$flight_class <- ifelse(gps$inst_ground_speed > 3.5, 1,0)
-#gps$flight_class <- as.factor(gps$flight_class)
-#gps$flight_class <- as.numeric(gps$flight_class)
+# Give flights unique id ####
+# We want to label flights with a unique id
+# First we make some vectors of next, previous point etc,
+# to find start and end points of flights.
 
-#'We want to label flights with a unique id
-#first we make some vectors of next, previous point etc, to find start and end points of flights
-flight1 <- gps$flight_class +1
+flight1 <- gps$flight_class + 1
+
 #make vector of next point value
-flight2 <- (2* c(gps$flight_class[2:length(gps$flight_class)],0))+1
+flight2 <- (2* c(gps$flight_class[2:length(gps$flight_class)], 0)) + 1
+
 #make vector of prev point value
 flight3 <- (3* c(0,gps$flight_class[1:(length(gps$flight_class)-1)]))+1
 
 
-#label by type of point: 0 - not flight, 1 - start, 2 - end, 3 - flight
-gps$flight_class_2 <- flight1*flight2*flight3   #product of above three vectors, produces unique values for each possible point type.
 
+# Label by type of point: 0 - not flight, 1 - start, 2 - end, 3 - flight
+# Product of above three vectors, produces unique values for each
+# possible point type.
+gps$flight_class_2 <- flight1 * flight2 * flight3
 #summary(as.factor(gps$flight_class_2))  #inspect this
 
+# Keep a copy of above calculation
+fly_type <- gps$flight_class_2        
 
-fly_type <- gps$flight_class_2        #keep a copy of above calculation
 
-#Reduce to the four possibilties
-gps$flight_class_2[(fly_type == 1)  ] <- 0
-gps$flight_class_2[fly_type == 3 ] <- 1
-gps$flight_class_2[(fly_type == 24) | (fly_type == 6) |
-                     (fly_type == 8) | (fly_type == 2) | (fly_type == 12)]<- 3
+# Reduce to the four possibilties 
+# (not flight, flight, or start or end points of flight).
+gps$flight_class_2[(fly_type == 1)  ]          <- 0
+gps$flight_class_2[fly_type == 3 ]             <- 1
+gps$flight_class_2[(fly_type == 24) |
+                     (fly_type == 6) | (fly_type == 8) |
+                     (fly_type == 2) | (fly_type == 12)] <- 3
 gps$flight_class_2[fly_type == 4] <- 2
 
 #make column for flight id, start with value 0, which will be null value - i.e. not a trip (points at the nest)
