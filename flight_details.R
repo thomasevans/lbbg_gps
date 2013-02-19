@@ -46,7 +46,7 @@ gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
 
 # Testing with subset ####
 # Preserve a copy of original, before taking a subset for testing.
-gps.original <- gps
+# gps.original <- gps
 gps <- gps.original
 #for testing purposes we take the first x lines
 # gps <- gps[1:50000,]
@@ -263,40 +263,33 @@ gps$flight_id <- all.points
 # gps$flight_id[1:2000]
 
 
-# Now we have labelled all gps points with unique
-# flight numbers we should now calculate various
-# summary information for each flight.
-# This could either be done in the same script, or
-# we could first add the flight number and flight
-# status columns to the 'cal_mov_paramaters' DB 
-# table, then make a new script which queries this
-# table and calculates flight information, then
-# outputs this data to a new db table specifically
-# for flight information.
-# To avoid over long and complicated scripts it is
-# probably best to break this down, so first output
-# the newly calculated column to the db, then start
-# a new script for the flight calculations.
-
-
-# names(gps)
-# 
-# gps$flight_class_2[1:100]
-# gps$trip_id[1:100]
-# gps$flight_id[1:100]
-
+# Output flight numbers to database. ####
 # Output the new data columns to the 'cal_mov_paramaters'
-#database table
-#add neccessary columns to db table first. Here 'flight_class' and 'flight_id', which are both integers.
-#put it all together in data_frame, with device_info_serial and date_time for primary keys.
+# database table.
+# Add neccessary columns to db table first. Here
+# 'flight_class' and 'flight_id', which are both integers.
+# Put it all together in data_frame, with
+# device_info_serial and date_time for primary keys.
 export_table <- as.data.frame(cbind(
   gps$device_info_serial, gps$date_time, gps$flight_class_2,
   gps$flight_id))
-#give names for columns
-names(export_table) <- c("device_info_serial","date_time","flight_class","flight_id")
-#add date_time to dataframe, somehow datetime loses its class in the above opperation - this is a workaround.
-export_table$date_time <- gps$date_time
-#export these calculated values to the database, updating existing 'cal_mov_paramaters' table.
-#first added the three new columns to the table useing access
-sqlUpdate(gps.db, export_table, tablename = "cal_mov_paramaters",index = c("device_info_serial","date_time"),fast=TRUE)
 
+
+# Give names for columns.
+names(export_table) <- c("device_info_serial",
+                         "date_time", "flight_class",
+                         "flight_id")
+
+# Add date_time to dataframe, somehow datetime loses
+# its class in the above opperation - this is a workaround.
+export_table$date_time <- gps$date_time
+
+# Export these calculated values to the database,
+# updating existing 'cal_mov_paramaters' table.
+# First added the two new columns to the table
+# useing Access.
+sqlUpdate(gps.db, export_table, tablename =
+            "cal_mov_paramaters", index =
+            c("device_info_serial", "date_time"),
+          fast=TRUE)
+close(gps.db)

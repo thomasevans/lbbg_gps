@@ -1,12 +1,17 @@
-#Header##############
-#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
-#You are welcome to use parts of this code, but please give credit when using it extensively.
+# Header##############
+# Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+# You are welcome to use parts of this code, but please
+# give credit when using it extensively.
 
 
-#'A script to analyse each flight, with various paramaters, such as maximum altitude.
-#'First the database will be queried too pull out the data columns we needd for our analysis.
-#'Second. Various paramateerrs and information about the flights will be calculated.
-#'Third. This will be ouput to a new database table specifially for flights.
+# A script to analyse each flight, with various
+# paramaters, such as maximum altitude, calculated.
+# First the database will be queried too pull out
+# the data columns we needd for our analysis.
+# Second. Various paramateerrs and information about
+# the flights will be calculated.
+# Third. This will be ouput to a new database table
+# specifially for flights.
 
 
 #database functions###################
@@ -23,24 +28,36 @@ sqlTables(gps.db)
 
 
 #Query the gull db to extract bird_id, nest_id, and nest locations
-nest_loc <- sqlQuery(gps.db, query="SELECT DISTINCT n.ring_number, n.nest_id, n.latitude, n.longitude, t.device_info_serial
-FROM gps_uva_nest_limited AS n, gps_uva_track_session_limited AS t
-WHERE n.ring_number = t.ring_number
-ORDER BY n.ring_number ASC;")
+nest_loc <- sqlQuery(gps.db, query=
+  "SELECT DISTINCT n.ring_number, n.nest_id,
+  n.latitude, n.longitude, t.device_info_serial
+  FROM gps_uva_nest_limited AS n,
+    gps_uva_track_session_limited AS t
+  WHERE n.ring_number = t.ring_number
+  ORDER BY n.ring_number ASC;")
 
 
 #get all the GPS info that we require
 
 #for all of data_base, except pre-deployment and null records
-gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude, g.latitude, g.x_speed, g.y_speed, g.z_speed, g.positiondop, g.speed_accuracy, c.bearing_next, c.bearing_prev, c.nest_gc_dist, c.nest_bear, c.inst_ground_speed, c.p2p_dist, c.time_interval_s, c.turning_angle, c.flight_class,c.flight_id, g.altitude
-  FROM gps_uva_tracking_limited AS g, cal_mov_paramaters AS c
+gps <- sqlQuery(gps.db, query =
+  "SELECT DISTINCT g.device_info_serial, g.date_time,
+  g.longitude, g.latitude, g.x_speed, g.y_speed,
+  g.z_speed, g.positiondop, g.speed_accuracy,
+  c.bearing_next, c.bearing_prev, c.nest_gc_dist,
+  c.nest_bear, c.inst_ground_speed, c.p2p_dist,
+  c.time_interval_s, c.turning_angle, c.flight_class,
+  c.flight_id, g.altitude
+  FROM gps_uva_tracking_limited AS g,
+    cal_mov_paramaters AS c
   WHERE g.device_info_serial = c.device_info_serial
     AND g.date_time = c.date_time
     ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
                 ,as.is=TRUE)
 
 #a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
-gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
+gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",
+                            format = "%Y-%m-%d %H:%M:%S")
 
 
 
@@ -64,21 +81,30 @@ lookup_nest <- function(device_info){
 
 #produce a vector of flight numbers##############
 flight_id <- sort(unique(gps$flight_id))
+
 f <- length(flight_id)
-flight_id <- flight_id[2:f]   #remove zero (i.e. non flight points)
 
-#start of function: flight.info######################
-#Function 'flight.info' produces a list of lists of information on flights
-#t - flight_id, the flight number
-#gps - the gps dataframe
-#t <- 59
+#remove zero (i.e. non flight points)
+flight_id <- flight_id[2:f]   
 
-#names(gps)
-#gps$positiondop[1:100]
-#gps$speed_accuracy[1:100]
-#gps$bearing_next[1:100]
 
-#t = 5
+
+# start of function: flight.info######################
+# Function 'flight.info' produces a list of lists
+# of information on flights.
+#
+# t - flight_id, the flight number
+# gps - the gps dataframe
+# 
+# Testing
+# 
+# t <- 59
+# names(gps)
+# gps$positiondop[1:100]
+# gps$speed_accuracy[1:100]
+# gps$bearing_next[1:100]
+# 
+# t = 5
 
 
 flight.info <- function(t, gps=gps){
@@ -87,76 +113,151 @@ flight.info <- function(t, gps=gps){
   library(circular) #required for some circular calculations
   #make a subset of 'gps' containing just data for flight, t.
   
-  sub01 <- subset(gps,flight_id == t)
+  sub01 <- subset(gps, flight_id == t)
+  
+  # The number of gps points for this flight.
+  n <- length(sub01$date_time)
+  
+# Calculate various paramaters for flights#################
+  
+  # Start time
+  start_time <- min(sub01$date_time)   
+  
+  # End time
+  end_time  <-  max(sub01$date_time)
+  
+  # Flight duration in seconds
+  duration <- as.numeric(difftime(end_time, 
+                                  start_time, units="secs")) 
+  
+  # Greatest distance reached from nest.
+  dist_max  <-  max(sub01$nest_gc_dist)
+  
+  # Total distance travelled, exclude first point
+  # p2p distance, as this includes distance to point
+  # before flight 'started'.
+  dist_total <- sum(sub01$p2p_dist[2:n])
+  
+  # Mean log interval.
+  interval_mean <- mean(sub01$time_interval_s) 
+  
+  # Min log interval.
+  # This may be useful for highlighting flights
+  # where high resolution GPS data is available
+  # (i.e. where the conditional log mode was used).
+  # It might make more sense to floor or round this
+  # value.
+  interval_min  <- min(sub01$time_interval_s)
+  
+  # Device info serial
+  device_info_serial <- sub01$device_info_serial[1]
   
   
-  n <- length(sub01$date_time)         #the number of gps points for this flight
-  
-#calculate various paramaters for flights#################
-  start_time <- min(sub01$date_time)   #start time
-  end_time  <-  max(sub01$date_time)  #end time
-  duration <- as.numeric(difftime(end_time,start_time,units="secs"))   #get flight duration in seconds
-  dist_max  <-  max(sub01$nest_gc_dist)   #greatest distance reached from nest
-  dist_total <- sum(sub01$p2p_dist[2:n])   #total distance travelled, exclude first point p2p distance, as this includes distance to point before flight 'started'.
-  interval_mean <- mean(sub01$time_interval_s)   #mean log interval
-  interval_min  <- min(sub01$time_interval_s)     #min log interval, may be useful for highlighting flights where high resolution GPS data is available (i.e. where the conditional log mode was used). It might make more sense to floor or round this value.
-  device_info_serial <- sub01$device_info_serial[1]  #get device_info_serial
-  
+  # Location at start, end, and for nest.
   start_long   <-  sub01$longitude[1]
   start_lat   <-   sub01$latitude[1]
   end_long    <-   sub01$longitude[n]
   end_lat    <-    sub01$latitude[n]
   nest <- lookup_nest(device_info_serial)
 
-  dist_nest_start    <-   1000*deg.dist(nest[2], nest[1], start_long, start_lat)
-  dist_nest_end      <-   1000*deg.dist(nest[2], nest[1], end_long, end_lat)
+  # Distance from nest at start of flight.
+  dist_nest_start    <-   1000 * 
+    deg.dist(nest[2], nest[1], start_long, start_lat)
+  
+  # Distance from next at end of flight.
+  dist_nest_end      <-   1000 * 
+    deg.dist(nest[2], nest[1], end_long, end_lat)
     
 
-  #Displacement relative to colony/ nest, i.e. difference between final and first distance from nest.
+  # Displacement relative to colony/ nest,
+  # i.e. difference between final and first distance
+  # from nest.
   dist_nest_dif <- dist_nest_end - dist_nest_start
   
-    
-#Some summaries of various values useful in drift analysis and similar calculations#######
-    dist_a_b    <-    1000*deg.dist(start_long, start_lat, end_long, end_lat)              #require a p2p distance function
-    straigtness <-    dist_a_b/dist_total              #use total distance travelled, and straight-line distance
-    bearing_a_b <-     earth.bear(start_long,start_lat,end_long,end_lat)             #bearing from start position to final position
-    
-    
-#Some calculations regarding speed###################
-    speed_a_b  <-  dist_a_b/duration     #resultant speed for distance travelled over time
-  #flight_class == 3
-    speed_inst_mean <-   mean(sub01$inst_ground_speed[sub01$flight_class == 3],na.rm = TRUE) #excluding the non-flight points (usually the first and final point
-    speed_inst_med <-   median(sub01$inst_ground_speed[sub01$flight_class == 3],na.rm = TRUE)
-    speed_inst_var <-   var(sub01$inst_ground_speed[sub01$flight_class == 3],na.rm = TRUE)
-#names(gps)
+  # Drift analysis paramaters etc. ####    
+  # Some summaries of various values useful in drift
+  # analysis and similar calculations.
   
-  #Altitude, max, mean, median
-  alt_max    <- max(sub01$altitude[sub01$flight_class == 3],
+  # Straight-line distance from start to end of flight.
+  dist_a_b    <-   1000 * deg.dist(
+      start_long, start_lat, end_long, end_lat)              
+  
+  # Straightness of flight.
+  straigtness <-   dist_a_b/dist_total
+  
+  # Bearing from start to end.
+  bearing_a_b <-   earth.bear(start_long, start_lat,
+                              end_long, end_lat)             
+
+    
+  #Some calculations regarding speed###################
+  
+  # Resultant speed for distance travelled over time.
+  speed_a_b  <-  dist_a_b/duration
+  
+  # Excluding the non-flight points (usually the first
+  # and final point. So only using flight-class == 3.
+  
+  speed_inst_mean <-   mean(sub01$inst_ground_speed
+                            [sub01$flight_class == 3],
+                            na.rm = TRUE) 
+  
+  # Median of instantaneous speed.
+  speed_inst_med <-   median(sub01$inst_ground_speed
+                             [sub01$flight_class == 3],
+                             na.rm = TRUE)
+  
+  # Variance of instaneous speed.
+  speed_inst_var <-   var(sub01$inst_ground_speed
+                          [sub01$flight_class == 3],
+                          na.rm = TRUE)
+  
+  #Altitude, max, mean, median ####
+  alt_max    <- max(sub01$altitude
+                    [sub01$flight_class == 3],
                     na.rm = TRUE)
-  alt_min    <- min(median(sub01$altitude[sub01$flight_class == 3],
+  
+  alt_min    <- min(median(sub01$altitude
+                           [sub01$flight_class == 3],
                            na.rm = TRUE))
-  alt_mean   <- mean(median(sub01$altitude[sub01$flight_class == 3],
+  
+  alt_mean   <- mean(median(sub01$altitude
+                            [sub01$flight_class == 3],
                             na.rm = TRUE))
-  alt_med    <- median(sub01$altitude[sub01$flight_class == 3],
+  
+  alt_med    <- median(sub01$altitude
+                       [sub01$flight_class == 3],
                        na.rm = TRUE)
     
   # 'circular' package functions#############
-  #get value of rho
-  rho        <- rho.circular(sub01$bearing_next, na.rm = TRUE)
-  ang_dev    <- angular.deviation(sub01$bearing_next, na.rm = TRUE)
-  ang_var    <- angular.variance(sub01$bearing_next, na.rm = TRUE)
+  
+  # Value of rho
+  rho        <- rho.circular(sub01$bearing_next,
+                             na.rm = TRUE)
+  
+  ang_dev    <- angular.deviation(sub01$bearing_next,
+                                  na.rm = TRUE)
+  
+  ang_var    <- angular.variance(sub01$bearing_next,
+                                 na.rm = TRUE)
   
   #make a vector containing all this data
-  data.out <- c(t,n,start_time,end_time,duration,dist_max,
-                dist_total,interval_mean,interval_min,
-                device_info_serial,start_long,start_lat,end_long,
-                end_lat,dist_nest_start,dist_nest_end,
-                dist_nest_dif,dist_a_b,straigtness,
-                bearing_a_b,speed_a_b,speed_inst_mean,
-                speed_inst_med,speed_inst_var,alt_max,
-                alt_min,alt_mean,alt_med, rho, ang_dev, ang_var)  
+  data.out <- c(t, n, start_time, end_time, duration,
+                dist_max, dist_total, interval_mean,
+                interval_min, device_info_serial,
+                start_long, start_lat, end_long,
+                end_lat, dist_nest_start, dist_nest_end,
+                dist_nest_dif, dist_a_b, straigtness,
+                bearing_a_b, speed_a_b, speed_inst_mean,
+                speed_inst_med, speed_inst_var, alt_max,
+                alt_min, alt_mean, alt_med, rho, ang_dev,
+                ang_var)  
   
-  return(data.out)            #output a vector for the bird of flight id
+  
+  # Output a vector for the bird of flight id
+  return(data.out)  
+  
+  # End function
 }
 #**********End of this function: flight.info
 
@@ -224,22 +325,6 @@ flights$end_time <- as.POSIXct(as.POSIXlt(flights$end_time,origin=startdate, tz=
 flights$start_time <- as.POSIXct(as.POSIXlt(flights$start_time,origin=startdate, tz= "GMT",format="%Y-%m-%d %H:%M:%S"))
 
 
-# str(flights)
-# flights$start_time[1:10]
-# flights$end_time[1:10]
-
-# names(flights)
-# hist(flights$dist_total, breaks = 20, freq = FALSE)
-# median(flights$dist_total[flights$trip_flight_type == "inward"], na.rm = TRUE)
-# median(flights$dist_total[flights$trip_flight_type == "outward"], na.rm = TRUE)
-# median(flights$dist_total[flights$trip_flight_type == "normal"], na.rm = TRUE)
-# 
-# hist(flights$dist_total[flights$trip_flight_type == "outward" & flights$dist_total < 50000], breaks = 20)
-# names(flights)
-# hist(flights$straigtness[flights$trip_flight_type == "outward" & flights$dist_total > 100000])
-# 
-# flights <- flights_original
-# flights$dist_total[1:100]
 
 #Label flight type and number for each trip######
 #for each trip, look at flights, label with number flight per that trip, and whether first or final, or inbetween. 
