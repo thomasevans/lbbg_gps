@@ -118,7 +118,7 @@ flight.info <- function(t, gps=gps){
   # The number of gps points for this flight.
   n <- length(sub01$date_time)
   
-# Calculate various paramaters for flights#################
+  # Calculate various paramaters for flights#################
   
   # Start time
   start_time <- min(sub01$date_time)   
@@ -304,6 +304,9 @@ stopCluster(cl)
 #length(names(flights))
 #Time taken last time 4006.31 s (67 mins)
 
+
+
+
 #Create dataframe of flights########
 #names for the dataframe
 names.flights <- c("flight_id", "points", "start_time", "end_time", "duration", "dist_max", "dist_total", "interval_mean", "interval_min", "device_info_serial", "start_long", "start_lat", "end_long", "end_lat", "dist_nest_start", "dist_nest_end", "dist_nest_dif", "dist_a_b", "straigtness", "bearing_a_b", "speed_a_b", "speed_inst_mean", "speed_inst_med", "speed_inst_var", "alt_max", "alt_min", "alt_mean", "alt_med", "rho", "ang_dev", "ang_var")
@@ -319,10 +322,14 @@ startdate <- "1970-01-01"
 startdate <- as.Date(startdate)
 
 #convert the end_time back to datetime format
-flights$end_time <- as.POSIXct(as.POSIXlt(flights$end_time,origin=startdate, tz= "GMT",format="%Y-%m-%d %H:%M:%S"))
+flights$end_time <- as.POSIXct(
+  as.POSIXlt(flights$end_time, origin=startdate,
+             tz= "GMT",format="%Y-%m-%d %H:%M:%S"))
 
 #conver the start_time back to datetime format
-flights$start_time <- as.POSIXct(as.POSIXlt(flights$start_time,origin=startdate, tz= "GMT",format="%Y-%m-%d %H:%M:%S"))
+flights$start_time <- as.POSIXct(
+  as.POSIXlt(flights$start_time, origin=startdate,
+             tz= "GMT",format="%Y-%m-%d %H:%M:%S"))
 
 
 
@@ -338,8 +345,11 @@ trips <- sqlQuery(gps.db, query="SELECT DISTINCT l.*
                 ,as.is=TRUE)
 
 #a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
-trips$start_time <- as.POSIXct(trips$start_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
-trips$end_time <- as.POSIXct(trips$end_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
+trips$start_time <- as.POSIXct(
+  trips$start_time, tz = "GMT", format = "%Y-%m-%d %H:%M:%S")
+
+trips$end_time <- as.POSIXct(
+  trips$end_time, tz = "GMT", format = "%Y-%m-%d %H:%M:%S")
 
 
 
@@ -353,56 +363,85 @@ trips$end_time <- as.POSIXct(trips$end_time, tz="GMT",format="%Y-%m-%d %H:%M:%S"
 # ************************************
   #Check below this point
 
+# Make vector to label trip_id for each flight
 flights$trip_id <- flights$trip_flight_n <- 
   rep(NA,length(flights$device_info_serial))
 
+# Flight type vector
 flights$trip_flight_type <- 0
 
-i <- 6
-sub01$start_time
+# For testing
+i <- 5
 
+# sub01$start_time
+
+
+# For all trips, do the following
 for(i in seq(along = trips$trip_id)){
+  
+  id <- trips$trip_id[i]
   
   #Get device id
   device <- trips$device_info_serial[i]
   
+  t1 <- c(TRUE, FALSE, TRUE)
+  t2 <- c(FALSE, TRUE, FALSE)
+  t1 | t2
+  
+  trip.filter <- (((flights$start_time  < trips$end_time[i])
+                &(flights$start_time  > trips$start_time[i]))
+               |((flights$end_time    < trips$end_time[i])
+                & (flights$end_time    > trips$start_time[i]))
+                & flights$device_info_serial == device)
+  
   #Make subset of flights for each trip
-  sub01 <- subset(flights, start_time >= trips$start_time[i]
-                  & start_time <= trips$end_time[i]
-                  & device_info_serial == device)
+  sub01 <- subset(flights, trip.filter)
+#                
+#                   start_time >= trips$start_time[i]
+#                   & start_time <= trips$end_time[i]
+#                   & device_info_serial == device)
   
-  x <- seq(along=sub01$flight_id)
+  # Make an index for flights subset above
+  x <- seq(along = sub01$flight_id)
   
-  flights$trip_id[((flights$start_time >= trips$start_time[i]) &
-                     (flights$start_time <= trips$end_time[i]) &
-                     (flights$device_info_serial==device))] <- i
+  # Give them the trip_id from which they come
+  # Note however, given our filtering algorithm, 
+  # it is possible for a flight to occur in more
+  # than one trip. The later trip will take
+  # precedence, overwriting details of earlier
+  # trip. This should be quite unusual though.
+  flights$trip_id[trip.filter]  <- id
   
-  flights$trip_flight_n[((flights$start_time >= trips$start_time[i]) &
-                           (flights$start_time <= trips$end_time[i]) &
-                           (flights$device_info_serial==device))]  <- x
+  # Lable flight number within trip
+  flights$trip_flight_n[trip.filter]  <- x
   
-  #then label flights within each trip, by 'outward' for flight #1, 'inward' for final flight and 'normal' for all others.
   
-  flights$trip_flight_type[((flights$start_time >= trips$start_time[i]) &
-                              (flights$start_time <= trips$end_time[i]) &
-                              (flights$device_info_serial==device))] <- "normal"
+#   Then label flights within each trip, by 'outward'
+#   for flight #1, 'inward' for final flight and 'normal'
+#   for all others.
   
-  flights$trip_flight_type[((flights$start_time >= trips$start_time[i]) &
-                              (flights$start_time <= trips$end_time[i]) &
-                              (flights$device_info_serial==device)) &
-                             flights$trip_flight_n == 1] <- "outward"
+  # First label all flights 'normal', then will relabel first 
+  # and final trip.
+  flights$trip_flight_type[trip.filter] <- "normal"
   
-  flights$trip_flight_type[((flights$start_time >= trips$start_time[i])
-                            & (flights$start_time <= trips$end_time[i]) &
-                              (flights$device_info_serial==device)) &
-                             flights$trip_flight_n == max(x)] <- "inward"
+  # Label flight 1 as outward - note if we are missing the 
+  # start of the trip then this might not actually be the
+  # first flight - but the first recorded flight.
+  flights$trip_flight_type[trip.filter &                
+                        flights$trip_flight_n == 1] <-
+                        "outward"
   
+  # Label final flight.
+  flights$trip_flight_type[trip.filter &
+                        flights$trip_flight_n == max(x)] <-
+                        "inward"
 }
 
 #Check that this has worked and looks sensible.
 #summary(as.factor(flights$trip_flight_type))
 
 #warnings()
+
 #names(flights)
 #hist(flights$points[flights$points > 2 & flights$points < 600])
 #length(flights$points[flights$trip_flight_type == "inward" & flights$points > 1])
