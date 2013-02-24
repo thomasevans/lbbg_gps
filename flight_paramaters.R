@@ -327,12 +327,16 @@ flights$start_time <- as.POSIXct(as.POSIXlt(flights$start_time,origin=startdate,
 
 
 #Label flight type and number for each trip######
-#for each trip, look at flights, label with number flight per that trip, and whether first or final, or inbetween. 
-#Querry database to get trip information:
+
+# For each trip, look at flights, label with number
+# flight per that trip, and whether first or final,
+# or inbetween. 
+# Querry database to get trip information:
 trips <- sqlQuery(gps.db, query="SELECT DISTINCT l.*
   FROM lund_trips AS l
   ORDER BY l.trip_id ASC ;"
                 ,as.is=TRUE)
+
 #a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
 trips$start_time <- as.POSIXct(trips$start_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
 trips$end_time <- as.POSIXct(trips$end_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
@@ -343,7 +347,14 @@ trips$end_time <- as.POSIXct(trips$end_time, tz="GMT",format="%Y-%m-%d %H:%M:%S"
 
 #summary((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device))
 
-flights$trip_id <- flights$trip_flight_n <- rep(NA,length(flights$device_info_serial))
+# ******************************************
+#   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^¨
+# 
+# ************************************
+  #Check below this point
+
+flights$trip_id <- flights$trip_flight_n <- 
+  rep(NA,length(flights$device_info_serial))
 
 flights$trip_flight_type <- 0
 
