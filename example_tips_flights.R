@@ -48,7 +48,7 @@ attr(tm,"tzone") <- "UTC"
 # tm[1:10]
 trips$start_time <- tm
 
-trips$end_time[1:10]
+# trips$end_time[1:10]
 tm <- as.POSIXlt(trips$end_time)
 #Check how this appears (i.e. time zone)
 # tm[1:10]
@@ -142,9 +142,9 @@ flights.extract <- function(i, start.t, end.t){
 
 
 # test <- flights.extract(i, start.t, end.t)
-i <- 100
-id <- 100
-map.trip(100)
+# i <- 100
+# id <- 100
+# map.trip(100)
 
 
 # Mapping trip #####
@@ -264,16 +264,12 @@ map.trip <- function(id){
   
 }
 #   names(trips.sample)
-#   ?difftime
-  
-#   ?mtext
-#   ?main
-# plot
+
 
 # For testing, get some initial values
 # i     <-  1
 
-pdf("example_trips_4.pdf")
+pdf("example_trips_5.pdf")
 for(i in seq(along = (trips.sample$trip_id))){
 map.trip(i)
 }
@@ -281,11 +277,11 @@ dev.off()
 
 
 
-pdf("example_trips_3.pdf")
-for(i in 20:30){
-  map.trip(i)
-}
-dev.off()
+# pdf("example_trips_3.pdf")
+# for(i in 20:30){
+#   map.trip(i)
+# }
+# dev.off()
 
 
 

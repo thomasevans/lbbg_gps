@@ -357,11 +357,6 @@ trips$end_time <- as.POSIXct(
 
 #summary((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device))
 
-# ******************************************
-#   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^¨
-# 
-# ************************************
-  #Check below this point
 
 # Make vector to label trip_id for each flight
 flights$trip_id <- flights$trip_flight_n <- 
