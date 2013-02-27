@@ -365,9 +365,9 @@ flights$trip_id <- flights$trip_flight_n <-
 # Flight type vector
 flights$trip_flight_type <- 0
 
-# For testing
-i <- 1665
-i <- 4
+# # For testing
+# i <- 1665
+# i <- 4
 # sub01$start_time
 
 
@@ -383,11 +383,38 @@ for(i in seq(along = trips$trip_id)){
 #   t2 <- c(FALSE, TRUE, FALSE)
 #   t1 | t2
   
-  trip.filter <- (((flights$start_time  < trips$end_time[i])
-                &(flights$start_time  > trips$start_time[i]))
-               |((flights$end_time    < trips$end_time[i])
-                & (flights$end_time    > trips$start_time[i]))
-                & flights$device_info_serial == device)
+  # Exclude final flight from each device (can be mixed up    
+  # with next device.
+  flight.exc  <-  0
+  
+  excl <- rep(TRUE, length(flights$device_info_serial))
+    
+  devices <- unique(flights$device_info_serial)
+  for(x in seq(along = devices)){
+    
+    excl[max(flights$flight_id[
+      flights$device_info_serial == devices[x]])] <- FALSE
+  }
+  
+#   excl <- flights$flight_id != all(flight.exc)
+#   summary(excl)
+  trip.filter <- ((flights$start_time < trips$end_time[i])
+                  & (flights$end_time > trips$start_time[i])
+                  & (flights$device_info_serial == device )
+                  & excl)
+  
+  
+#   flights$start_time[22873] < trips$end_time[i]
+#   flights$end_time[22873]   > trips$start_time[i]
+#   flights$device_info_serial[22873]
+#   
+#   trip.filter <- (((flights$start_time  < trips$end_time[i])
+#                 &(flights$start_time  > trips$start_time[i]))
+#                |((flights$end_time    < trips$end_time[i])
+#                 & (flights$end_time    > trips$start_time[i]))
+#                 & flights$device_info_serial == device)
+
+#   summary(trip.filter)
   
   #Make subset of flights for each trip
   sub01 <- subset(flights, trip.filter)
