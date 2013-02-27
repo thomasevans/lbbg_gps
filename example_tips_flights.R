@@ -110,7 +110,9 @@ gps.extract <- function(i, start.t, end.t){
   return(gps.sub)
 }
 
-
+start.t
+end.t
+i <- 624
 #Extract flight points
 flights.extract <- function(i, start.t, end.t){
   #Function to extract required flights data
@@ -128,8 +130,8 @@ flights.extract <- function(i, start.t, end.t){
   #Accepts the aguments given to the function, to extract the
   #values requested.
   q1c <- paste(" lf.device_info_serial = ", i, " AND ",
-               "(lf.start_time >= #", start.t, 
-               "# OR lf.start_time <= #", end.t, "#) ", sep = "")
+               "(lf.end_time >= #", start.t, 
+               "# AND lf.start_time <= #", end.t, "#) ", sep = "")
   
   #Get flight information
   flight.sub <- sqlQuery(gps.db, query= gsub("\n", " ", paste(q1a, q1c, q1b, sep=""))
@@ -145,7 +147,7 @@ flights.extract <- function(i, start.t, end.t){
 # i <- 100
 # id <- 100
 # map.trip(100)
-
+id <- 4
 
 # Mapping trip #####
 # Function defenition
@@ -186,7 +188,8 @@ map.trip <- function(id){
   # Add points
   
   #Flight points
-  # i <- 2
+  #
+  i <- 1
   for( i in seq(along = flights.sub$trip_flight_type)){
     flight.type <- flights.sub$trip_flight_type[i]
     if(flight.type == "outward"){
@@ -268,8 +271,11 @@ map.trip <- function(id){
 
 # For testing, get some initial values
 # i     <-  1
+i
 
-pdf("example_trips_5.pdf")
+map.trip(4)
+
+pdf("example_trips_6.pdf")
 for(i in seq(along = (trips.sample$trip_id))){
 map.trip(i)
 }

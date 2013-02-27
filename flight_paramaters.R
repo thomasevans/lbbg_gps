@@ -366,8 +366,8 @@ flights$trip_id <- flights$trip_flight_n <-
 flights$trip_flight_type <- 0
 
 # For testing
-i <- 5
-
+i <- 1665
+i <- 4
 # sub01$start_time
 
 
@@ -379,9 +379,9 @@ for(i in seq(along = trips$trip_id)){
   #Get device id
   device <- trips$device_info_serial[i]
   
-  t1 <- c(TRUE, FALSE, TRUE)
-  t2 <- c(FALSE, TRUE, FALSE)
-  t1 | t2
+#   t1 <- c(TRUE, FALSE, TRUE)
+#   t2 <- c(FALSE, TRUE, FALSE)
+#   t1 | t2
   
   trip.filter <- (((flights$start_time  < trips$end_time[i])
                 &(flights$start_time  > trips$start_time[i]))
