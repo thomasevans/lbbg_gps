@@ -38,7 +38,7 @@ FROM lund_trips AS t
 
 # Hack to set time zone back to UTC rather than system locale.
 # See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
-trips$start_time[1:10]
+# trips$start_time[1:10]
 tm <- as.POSIXlt(trips$start_time)
 #Check how this appears (i.e. time zone)
 # tm[1:10]
@@ -109,10 +109,10 @@ gps.extract <- function(i, start.t, end.t){
   
   return(gps.sub)
 }
+# 
+# start.t
+# end.t
 
-start.t
-end.t
-i <- 624
 #Extract flight points
 flights.extract <- function(i, start.t, end.t){
   #Function to extract required flights data
@@ -147,7 +147,8 @@ flights.extract <- function(i, start.t, end.t){
 # i <- 100
 # id <- 100
 # map.trip(100)
-id <- 4
+# id <- 4
+# id <- 49
 
 # Mapping trip #####
 # Function defenition
@@ -271,11 +272,11 @@ map.trip <- function(id){
 
 # For testing, get some initial values
 # i     <-  1
-i
+# i
 
-map.trip(4)
+#    map.trip()
 
-pdf("example_trips_6.pdf")
+pdf("example_trips_10.pdf")
 for(i in seq(along = (trips.sample$trip_id))){
 map.trip(i)
 }

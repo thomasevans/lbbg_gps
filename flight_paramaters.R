@@ -40,20 +40,22 @@ nest_loc <- sqlQuery(gps.db, query=
 #get all the GPS info that we require
 
 #for all of data_base, except pre-deployment and null records
-gps <- sqlQuery(gps.db, query =
-  "SELECT DISTINCT g.device_info_serial, g.date_time,
-  g.longitude, g.latitude, g.x_speed, g.y_speed,
-  g.z_speed, g.positiondop, g.speed_accuracy,
-  c.bearing_next, c.bearing_prev, c.nest_gc_dist,
-  c.nest_bear, c.inst_ground_speed, c.p2p_dist,
-  c.time_interval_s, c.turning_angle, c.flight_class,
-  c.flight_id, g.altitude
-  FROM gps_uva_tracking_limited AS g,
-    cal_mov_paramaters AS c
-  WHERE g.device_info_serial = c.device_info_serial
-    AND g.date_time = c.date_time
-    ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
-                ,as.is=TRUE)
+# gps <- sqlQuery(gps.db, query =
+#   "SELECT DISTINCT g.device_info_serial, g.date_time,
+#   g.longitude, g.latitude, g.x_speed, g.y_speed,
+#   g.z_speed, g.positiondop, g.speed_accuracy,
+#   c.bearing_next, c.bearing_prev, c.nest_gc_dist,
+#   c.nest_bear, c.inst_ground_speed, c.p2p_dist,
+#   c.time_interval_s, c.turning_angle, c.flight_class,
+#   c.flight_id, g.altitude
+#   FROM gps_uva_tracking_limited AS g,
+#     cal_mov_paramaters AS c
+#   WHERE g.device_info_serial = c.device_info_serial
+#     AND g.date_time = c.date_time
+#     ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
+#                 ,as.is=TRUE)
+
+load("flight_gps_data.Rdata")
 
 #a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
 gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",
@@ -302,9 +304,9 @@ system.time({lst <- foreach(i = seq(along = flight_id )) %dopar%{
 #close cluster
 stopCluster(cl)
 #length(names(flights))
-#Time taken last time 4006.31 s (67 mins)
+#Time taken one time 4006.31 s (67 mins), 3105s another time
 
-
+ 
 
 
 #Create dataframe of flights########
@@ -331,7 +333,7 @@ flights$start_time <- as.POSIXct(
   as.POSIXlt(flights$start_time, origin=startdate,
              tz= "GMT",format="%Y-%m-%d %H:%M:%S"))
 
-
+# save(flights, file = "flights_part1.Rdata")
 
 #Label flight type and number for each trip######
 
@@ -353,7 +355,7 @@ trips$end_time <- as.POSIXct(
 
 
 
-#i <- 25
+# i <- 1229
 
 #summary((flights$start_time >= trips$start_time[i]) & (flights$start_time <= trips$end_time[i]) & (flights$device_info_serial==device))
 
@@ -370,14 +372,84 @@ flights$trip_flight_type <- 0
 # i <- 4
 # sub01$start_time
 
+# Exclude flights which might have problems with them - those at the end of a bird record
+excl <- rep(TRUE, length(flights$device_info_serial))
+ trip.excl <- NA
+devices <- unique(flights$device_info_serial)
+for(x in seq(along = devices)){
+#   x <- 2
+  excl[max(flights$flight_id[
+    flights$device_info_serial == devices[x]])] <- FALSE
+
+  trip.excl[x] <- max(trips$trip_id[
+    trips$device_info_serial == devices[x]], na.rm = TRUE)
+}
+  
+#   f <- (flights$device_info_serial == devices[x])
+#   
+#   summary(flights$trip_id)
+  
+  #   trip.excl[x] <- max(flights$trip_id[
+#     flights$device_info_serial == devices[x]], na.rm = TRUE)
+# # }
+#   max(flights$trip_id, na.rm = TRUE)
+#   max(flights$trip_id[
+#     flights$device_info_serial == devices[1]], na.rm = TRUE)
+#   #added this to exlude 'final' trip for each device - which is likely to get mixed up with data from following device.
+#   excl[flights$trip_id == max(flights$trip_id[
+#     flights$device_info_serial == devices[x]],
+#            na.rm = TRUE)] <- FALSE  
+#   
+  
+#   excl[flights$trip_id == (max(flights$trip_id[
+#     flights$device_info_serial == devices[x]],
+#               na.rm = TRUE))]
+
+
+# warnings()
+
+# ?any
+
+
+# ?max
+# x <- 1
+# 
+# i <-  1229
+#  i <- 1318
+# test <- seq(along = trips$trip_id)
+# length(test)
+# summary(test == i)
+# length(trips$trip_id)
+# length(unique(trips$trip_id))
+
+# test <- NA
+# for(i in 1228:1319){
+#   test[i] <- i
+# }
+
+# for(i in 1:10){
+#   if(i == 5){(print(8))} else (print(4))
+# }
+
+# save(gps, file = "flight_gps_data.Rdata")
+
+# summary(trips$trip_id == 1318)
 
 # For all trips, do the following
-for(i in seq(along = trips$trip_id)){
+system.time(for(i in seq(along = trips$trip_id)){
+# for(i in 1228:1319){
+  
   
   id <- trips$trip_id[i]
   
+#   ?break
+#   id <- 1318
+  if( any( trip.excl == id)) {test <- 1} else{
+
+  
   #Get device id
   device <- trips$device_info_serial[i]
+
   
 #   t1 <- c(TRUE, FALSE, TRUE)
 #   t2 <- c(FALSE, TRUE, FALSE)
@@ -385,16 +457,16 @@ for(i in seq(along = trips$trip_id)){
   
   # Exclude final flight from each device (can be mixed up    
   # with next device.
-  flight.exc  <-  0
+#   flight.exc  <-  0
   
-  excl <- rep(TRUE, length(flights$device_info_serial))
-    
-  devices <- unique(flights$device_info_serial)
-  for(x in seq(along = devices)){
-    
-    excl[max(flights$flight_id[
-      flights$device_info_serial == devices[x]])] <- FALSE
-  }
+#   excl <- rep(TRUE, length(flights$device_info_serial))
+#     
+#   devices <- unique(flights$device_info_serial)
+#   for(x in seq(along = devices)){
+#     
+#     excl[max(flights$flight_id[
+#       flights$device_info_serial == devices[x]])] <- FALSE
+#   }
   
 #   excl <- flights$flight_id != all(flight.exc)
 #   summary(excl)
@@ -402,9 +474,9 @@ for(i in seq(along = trips$trip_id)){
                   & (flights$end_time > trips$start_time[i])
                   & (flights$device_info_serial == device )
                   & excl)
-  
-  
-#   flights$start_time[22873] < trips$end_time[i]
+#   summary(trip.filter)
+#   flights$trip_id[trip.filter]
+#   flights$start_time[22873] < trips$end_time[i]  
 #   flights$end_time[22873]   > trips$start_time[i]
 #   flights$device_info_serial[22873]
 #   
@@ -453,12 +525,18 @@ for(i in seq(along = trips$trip_id)){
                         flights$trip_flight_n == 1] <-
                         "outward"
   
+#   flights$trip_flight_n[trip.filter]
+  
   # Label final flight.
   flights$trip_flight_type[trip.filter &
                         flights$trip_flight_n == max(x)] <-
                         "inward"
-}
 
+  
+  }
+})
+#about 80 s
+# warnings()
 #Check that this has worked and looks sensible.
 #summary(as.factor(flights$trip_flight_type))
 
@@ -468,6 +546,8 @@ for(i in seq(along = trips$trip_id)){
 #hist(flights$points[flights$points > 2 & flights$points < 600])
 #length(flights$points[flights$trip_flight_type == "inward" & flights$points > 1])
 #length(flights$points[flights$trip_flight_type == "inward" & flights$points > 5])
+
+# summary(flights$trip_id == 1318)
 
 
 
@@ -481,5 +561,5 @@ sqlSave(gps.db, flights, tablename = "lund_flights", append = FALSE,
         fast = TRUE, test = FALSE, nastring = NULL,varTypes=c(start_time="Date",end_time="Date"))
   
 
-
-
+#  flights[flights$flight_id == 1517,]
+# summary(as.factor((flights$trip_flight_type)))
