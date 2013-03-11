@@ -4,7 +4,7 @@
 # Description #########
 #This script analyses various flight paramaters, including
 #reanalysing weather data extracted from NCEP reanalysis I 
-#(see 'weather_details.R'), using standar wind-shear equations
+#(see 'weather_details.R'), using standard wind-shear equations
 #to calculate wind-speed at height (it does not make any allowance
 #for variation in wind-direction at different heights) - it should
 #only be trusted probably for lower altitudes.
@@ -58,11 +58,11 @@ ORDER BY f.flight_id ASC;")
 # See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
 tm <- as.POSIXlt(flights.weather$start_time)
 #Check how this appears (i.e. time zone)
-tm[1:10]
+# tm[1:10]
 attr(tm,"tzone") <- "UTC"
 #Check how appears after change of time-zone - i.e. is the absolute time
 #value unchanged?
-tm[1:10]
+# tm[1:10]
 flights.weather$start_time <- tm
 
 #str(flights.weather)  #check structure
@@ -83,7 +83,10 @@ flights.weather$start_time <- tm
 #Calculating first uwnd.10m.flt.ht and vwn.10m.flt.ht
 #Then with simple Pythagoras theorem, the wind velocity
 #(square root of sum of the squared values for u and v)
-
+# (3^0.11)*5.69
+# 
+# ((43.5/10)^0.11)
+# ((17.5/10)^0.11)
 
 wind.shear <- function(uwind10, vwind10, ht.med){
   

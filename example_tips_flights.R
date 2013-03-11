@@ -147,7 +147,7 @@ flights.extract <- function(i, start.t, end.t){
 # i <- 100
 # id <- 100
 # map.trip(100)
-# id <- 4
+ id <- 61
 # id <- 49
 
 # Mapping trip #####
@@ -259,10 +259,10 @@ map.trip <- function(id){
                 format(round(dur, 2), nsmall = 2) , " hours")
           , side = 3, line = 0, cex = 1)
 #   ?grconvertX
-  legend("topleft", pch=c(19, 19, 19, 1),
-         c("IN", "OUT", "OTHER", "NON-FLIGHT"),
-         col = c("red", "blue", "dark grey", "black"),
-         )
+#   legend("topleft", pch=c(19, 19, 19, 1),
+#          c("IN", "OUT", "OTHER", "NON-FLIGHT"),
+#          col = c("red", "blue", "dark grey", "black"),
+#          )
 #   ?legend
 #   ?legend
   
@@ -276,6 +276,10 @@ map.trip <- function(id){
 
 #    map.trip()
 
+pdf("example_trip_61.pdf")
+map.trip(61)
+dev.off()
+# ?win.metafile
 pdf("example_trips_10.pdf")
 for(i in seq(along = (trips.sample$trip_id))){
 map.trip(i)

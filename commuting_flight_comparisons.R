@@ -27,19 +27,19 @@ flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
 # See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
 
 tm <- as.POSIXlt(flights$start_time)
-tm[1:10]
+# tm[1:10]
 attr(tm,"tzone") <- "UTC"
-tm[1:10]
+# tm[1:10]
 flights$start_time <- tm
 
 tm <- as.POSIXlt(flights$end_time)
-tm[1:10]
+# tm[1:10]
 attr(tm,"tzone") <- "UTC"
-tm[1:10]
+# tm[1:10]
 flights$end_time <- tm
 
 
-flights$start_time[1:10]
+# flights$start_time[1:10]
 
 #str(flights)  #check structure
 
@@ -52,11 +52,11 @@ ORDER BY f.flight_id ASC;")
 # See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
 tm <- as.POSIXlt(flights.weather$start_time)
 #Check how this appears (i.e. time zone)
-tm[1:10]
+# tm[1:10]
 attr(tm,"tzone") <- "UTC"
 #Check how appears after change of time-zone - i.e. is the absolute time
 #value unchanged?
-tm[1:10]
+# tm[1:10]
 flights.weather$start_time <- tm
 
 
@@ -68,15 +68,15 @@ ORDER BY t.trip_id ASC;")
 #str(trips)
 
 tm <- as.POSIXlt(trips$start_time)
-tm[1:10]
+# tm[1:10]
 attr(tm,"tzone") <- "UTC"
-tm[1:10]
+# tm[1:10]
 trips$start_time <- tm
 
 tm <- as.POSIXlt(trips$end_time)
-tm[1:10]
+# tm[1:10]
 attr(tm,"tzone") <- "UTC"
-tm[1:10]
+# tm[1:10]
 trips$end_time <- tm
 
 
@@ -92,6 +92,13 @@ for(i in seq(along = flights$trip_id)){
                                          flights$trip_id[i]][1]
 }
 
+
+
+# Add some more paramaters to filter
+# Non full trips (i.e. where there is a gap of > 25 minutes?)
+# Trips to Gotland
+# 
+# Might be better to create new columns and label trips by these info.
 
 
 #filters####
