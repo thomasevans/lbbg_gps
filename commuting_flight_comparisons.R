@@ -23,6 +23,7 @@ flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
                     FROM lund_flights AS f
                     ORDER BY f.flight_id ASC;")
 
+
 # Hack to set time zone back to UTC rather than system locale.
 # See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
 
@@ -80,16 +81,30 @@ attr(tm,"tzone") <- "UTC"
 trips$end_time <- tm
 
 
+flights.characteristics <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
+                    FROM lund_flights_characteristics AS f
+                    ORDER BY f.flight_id ASC;")
+
+
+
 
 #Trip type and duration#######
 trip_type <- 0
 trip_duration <- 0
+trip_gotland <- 0
+trip_distmax <- 0
+
+# names(trips)
 
 for(i in seq(along = flights$trip_id)){
   trip_type[i] <- trips$trip_type[trips$trip_id ==
                                     flights$trip_id[i]][1]
   trip_duration[i] <- trips$duration_s[trips$trip_id ==
                                          flights$trip_id[i]][1]
+  trip_gotland[i] <- trips$gotland[trips$trip_id ==
+                                         flights$trip_id[i]][1]
+  trip_distmax[i] <- trips$dist_max[trips$trip_id ==
+                                      flights$trip_id[i]][1]
 }
 
 
@@ -100,14 +115,154 @@ for(i in seq(along = flights$trip_id)){
 # 
 # Might be better to create new columns and label trips by these info.
 
-
+trip_gotland <- as.factor(trip_gotland)
+# summary(trip_gotland)
 #filters####
-outward <- flights$trip_flight_type == "outward"
-inward  <- flights$trip_flight_type == "inward"
+# hist(trip_distmax[outward])
+hist(trip_distmax[trip_distmax < 1000])
+
+
+outward <- (flights$trip_flight_type == "outward") & trip_gotland == 0 & (flights$interval_mean < 800) & (trip_distmax > 2) & (trip_distmax < 400)
+
+inward  <- (flights$trip_flight_type == "inward")  & (trip_gotland == 0) & (flights$interval_mean < 800) & (trip_distmax > 2) & (trip_distmax < 400)
+
+summary(inward)
+summary(outward)
+
+# hist(flights$interval_mean[outward])
+# length(flights$interval_mean[outward])
 
 # Speed comparision######
-names(flights)
+# names(flights)
 
+
+# pdf("out_vs_in_inst_speed.pdf")
+par(mfrow = c(1,2))
+hist(flights$speed_inst_mean[outward ],ylim = c(0,120), xlim = c(0,20),breaks="Scott", xlab = "Speed ms-1", main = "",las=1, cex.axis = 1.3, cex.lab = 1.4, col = "grey")
+
+x1 <- mean(flights$speed_inst_mean[outward], na.rm = TRUE)
+abline(v = x1, lwd = 2, lty = 2, col = "red")
+
+hist(flights$speed_inst_mean[inward],ylim = c(0,120), xlim = c(0,20),breaks="Scott", xlab = "Speed ms-1", main = "",las=1, cex.axis = 1.3, cex.lab = 1.4, col = "grey")
+
+x2 <- mean(flights$speed_inst_mean[inward], na.rm = TRUE)
+abline(v = x1, lwd = 2, lty = 2, col = "red")
+
+# dev.off()
+
+x1
+x2
+
+?t.test
+
+t.test(flights$speed_inst_mean[inward], flights$speed_inst_mean[outward])
+
+
+
+
+win.metafile("Out_in_straightness_comparison.wmf")
+par(mfrow = c(1,2))
+hist(1-flights$rho[outward],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,200), xlim = c(0,1), main = "Outward")
+hist(1-flights$rho[inward] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,200), xlim = c(0,1), main = "Inward")
+dev.off()
+
+
+mean(1-flights$rho[inward])
+mean(1-flights$rho[outward])
+t.test(1-flights$rho[outward], 1-flights$rho[inward])
+
+
+names(flights)
+par(mfrow = c(1,2))
+hist(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ],xlab = "Altitude (m)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",  main = "Outward", xlim = c(-20,150), ylim = c(0,250))
+hist(flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ] ,xlab = "Altitude (m)", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",  main = "Inward", xlim = c(-20,150), ylim = c(0,250))
+
+mean(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ])
+mean(flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ])
+t.test(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ],flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ])
+
+
+
+
+
+names(flights.weather)
+names(flights)
+names(flights.characteristics)
+hist(abs(flights.weather$vwnd10m[outward]*flights.weather$uwnd10m[outward]))
+
+# hist(flights$bearing_a_b[outward])
+# hist(flights.characteristics$winddir[outward])
+dif.angle <- flights$bearing_a_b - flights.characteristics$winddir
+# hist(dif.angle)
+dif.angle <- abs(dif.angle)
+# hist(dif.angle)
+# hist(dif.angle[outward] %% 180)
+# hist(dif.angle[inward] %% 180)
+# dif.angle <- dif.angle %% 180
+cor.ang <- function(x){
+  if(x > 180){ y <- 180 - (x - 180)}
+  else y <- x
+  return(y)
+}
+# cor.ang(181)
+dif.angle <- sapply(dif.angle, cor.ang)
+#  hist(dif.angle)
+
+
+par(mfrow = c(2,2))
+hist(1-flights$rho[outward & dif.angle < 90],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,110), xlim = c(0,1), main = "Outward")
+hist(1-flights$rho[outward & dif.angle > 90],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,110), xlim = c(0,1), main = "Outward")
+hist(1-flights$rho[inward & dif.angle < 90] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,110), xlim = c(0,1), main = "Inward")
+hist(1-flights$rho[inward & dif.angle > 90] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,110), xlim = c(0,1), main = "Inward")
+
+length(outward)
+# length(dif.angle)
+
+mean(1-flights$rho[outward & dif.angle < 90])
+mean(1-flights$rho[outward & dif.angle > 90])
+mean(1-flights$rho[inward & dif.angle < 90])
+mean(1-flights$rho[inward & dif.angle > 90])
+
+
+alt.f <- flights$alt_med > -50 & flights$alt_med < 200 
+
+names(flights.characteristics)
+hist(flights.characteristics$windspeed)
+high.s <- flights.characteristics$windspeed < 5
+
+mean(flights$alt_med[outward & (dif.angle < 60) & alt.f])
+mean(flights$alt_med[outward & (dif.angle > 120) & alt.f])
+mean(flights$alt_med[inward & (dif.angle < 60) & alt.f])
+mean(flights$alt_med[inward & (dif.angle > 120) & alt.f])
+
+
+
+par(mfrow = c(2,2))
+hist(flights$alt_med[outward & (dif.angle < 60) & alt.f], ylim = c(0,55), xlim = c(-10, 150), breaks=20, main ="", xlab = "Altitude (m)", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue")
+x <- mean(flights$alt_med[outward & (dif.angle < 60) & alt.f])
+abline(v = x, lwd = 2, lty = 2, col = "black")
+
+
+hist(flights$alt_med[inward & (dif.angle < 60) & alt.f], ylim = c(0,55),  xlim = c(-10, 150), breaks=20, main ="", xlab = "Altitude (m)", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red")
+x <- mean(flights$alt_med[inward & (dif.angle < 60) & alt.f])
+abline(v = x, lwd = 2, lty = 2, col = "black")
+
+hist(flights$alt_med[outward & (dif.angle > 120) & alt.f], ylim = c(0,55),  xlim = c(-10, 150), breaks=20, main ="", xlab = "Altitude (m)", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue")
+x <- mean(flights$alt_med[outward & (dif.angle > 120) & alt.f])
+abline(v = x, lwd = 2, lty = 2, col = "black")
+
+hist(flights$alt_med[inward & (dif.angle > 120) & alt.f], ylim = c(0,55), xlim = c(-10, 150), breaks=20, main ="", xlab = "Altitude (m)", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red")
+x <- mean(flights$alt_med[inward & (dif.angle > 120) & alt.f])
+abline(v = x, lwd = 2, lty = 2, col = "black")
+
+
+
+
+t.test(flights$alt_med[inward & (dif.angle > 120) & alt.f],flights$alt_med[inward & (dif.angle < 60) & alt.f])
+
+
+
+?abs
 par(mfrow = c(1,2))
 # Resultant speed
 hist(flights$speed_a_b[outward & flights$speed_a_b < 25], xlim = c(0,25), breaks = 20, freq = FALSE, ylim = c(0, 0.30), main = "outward", xlab = "speed a to b in ms -1")
@@ -120,18 +275,21 @@ x2 <- mean(flights$speed_a_b[inward & flights$speed_a_b < 25], na.rm = TRUE)
 abline(v = x2, lwd = 2, lty = 2, col = "red")
 
 
+summary(outward)
+summary(inward)
 
 
 par(mfrow = c(1,2))
 # Mean speed
-hist(flights$speed_inst_mean[outward & flights$speed_inst_mean < 25], xlim = c(0,25), breaks = 20, freq = FALSE, ylim = c(0, 0.20), main = "Outward", xlab = "Speed - mean - ms-1")
+hist(flights$speed_inst_mean[outward & flights$speed_inst_mean < 25], xlim = c(0,21), breaks = 20, freq = FALSE,  main = "Outward", xlab = "Speed - mean - ms-1")
 x1 <- mean(flights$speed_inst_mean[outward & flights$speed_inst_mean < 25], na.rm = TRUE)
 abline(v = x1, lwd = 2, lty = 2, col = "red")
 
-hist(flights$speed_inst_mean[inward & flights$speed_inst_mean < 25],  xlim = c(0,25), breaks = 20, freq = FALSE, ylim = c(0, 0.20), main = "Inward", xlab = "Speed - mean - ms-1")
+hist(flights$speed_inst_mean[inward & flights$speed_inst_mean < 25],  xlim = c(0,21), breaks = 20, freq = FALSE, main = "Inward", xlab = "Speed - mean - ms-1")
 x2 <- mean(flights$speed_inst_mean[inward & flights$speed_inst_mean < 25], na.rm = TRUE)
 abline(v = x2, lwd = 2, lty = 2, col = "red")
-
+x1
+x2
 
 
 
@@ -187,6 +345,10 @@ abline(v = x2, lwd = 2, lty = 2, col = "red")
 
 x1
 x2
+
+
+hist(1-flights$rho[inward])
+hist(1-flights$rho[outward])
 
 
 
