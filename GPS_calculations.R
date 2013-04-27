@@ -24,17 +24,7 @@ gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
 #See what tables are available
 sqlTables(gps.db)
 
-# Query the gull db to get gps data
-# For testing, start with 15 days data from two birds
-# gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.*
-#  FROM gps_uva_tracking_limited AS g, gps_uva_track_session_limited AS t
-#  WHERE g.device_info_serial = t.device_info_serial
-#    AND g.date_time >= t.start_date
-#    AND g.latitude IS NOT NULL
-#    AND (g.device_info_serial = 602 OR g.device_info_serial = 603)
-#    AND g.date_time > #2012-06-15#
-#    AND g.date_time < #2012-07-01#
-#  ORDER BY g.device_info_serial ASC, g.date_time ASC ;")
+
 
 #for all of data_base, except pre-deployment and null records
 #excluding individuals with start north of 59 (i.e. those birds
@@ -62,7 +52,7 @@ nest_loc <- sqlQuery(gps.db, query="SELECT DISTINCT n.ring_number,
       WHERE n.ring_number = t.ring_number
       ORDER BY n.ring_number ASC;")
 
-#list available devices############
+#list available devices###########
 gps_devices <- sort(unique(nest_loc$device_info_serial))
 
 
@@ -105,6 +95,7 @@ time_interval_s <-
                       units="s"))
 
 time_interval_s <- c(0,time_interval_s)
+
 
 
 # Speed calculations ##############
@@ -196,7 +187,7 @@ turning_angle <- c(0, (abs(bearing_next[-c(1,length(bearing_next))]
 #bearing from nest, uses Haversine formula
 nest_bear <- earth.bear(gps$latitude,gps$longitude,nest_pos$lat,nest_pos$long)
 #hist(nest_bear)
-
+# abs(-5)
 
 
 #replace first values for each bird with zero, where calculations were made between birds
@@ -209,6 +200,7 @@ devices <- sort(unique(gps$device_info_serial))
 #for each device present in data_set get the value for the minimum
 #date_time value (i.e. the first record for that bird)
 index <- seq(along = gps$device_info_serial)
+
 
 for(i in seq(along = devices )){
   x[i] <- min(gps$date_time[gps$device_info_serial==devices[i]])
@@ -251,3 +243,15 @@ sqlSave(gps.db, export_table, tablename = "cal_mov_paramaters",
         fast = TRUE, test = FALSE, nastring = NULL,
         varTypes = c(date_time = "Date"))
 
+
+
+
+x <- c(1,2,3,4,5,6,7)
+y <- c(1,4,2,6,27,7,2)
+
+z <- x + y
+vectorise
+
+for(i in 1:length(x)){
+  z[i] <- x[i] + y[i]
+}

@@ -120,11 +120,12 @@ trip_gotland <- as.factor(trip_gotland)
 #filters####
 # hist(trip_distmax[outward])
 hist(trip_distmax[trip_distmax < 1000])
+names(flights)
 
+outward <- (flights$trip_flight_type == "outward") & trip_gotland == 0 & (flights$interval_mean < 800) & (trip_distmax > 2) & (trip_distmax < 400) & flights$points > 4 & flights$dist_a_b > 2000
+  hist(flights$dist_a_b[outward])
 
-outward <- (flights$trip_flight_type == "outward") & trip_gotland == 0 & (flights$interval_mean < 800) & (trip_distmax > 2) & (trip_distmax < 400)
-
-inward  <- (flights$trip_flight_type == "inward")  & (trip_gotland == 0) & (flights$interval_mean < 800) & (trip_distmax > 2) & (trip_distmax < 400)
+inward  <- (flights$trip_flight_type == "inward")  & (trip_gotland == 0) & (flights$interval_mean < 800) & (trip_distmax > 2) & (trip_distmax < 400) & flights$points > 4  & flights$dist_a_b > 2000
 
 summary(inward)
 summary(outward)
@@ -483,4 +484,136 @@ axis(1, at = c(0, 45, 90, 135, 180), lab = c("0", "45", "90", "135", "180"))
 
 
 
+# Sky conditions ######
 
+names(flights.weather)
+#Total Cloud Cover %
+hist(flights.weather$tcdceatm[outward | inward])
+
+cloud.high <- flights.weather$tcdceatm > 60
+cloud.low <- flights.weather$tcdceatm < 40
+
+# cloud.high <- flights.weather$pratesfc == 0
+# cloud.low <- flights.weather$pratesfc > 0
+
+
+names(flights)
+names(flights.weather)
+hist(sqrt(flights.weather$pratesfc))
+summary(flights.weather$pratesfc == 0)
+
+par(mfrow = c(1,1))
+# plot(1-flights$rho ~ flights.weather$tcdceatm)
+
+
+
+
+
+par(mfrow = c(2,2))
+hist(1-flights$rho[outward & cloud.high],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", xlim = c(0,1), main = "Outward", breaks = 20)
+abline(v = mean(1-flights$rho[outward & cloud.high]), lty = 2, lwd = 2)
+median((1-flights$rho[outward & cloud.high]))
+mean(1-flights$rho[outward & cloud.high])
+
+
+hist(1-flights$rho[inward & cloud.high] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", xlim = c(0,1), main = "Inward", breaks = 10)
+abline(v = mean(1-flights$rho[inward & cloud.high]), lty = 2, lwd = 2)
+mean(1-flights$rho[inward & cloud.high])
+median(1-flights$rho[inward & cloud.high])
+
+
+hist(1-flights$rho[outward & cloud.low],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", xlim = c(0,1), main = "Outward", breaks = 20)
+abline(v = mean(1-flights$rho[outward & cloud.low]), lty = 2, lwd = 2)
+mean(1-flights$rho[outward & cloud.low])
+median(1-flights$rho[outward & cloud.low])
+
+hist(1-flights$rho[inward & cloud.low] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", xlim = c(0,1), main = "Inward", breaks = 20)
+abline(v = mean(1-flights$rho[inward & cloud.low]), lty = 2, lwd = 2)
+mean(1-flights$rho[inward & cloud.low])
+median(1-flights$rho[inward & cloud.low])
+
+length(outward)
+# length(dif.angle)
+
+mean(1-flights$rho[outward & cloud.high])
+mean(1-flights$rho[outward & cloud.low])
+mean(1-flights$rho[inward & cloud.high])
+mean(1-flights$rho[inward & cloud.low])
+
+
+#Straightness (not rho) ####
+
+cloud.high <- flights.weather$tcdceatm > 60
+cloud.low <- flights.weather$tcdceatm < 40
+
+
+# hist(flights$speed_a_b)
+x <- (flights$straigtness < 1.01)
+x[is.na(x)] <- FALSE
+summary(x)
+f <- (flights$speed_a_b > 3) & (flights$speed_a_b < 30) & x
+
+summary(f)
+
+par(mfrow = c(2,2))
+hist(flights$straigtness[f & outward & cloud.high],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", xlim = c(0.7,1), main = "", breaks = 40)
+z <- median((flights$straigtness[f & outward & cloud.high]))
+mean(flights$straigtness[f & outward & cloud.high])
+abline(v = z, lty = 2, lwd = 2)
+
+
+hist(flights$straigtness[f & inward & cloud.high] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", xlim = c(0.7,1), main = "", breaks = 20)
+mean(flights$straigtness[f & inward & cloud.high])
+z <-  median(flights$straigtness[f & inward & cloud.high])
+abline(v = z, lty = 2, lwd = 2)
+
+hist(flights$straigtness[f & outward & cloud.low],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", xlim = c(0.7,1), main = "", breaks = 40)
+mean(flights$straigtness[f & outward & cloud.low])
+z <- median(flights$straigtness[f & outward & cloud.low])
+abline(v = z, lty = 2, lwd = 2)
+
+hist(flights$straigtness[f & inward & cloud.low] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", xlim = c(0.7,1), main = "", breaks = 20)
+mean(flights$straigtness[f & inward & cloud.low])
+z <- median(flights$straigtness[f & inward & cloud.low])
+abline(v = z, lty = 2, lwd = 2)
+
+
+
+library(psych)
+x1 <- geometric.mean(flights$straigtness[f & inward & cloud.low])
+
+
+names(flights.weather)
+
+
+
+
+
+# ArcSine
+arcsine <- function(x){
+  z <- x * 0.01
+  z <- sqrt(z)
+  z <- asin(z)
+  return(z)
+}
+
+par(mfrow = c(2,2))
+hist(arcsine(flights$straigtness[f & outward & cloud.high]),xlab = "straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", main = "", breaks = 40)
+abline(v = mean(flights$straigtness[f & outward & cloud.high]), lty = 2, lwd = 2)
+median((flights$straigtness[f & outward & cloud.high]))
+mean(flights$straigtness[f & outward & cloud.high])
+
+
+hist(arcsine(flights$straigtness[f & inward & cloud.high]) ,xlab = "straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", main = "", breaks = 20)
+abline(v = mean(flights$straigtness[f & inward & cloud.high]), lty = 2, lwd = 2)
+mean(flights$straigtness[f & inward & cloud.high])
+median(flights$straigtness[f & inward & cloud.high])
+
+hist(arcsine(flights$straigtness[f & outward & cloud.low]),xlab = "straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", main = "", breaks = 40)
+abline(v = mean(flights$straigtness[f & outward & cloud.low]), lty = 2, lwd = 2)
+mean(flights$straigtness[f & outward & cloud.low])
+median(flights$straigtness[f & outward & cloud.low])
+
+hist(arcsine(flights$straigtness[f & inward & cloud.low]) ,xlab = "straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", main = "", breaks = 20)
+abline(v = mean(flights$straigtness[f & inward & cloud.low]), lty = 2, lwd = 2)
+  
