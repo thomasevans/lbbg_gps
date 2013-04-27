@@ -2,18 +2,14 @@
 # long = c(0,1,2)
 # lat = c(2,3,4)
 # for(i in 1:10){
-# r1 <- 10000
-# r2 <- 50000
-# r3 <- 100000
 
 
 #Get test data
 test10min <- read.table ("C:/Users/Tom/Dropbox/jose_shearwaters/test10min.txt", head = T, dec =",")
 
 # names(test10min)
-# long <- test10min$Longitude
-# lat <- test10min$Latitude
 
+# 
 
 #Make vector with combined date and time. This will be character formatted
 test_date_time_txt <- paste(test10min$Date, " ", test10min$Time, sep = "")
@@ -29,6 +25,13 @@ test_date_time_posix <- as.POSIXct(test_date_time_txt, format = "%d/%m/%Y %H:%M:
 # 
 # date_time <- date_time2
 
+#Testing
+# long <- test10min$Longitude
+# lat <- test10min$Latitude
+# r1 <- 10000
+# r2 <- 50000
+# r3 <- 100000
+# date_time <- test_date_time_posix
 
 
 # length(long)
@@ -36,7 +39,7 @@ test_date_time_posix <- as.POSIXct(test_date_time_txt, format = "%d/%m/%Y %H:%M:
 # length(date_time)
 
 #Function to calculate tortoisity and '
-votier_calc <- function(long, lat, date_time, r1 = 1, r2 = 10, r3 = 100){
+votier_calc <- function(long, lat, date_time, r1 = 1000, r2 = 10000, r3 = 100000){
   #Long - a vector of longitude values
   #Lat - a vector of latitude values
   #r1, r2, r3  - the radii, in km, for which values will be calculated, r3 > r2 > r1. Default values are provided (1, 10, 100 km).
@@ -128,7 +131,7 @@ votier_calc <- function(long, lat, date_time, r1 = 1, r2 = 10, r3 = 100){
     subs1 <- (indexz >= first_point_r3 ) & (indexz <= final_point_r3)
 #     summary(subs)
     
-    #rx <- r2z
+    #rx <- r3
     #This function calculates the tortoisity and the 'derived ground speed' for each GPS point
     param_calc <- function(longx = longz[subs1], latx = latz[subs1], indexx = indexz[subs1], p2p_distx = p2p_distz[subs1], date_timex = date_timez[subs1], rx, idxx = idz, distx = dist[subs1]){
       #Takes calculated values from above, then calculates paramaters for that GPS point (id), and the defined redius (r).
@@ -168,6 +171,15 @@ votier_calc <- function(long, lat, date_time, r1 = 1, r2 = 10, r3 = 100){
         time_dif <- as.numeric(time_dif, units="secs")
         #Metres over seconds - i.e. metres per second
         speed <- dist_ab / time_dif
+      
+#       distx[237]
+      
+      #Test if the distance between the first point and the centre of the circle are close to the intended radius (here we have a tolerance of upto 20 % less than intended.
+      #The idea of thise is that with the GPS recording interval, it is likely that the GPS point closest to the edge of the circle, may be some distance a way - here this is accepted up to a certain tolerance.
+      if((distx[indexx == first_point] < (0.8 * rx)) | (distx[indexx == final_point] < (0.8 * rx)) ){
+      tort <- NA
+      speed <- NA
+      }
       
       return(c(tort,speed))
       
@@ -211,8 +223,10 @@ votier_calc <- function(long, lat, date_time, r1 = 1, r2 = 10, r3 = 100){
 }
 #End of calculation 'votier_calc'
 
-gps_vot_calc <- votier_calc(long = test10min$Longitude, lat = test10min$Latitude, date_time = test_date_time_posix, r1 = 1000, r2 = 10000, r3 = 100000)
+gps_vot_calc <- votier_calc(long = test10min$Longitude, lat = test10min$Latitude, date_time = test_date_time_posix, r1 = 5000, r2 = 10000, r3 = 20000)
 
+gps_vot_calc[1000:1336,]
+par(mfrow=c(1,1))
 names(gps_vot_calc)
 hist(gps_vot_calc$r1, breaks = 20)
 hist(gps_vot_calc$r2, breaks = 20)
@@ -221,27 +235,27 @@ hist(gps_vot_calc$v1, breaks = 20)
 hist(gps_vot_calc$v2, breaks = 20)
 hist(gps_vot_calc$v3, breaks = 20)
 
-plot(gps_vot_calc$v2 ~ gps_vot_calc$r2, main = "50 km")
 plot(gps_vot_calc$v1 ~ gps_vot_calc$r1, main = "5 km")
-plot(gps_vot_calc$v3 ~ gps_vot_calc$r3, main = "100 km")
-
-#Package to make colour palates
-library(RColorBrewer)
-#Make a colour scale for blue - 100 shades of blue
-col.graph <-    colorRampPalette(brewer.pal(9,"Blues"))(100)
-
-#Plot map with points coloured by tortoisity (dark is low straightness - i.e. high tortoisity).
-plot(test10min$Latitude ~ test10min$Longitude, col = col.graph[100-floor(gps_vot_calc$r1*100)])
-
-#As above but for speed.
-plot(test10min$Latitude ~ test10min$Longitude, col = col.graph[100-floor(gps_vot_calc$v1/max(gps_vot_calc$v1)*100)])
-
-
-#Plot map with points coloured by tortoisity (dark is low straightness - i.e. high tortoisity).
-plot(test10min$Latitude ~ test10min$Longitude, col = col.graph[100-floor(gps_vot_calc$r2*100)])
-
-#As above but for speed.
-plot(test10min$Latitude ~ test10min$Longitude, col = col.graph[100-floor(gps_vot_calc$v2/max(gps_vot_calc$v2)*100)])
+plot(gps_vot_calc$v2 ~ gps_vot_calc$r2, main = "10 km")
+plot(gps_vot_calc$v3 ~ gps_vot_calc$r3, main = "20 km")
+# 
+# #Package to make colour palates
+# library(RColorBrewer)
+# #Make a colour scale for blue - 100 shades of blue
+# col.graph <-    colorRampPalette(brewer.pal(9,"Blues"))(100)
+# 
+# #Plot map with points coloured by tortoisity (dark is low straightness - i.e. high tortoisity).
+# plot(test10min$Latitude ~ test10min$Longitude, col = col.graph[100-floor(gps_vot_calc$r1*100)])
+# 
+# #As above but for speed.
+# plot(test10min$Latitude ~ test10min$Longitude, col = col.graph[100-floor(gps_vot_calc$v1/max(gps_vot_calc$v1)*100)])
+# 
+# 
+# #Plot map with points coloured by tortoisity (dark is low straightness - i.e. high tortoisity).
+# plot(test10min$Latitude ~ test10min$Longitude, col = col.graph[100-floor(gps_vot_calc$r2*100)])
+# 
+# #As above but for speed.
+# plot(test10min$Latitude ~ test10min$Longitude, col = col.graph[100-floor(gps_vot_calc$v2/max(gps_vot_calc$v2)*100)])
 
 
 
@@ -257,7 +271,7 @@ col.graph <-    colorRampPalette(brewer.pal(9,"Reds"))(100)
 
 
 
-
+#Determine range/ bounding for x and y axis. Here we choose the range of values for which the points represent plus some margin either side of this.
 long.bound <-  range(test10min$Longitude)
 long.bound[1] <- long.bound[1] -  (0.35 * abs(long.bound[2]-long.bound[1]))
 long.bound[2] <- long.bound[2] +  (0.25 * abs(long.bound[2]-long.bound[1]))
@@ -266,11 +280,16 @@ lat.bound <-  range(test10min$Latitude)
 lat.bound[1] <- lat.bound[1] -  (0.25 * abs(lat.bound[2]-lat.bound[1]))
 lat.bound[2] <- lat.bound[2] +  (0.25 * abs(lat.bound[2]-lat.bound[1]))
 
-map(database = "worldHires", regions = ".", fill=TRUE,col="grey",bg = "white",bty="7", xlim = long.bound, ylim=c(23.5,27))
-points(test10min$Longitude,test10min$Latitude,col = col.graph[100-(floor(gps_vot_calc$r2*100))], cex = 0.4)
+#Draw background map
+map(database = "worldHires", regions = ".", fill=TRUE, col="grey",bg = "white",bty="7", xlim = long.bound, ylim=lat.bound)
+#Add GPS points to map, coloured by previously determined colour scale. Here we invert the colour scale, so that low values of tortoisity (i.e. very tortuos) have darker colours.
+points(test10min$Longitude,test10min$Latitude,col = col.graph[100-(floor(gps_vot_calc$r3*100))], cex = 0.4)
 
+#Addd a border to the map.
 box()
+#Add axis and labels
 axis(side=(1),las=1)
 axis(side=(2),las=1)
+#Add a scale bar
 map.scale(ratio=FALSE,relwidth = 0.4, cex = 0.6)
 # ?map.scale
