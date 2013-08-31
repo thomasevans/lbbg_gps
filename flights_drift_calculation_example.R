@@ -57,7 +57,7 @@ library(RODBC)
 
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #See what tables are available
 sqlTables(gps.db)
@@ -89,7 +89,7 @@ points.weather <- NULL
 
 
 #Wind Speed in E-W direction 'uwnd.sig995' (ms^-1) 'near surface'
-uwnd. <- NCEP.interp(variable = "uwnd.sig995", level = "surface",
+uwnd <- NCEP.interp(variable = "uwnd.sig995", level = "surface",
                      lat = points$latitude, lon = points$longitude,  
                      dt = points$date_time,
                      reanalysis2 = FALSE, keep.unpacking.info = TRUE,
@@ -364,10 +364,11 @@ names(ground.speed) <- c("ground.speed", "ground.dir")
 
 #' Calculating copensation angle and drift angle
 #' 
-names(points)
-nest_bear
-names(head.info)
-head.info$head.dir
+
+#names(points)
+#nest_bear
+#names(head.info)
+#head.info$head.dir
 
 
 angle.cor <- function(x) if(x >= 180) return(-360 + x) else if(x <= -180) return(360 + x) else return(x)
@@ -401,7 +402,7 @@ names(vec.all) <- c("nest_bear" , "head.dir", "wind.dir.10m", "ground.dir","grou
 #Mapping flight ####
 
 # pdf(paste0("flight_",flight,".pdf"))
-win.metafile(paste0("flight_",flight,".wmf"))
+#win.metafile(paste0("flight_",flight,".wmf"))
 
 library(maps)
 
@@ -490,16 +491,11 @@ map.scale(ratio = FALSE)
 box()
 axis(side=(1),las=1)
 axis(side=(2),las=1)
-#   ?text
-mtext(paste("Flight: ", )
-      , side = 3, line = 1, cex = 1)
 
-#   dur <- as.difftime(trips.sample$duration_s[id], units= "secs")
-#   dur <- as.numeric(dur, units="hours")
 mtext(paste("Flight ID: ", flight)
       , side = 3, line = 0, cex = 1)
 
-dev.off()
+#dev.off()
 
 #End of figure
 
@@ -565,10 +561,11 @@ names(vec.all) <- c(vec.all.names,"drift_angle","compensation_angle","full_compe
 # ?write.table
 #' Output HTML table.
 library(xtable)
-print.xtable(xtable(vec.all), type="html", file=paste0("flight_",flight,".html"))
-
+#print.xtable(xtable(vec.all), type="html", file=paste0("flight_",flight,".html"))
+vec.all
 #useing anser from: http://stackoverflow.com/questions/6190051/how-can-i-remove-all-objects-but-one-from-the-workspace-in-r
 # rm(list=setdiff(ls(), c("i","flights.sample")))
 # }
 # rm(list=ls())
 # warnings()
+
