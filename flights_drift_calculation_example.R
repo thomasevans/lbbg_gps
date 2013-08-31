@@ -23,6 +23,32 @@
 # Departure time: 2012−06−16 13:02:24 UTC
 # Trip duration: 6.16 hours
 # flight 21290
+# Inward flights 21290, 15475, 20446, 5604, 13108, 21862, 10053, 19946, 18729,15873
+
+# flights.sample <- c(21290, 15475, 20446, 5604, 13108, 21862, 10053, 19946, 18729,15873)
+
+# Outward flight: 5576, 10049, 17033, 15309
+
+flight <- 5576
+# Switch between calculating with nest as destination  and final point
+# as destination (aka. goal).
+type <- "out"
+# type <- "in"
+
+# x <- c(1,2,3,4)
+# for( i in x){
+#   print(i)
+#   write(x+i, file = paste0(i,"_test.txt"))
+# }
+
+
+# for(i in 1:length(flights.sample)){
+#   print(flights.sample[i])
+# }
+
+#   i <- 5
+
+# flight <- flights.sample[i]
 
 # To link to database
 library(RODBC)
@@ -37,18 +63,17 @@ gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
 sqlTables(gps.db)
 
 #Get flight info for specified flight number
-flights <- sqlQuery(gps.db, query="SELECT DISTINCT lf.*, lfc.*
-  FROM lund_flights AS lf, lund_flights_characteristics AS lfc
-  WHERE lf.flight_id = lfc.flight_id
-  AND  lf.flight_id = 21290
-    ORDER BY lf.flight_id ASC;"
-                ,as.is=TRUE)
+flights <- sqlQuery(gps.db, query= paste0("SELECT DISTINCT lf.*, lfc.*
+                                          FROM lund_flights AS lf, lund_flights_characteristics AS lfc
+                                          WHERE lf.flight_id = lfc.flight_id
+                                          AND  lf.flight_id =", flight,"  ORDER BY lf.flight_id ASC;")
+                    ,as.is=TRUE)
 
 #Then extract GPS points and paramaters for these for the flight
 #Where time is in range and device-info-serial is correct
 points <- sqlQuery(gps.db, query=
                      paste0("SELECT DISTINCT g.*, c.* FROM gps_uva_tracking_speed_3d_limited AS g, gps_uva_track_session_limited AS t, cal_mov_paramaters AS c  WHERE g.device_info_serial = t.device_info_serial AND g.device_info_serial = c.device_info_serial AND g.date_time = c.date_time   AND g.date_time >= t.start_date    AND g.latitude IS NOT NULL    AND t.start_latitude < 59    AND g.device_info_serial = ", flights$device_info_serial[1],   "   AND g.date_time BETWEEN #", flights$start_time[1],  "# AND #", flights$end_time[1], "#  ORDER BY g.device_info_serial ASC, g.date_time ASC ;")
-                       ,as.is=TRUE)
+                   ,as.is=TRUE)
 
 # points <- NULL
 
@@ -58,15 +83,18 @@ points <- sqlQuery(gps.db, query=
 #Required packages
 library(RNCEP)
 
+# vignette(RNCEP)
+
 points.weather <- NULL
 
 
 #Wind Speed in E-W direction 'uwnd.sig995' (ms^-1) 'near surface'
-uwnd <- NCEP.interp(variable = "uwnd.sig995", level = "surface",
-                    lat = points$latitude, lon = points$longitude,  
-                    dt = points$date_time,
-                    reanalysis2 = FALSE, keep.unpacking.info = TRUE,
-                    interp = 'linear')
+uwnd. <- NCEP.interp(variable = "uwnd.sig995", level = "surface",
+                     lat = points$latitude, lon = points$longitude,  
+                     dt = points$date_time,
+                     reanalysis2 = FALSE, keep.unpacking.info = TRUE,
+                     interp = 'linear')
+# ?NCEP.interp
 
 #Add values to points.weather table
 uwnd.sig995 <- (as.numeric(uwnd))
@@ -94,6 +122,10 @@ uwnd10 <- NCEP.interp(variable = "uwnd.10m", level = "gaussian",
                       dt = points$date_time,
                       reanalysis2 = FALSE, keep.unpacking.info = TRUE,
                       interp = 'linear')
+
+
+
+
 
 #Add values to points.weather table
 uwnd.10m <- (as.numeric(uwnd10))
@@ -142,11 +174,14 @@ wind.shear <- function(uwind10, vwind10, ht.med){
   # Remove negative altitude values, if x is 1 m or less, replace with 1 m
   # Leave NA values as is.
   rem.neg <- function(x){
-    if(is.na(NA) == FALSE){
+    if(is.na(x) == FALSE){
       if(x < 1) x <- 1
     }
     return(x)
   }
+  
+  #   rem.neg(-1)
+  
   
   #For median flight height, remove values less than 1, and replace with
   # 1. See function 'rem.neg' above.
@@ -156,7 +191,8 @@ wind.shear <- function(uwind10, vwind10, ht.med){
   uwind.new <- uwind10 * ((ht.med / 10) ^ 0.11)
   vwind.new <- vwind10 * ((ht.med / 10) ^ 0.11)
   
-  #New wind speed, using hypotenuse rule to calculate wind speed
+  
+  #New wind speed, using Pythagoras theorem to calculate wind speed
   wind.new  <- sqrt((uwind.new * uwind.new) + (vwind.new * vwind.new))
   
   #Vairables to export
@@ -176,7 +212,7 @@ alt.cor <- sapply(points$altitude, rep.neg.alt)
 wind.calculated    <- wind.shear(points.weather$uwnd.10m,
                                  points.weather$vwnd.10m,
                                  alt.cor)
-
+names(points.weather)
 # Make into dataframe
 wind.calculated    <- as.data.frame(wind.calculated)
 
@@ -199,10 +235,10 @@ wind.dir.speed <- function(uwind10, vwind10){
   # Calculate direction in radians (0 - 90 deg)
   dir <- atan(abs(uwind10/ vwind10))
   
-#   atan(1)
-#   atan(0.5)
-#   dir <- atan(0.5)
-#   ?atan
+  #   atan(1)
+  #   atan(0.5)
+  #   dir <- atan(0.5)
+  #   ?atan
   # Direction in degrees (0 - 90)
   dir <- dir * 180 / pi
   
@@ -254,10 +290,12 @@ points.weather <- cbind(points.weather, wind.origin.10m)
 #' 
 
 # Calculating x and z component of heading vector
+# Subtract wind vector from ground vector, leaving
+# heading vector
 # names(points)
 # names(points.weather)
-head.x <- points$veast + points.weather$uwind.10m.flt.ht
-head.z <- points$z_speed + points.weather$vwind.10m.flt.ht
+head.x <- points$veast  - points.weather$uwind.10m.flt.ht
+head.z <- points$vnorth - points.weather$vwind.10m.flt.ht
 
 head.info <- t(mapply(wind.dir.speed, head.x,
                       head.z))
@@ -271,32 +309,21 @@ names(head.info) <- c("head.speed", "head.dir")
 #' Angle of compensation
 #' To calculate this, we require both the bearing from the current
 #' location to the goal (in this example the nest), and the
-#' heading vector (calculated above). The compensation angle then
-#' is simply the different between heading direction and goal
-#' direction.
+#' heading vector (calculated above). 
+#' 
+#' 
 
-# names(points)
-# 
-# nest_bear - head.info$head.dir
-# nest_bear - 
-# plot(points$nest_bear , head.info$head.dir)
-# hist(nest_bear)
-# hist(head.info$head.dir)
-
-#Check the nest bearing values - appear wrong
 #Discovered that I had the formular wrong (long and lat in wrong order) in gps_calculations.R
-
-
 
 
 
 #' Rerun nest location thing for this example:
 #Query the gull db to extract bird_id, nest_id, and nest locations
 nest_loc <- sqlQuery(gps.db, query="SELECT DISTINCT n.ring_number,
-      n.nest_id, n.latitude, n.longitude, t.device_info_serial
-      FROM gps_uva_nest_limited AS n, gps_uva_track_session_limited AS t
-      WHERE n.ring_number = t.ring_number
-      ORDER BY n.ring_number ASC;")
+                     n.nest_id, n.latitude, n.longitude, t.device_info_serial
+                     FROM gps_uva_nest_limited AS n, gps_uva_track_session_limited AS t
+                     WHERE n.ring_number = t.ring_number
+                     ORDER BY n.ring_number ASC;")
 
 
 #Nest location #############
@@ -318,13 +345,15 @@ colnames(nest_pos) <- c("lat","long")
 
 
 
-
 #bearing from nest, uses Haversine formula
-nest_bear <- earth.bear(points$longitude,points$latitude,nest_pos$long,nest_pos$lat)
+n <- length(points$longitude)
+if(type == "in") {nest_bear <- earth.bear(points$longitude,points$latitude,nest_pos$long,nest_pos$lat)} else {
+  nest_bear <- earth.bear(points$longitude,points$latitude,points$longitude[n],points$latitude[n])
+}
 
 
-ground.speed <- t(mapply(wind.dir.speed, points$x_speed,
-                         points$z_speed))
+ground.speed <- t(mapply(wind.dir.speed, points$veast,
+                         points$vnorth))
 # Make dataframe
 ground.speed <- as.data.frame(ground.speed)
 
@@ -333,27 +362,213 @@ names(ground.speed) <- c("ground.speed", "ground.dir")
 
 
 
-#' Some quick comparisons
+#' Calculating copensation angle and drift angle
 #' 
-nest_bear - head.info$head.dir
-plot(nest_bear , head.info$head.dir)
-hist(nest_bear)
-hist(head.info$head.dir)
-# names(points.weather)
+names(points)
+nest_bear
+names(head.info)
+head.info$head.dir
+
+
+angle.cor <- function(x) if(x >= 180) return(-360 + x) else if(x <= -180) return(360 + x) else return(x)
+
+angle.comp <- abs(head.info$head.dir   -   nest_bear)
+angle.comp <-sapply(angle.comp, angle.cor) *-1
+
+
+angle.drift <- nest_bear - ground.speed$ground.dir
+angle.drift <- sapply(angle.drift, angle.cor)
+
+
+
+
+
+
+
+
+# Dataframe of vairables created ####
+#' 
 vec.all <- cbind(nest_bear , head.info$head.dir, points.weather$wind.dir.10m,ground.speed$ground.dir)
 vec.all <- as.data.frame(vec.all)
 names(vec.all) <- c("nest_bear" , "head.dir", "wind.dir.10m", "ground.dir")
+# vec.all <- cbind(vec.all, ground.speed$ground.speed,head.info$head.speed,points.weather$vwind.10m.flt.ht,angle.comp,angle.drift)
+# names(vec.all) <- c("nest_bear" , "head.dir", "wind.dir.10m", "ground.dir","ground.speed","head.speed","wind.speed","compensation_angle","drift_angle")
+vec.all <- cbind(vec.all, ground.speed$ground.speed,head.info$head.speed,points.weather$wind.10m.flt.ht)
+names(vec.all) <- c("nest_bear" , "head.dir", "wind.dir.10m", "ground.dir","ground.speed","head.speed","wind.speed")
+
+# names(points.weather)
+
+#Mapping flight ####
+
+# pdf(paste0("flight_",flight,".pdf"))
+win.metafile(paste0("flight_",flight,".wmf"))
+
+library(maps)
+
+#First subset the data that we require  
+#   i      <-  trips.sample$device_info_serial[id]
+#   start.t  <-  trips.sample$start_time[id]
+#   end.t    <-  trips.sample$end_time[id]
+
+gps.sub <- points
+#   flights.sub <- flights.extract(i, start.t, end.t)
+
+
+# Set map limits
+c.xlim <- range(gps.sub$longitude)
+dif    <- c.xlim[2] - c.xlim[1]
+dif    <- dif *.15
+c.xlim <- c((c.xlim[1] - dif), (c.xlim[2] + dif))
+
+c.ylim <- range(gps.sub$latitude)
+dif    <- c.ylim[2] - c.ylim[1]
+dif    <- dif *.15
+c.ylim <- c((c.ylim[1] - dif), (c.ylim[2] + dif))
+
+# Plot base map
+load("SWE_adm0.RData")
+
+par( mar = c(5, 4, 4, 2))
+plot(gadm, xlim = c.xlim,
+     ylim = c.ylim, col="dark grey", bg = "white")
+# ?par
+
+# names(flights.sub)
+# Add points
+
+#Flight points
+
+points(gps.sub$longitude,
+       gps.sub$latitude,
+       col = "black", cex = 0.5)
+
+
+
+# Add lines
+# gps.sub$longitude,
+# gps.sub$latitude,
+#First grey for all
+n <- length(gps.sub$longitude)
+segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+         gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+         col = "grey")
+
+
+#' Arrows
+#' Make arrows for:
+#'  Wind vectors    (blue)
+#'  Heading vectors (red)
+#'  Ground vectors (black)
+
+
+#Arrows for wind
+arrows(points$longitude, points$latitude, x1 = (points$longitude + (points.weather$uwind.10m.flt.ht*.001)), y1 = (points$latitude + (points.weather$vwind.10m.flt.ht*.001))
+       ,length = 0.03, col = "blue"
+)
+
+#Arrows for heading
+arrows(points$longitude, points$latitude, x1 = (points$longitude + (head.x*.001)), y1 = (points$latitude + (head.z*.001))
+       ,length = 0.03, col = "red"
+)
+
+#Arrows for ground
+arrows(points$longitude, points$latitude, x1 = (points$longitude + (points$veast*.001)), y1 = (points$latitude + (points$vnorth*.001))
+       ,length = 0.03, col = "black"
+)
 
 
 
 
-plot(points$longitude,points$latitude)
-points(nest_pos$long,nest_pos$lat,col="red", pch = 10)
+# names(vec.all)
+# names(points.weather)
+# names(head.info)
+# names(ground.speed)
 
 
-names(points)
-cbind(vec.all,points$bearing_next, points$nest_gc_dist)
+# Scale bar and axis
+map.scale(ratio = FALSE)
+box()
+axis(side=(1),las=1)
+axis(side=(2),las=1)
+#   ?text
+mtext(paste("Flight: ", )
+      , side = 3, line = 1, cex = 1)
 
-names(points)
+#   dur <- as.difftime(trips.sample$duration_s[id], units= "secs")
+#   dur <- as.numeric(dur, units="hours")
+mtext(paste("Flight ID: ", flight)
+      , side = 3, line = 0, cex = 1)
 
-plot(points$altitude)
+dev.off()
+
+#End of figure
+
+# is.data.frame(vec.all)
+# 
+# write.table(vec.all, "clipboard", sep="\t")
+# write.table(vec.all, "clipboard", fileEncoding = "UTF-16LE")
+# 
+
+
+
+
+
+# Drift and compensation angle calculation ####
+
+# 1. Produce data.frame with all neccessary tracks
+# Wind, track, goal (nest), heading, with both bearing and speed
+# Use 'vec.all' created above
+
+# 2. Subtract goal direction from all (i.e. so goal is zero, and others
+# are now deviations from goal direction.
+names(vec.all)
+
+ang.cor2 <- function(x) if(x < 0) return(360 + x) else return(x)
+
+angle.comp <- abs(head.info$head.dir   -   nest_bear)
+angle.comp <-sapply(angle.comp, angle.cor) *-1
+
+v.wind  <- sapply(vec.all$wind.dir.10m - vec.all$nest_bear,ang.cor2)
+v.head  <- sapply(vec.all$head.dir - vec.all$nest_bear,ang.cor2)
+v.track <- sapply(vec.all$ground.dir - vec.all$nest_bear,ang.cor2)
+
+# negative deviation if 180 - 360, and positive if 0 - 180
+ang.cor3 <- function(x) if(x <360 & x > 180) return(-1*(180 -(x - 180))) else return(x)
+
+v.wind2  <- sapply(v.wind,ang.cor3)
+v.head2  <- sapply(v.head,ang.cor3)
+v.track2 <- sapply(v.track,ang.cor3)
+
+ang.cor.drift <- function(x,y) if(x < 0) return(y*-1) else return(y)
+ang.cor.comp  <- function(x,y) if(x < 0) return(y) else return(y*-1)
+
+
+a.drift <- mapply(v.wind2, FUN = ang.cor.drift, y = v.track2)
+a.comp  <- mapply(v.wind2, FUN = ang.cor.comp, y = v.head2)
+
+names(vec.all)
+#Need to remove the first and final points
+v.wind2[-length(v.wind2)] [-1]
+
+a.comp.full <- asin((vec.all$wind.speed[-length(v.wind2)] [-1]/vec.all$head.speed[-length(v.wind2)] [-1])*sin(abs(v.wind2[-length(v.wind2)] [-1])*pi/180))
+a.comp.full <- a.comp.full/pi *180
+a.comp.full <- c(NA,a.comp.full,NA)
+# v.wind2
+# asin(1.1)
+comp.dif <- a.comp.full - a.comp
+
+# Add to dataframe
+vec.all.names <- names(vec.all)
+vec.all <- cbind(vec.all,a.drift,a.comp,a.comp.full,comp.dif)
+names(vec.all) <- c(vec.all.names,"drift_angle","compensation_angle","full_compensation_angle","angle_dif")
+
+# ?write.table
+#' Output HTML table.
+library(xtable)
+print.xtable(xtable(vec.all), type="html", file=paste0("flight_",flight,".html"))
+
+#useing anser from: http://stackoverflow.com/questions/6190051/how-can-i-remove-all-objects-but-one-from-the-workspace-in-r
+# rm(list=setdiff(ls(), c("i","flights.sample")))
+# }
+# rm(list=ls())
+# warnings()
