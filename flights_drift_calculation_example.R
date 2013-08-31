@@ -89,7 +89,11 @@ points.weather <- NULL
 
 
 #Wind Speed in E-W direction 'uwnd.sig995' (ms^-1) 'near surface'
+<<<<<<< HEAD
 uwnd <- NCEP.interp(variable = "uwnd.sig995", level = "surface",
+=======
+uwnd. <- NCEP.interp(variable = "uwnd.sig995", level = "surface",
+>>>>>>> 861417703a98291db4d741096ac889d48bc508bb
                      lat = points$latitude, lon = points$longitude,  
                      dt = points$date_time,
                      reanalysis2 = FALSE, keep.unpacking.info = TRUE,
@@ -364,11 +368,18 @@ names(ground.speed) <- c("ground.speed", "ground.dir")
 
 #' Calculating copensation angle and drift angle
 #' 
+<<<<<<< HEAD
 
 #names(points)
 #nest_bear
 #names(head.info)
 #head.info$head.dir
+=======
+names(points)
+nest_bear
+names(head.info)
+head.info$head.dir
+>>>>>>> 861417703a98291db4d741096ac889d48bc508bb
 
 
 angle.cor <- function(x) if(x >= 180) return(-360 + x) else if(x <= -180) return(360 + x) else return(x)
@@ -396,6 +407,7 @@ names(vec.all) <- c("nest_bear" , "head.dir", "wind.dir.10m", "ground.dir")
 # names(vec.all) <- c("nest_bear" , "head.dir", "wind.dir.10m", "ground.dir","ground.speed","head.speed","wind.speed","compensation_angle","drift_angle")
 vec.all <- cbind(vec.all, ground.speed$ground.speed,head.info$head.speed,points.weather$wind.10m.flt.ht)
 names(vec.all) <- c("nest_bear" , "head.dir", "wind.dir.10m", "ground.dir","ground.speed","head.speed","wind.speed")
+<<<<<<< HEAD
 
 # names(points.weather)
 
@@ -537,8 +549,14 @@ v.track2 <- sapply(v.track,ang.cor3)
 
 ang.cor.drift <- function(x,y) if(x < 0) return(y*-1) else return(y)
 ang.cor.comp  <- function(x,y) if(x < 0) return(y) else return(y*-1)
+=======
 
+# names(points.weather)
+>>>>>>> 861417703a98291db4d741096ac889d48bc508bb
 
+#Mapping flight ####
+
+<<<<<<< HEAD
 a.drift <- mapply(v.wind2, FUN = ang.cor.drift, y = v.track2)
 a.comp  <- mapply(v.wind2, FUN = ang.cor.comp, y = v.head2)
 
@@ -569,3 +587,177 @@ vec.all
 # rm(list=ls())
 # warnings()
 
+=======
+# pdf(paste0("flight_",flight,".pdf"))
+win.metafile(paste0("flight_",flight,".wmf"))
+
+library(maps)
+
+#First subset the data that we require  
+#   i      <-  trips.sample$device_info_serial[id]
+#   start.t  <-  trips.sample$start_time[id]
+#   end.t    <-  trips.sample$end_time[id]
+
+gps.sub <- points
+#   flights.sub <- flights.extract(i, start.t, end.t)
+
+
+# Set map limits
+c.xlim <- range(gps.sub$longitude)
+dif    <- c.xlim[2] - c.xlim[1]
+dif    <- dif *.15
+c.xlim <- c((c.xlim[1] - dif), (c.xlim[2] + dif))
+
+c.ylim <- range(gps.sub$latitude)
+dif    <- c.ylim[2] - c.ylim[1]
+dif    <- dif *.15
+c.ylim <- c((c.ylim[1] - dif), (c.ylim[2] + dif))
+
+# Plot base map
+load("SWE_adm0.RData")
+
+par( mar = c(5, 4, 4, 2))
+plot(gadm, xlim = c.xlim,
+     ylim = c.ylim, col="dark grey", bg = "white")
+# ?par
+
+# names(flights.sub)
+# Add points
+
+#Flight points
+
+points(gps.sub$longitude,
+       gps.sub$latitude,
+       col = "black", cex = 0.5)
+
+
+
+# Add lines
+# gps.sub$longitude,
+# gps.sub$latitude,
+#First grey for all
+n <- length(gps.sub$longitude)
+segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+         gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+         col = "grey")
+
+
+#' Arrows
+#' Make arrows for:
+#'  Wind vectors    (blue)
+#'  Heading vectors (red)
+#'  Ground vectors (black)
+
+
+#Arrows for wind
+arrows(points$longitude, points$latitude, x1 = (points$longitude + (points.weather$uwind.10m.flt.ht*.001)), y1 = (points$latitude + (points.weather$vwind.10m.flt.ht*.001))
+       ,length = 0.03, col = "blue"
+)
+
+#Arrows for heading
+arrows(points$longitude, points$latitude, x1 = (points$longitude + (head.x*.001)), y1 = (points$latitude + (head.z*.001))
+       ,length = 0.03, col = "red"
+)
+
+#Arrows for ground
+arrows(points$longitude, points$latitude, x1 = (points$longitude + (points$veast*.001)), y1 = (points$latitude + (points$vnorth*.001))
+       ,length = 0.03, col = "black"
+)
+
+
+
+
+# names(vec.all)
+# names(points.weather)
+# names(head.info)
+# names(ground.speed)
+
+
+# Scale bar and axis
+map.scale(ratio = FALSE)
+box()
+axis(side=(1),las=1)
+axis(side=(2),las=1)
+#   ?text
+mtext(paste("Flight: ", )
+      , side = 3, line = 1, cex = 1)
+
+#   dur <- as.difftime(trips.sample$duration_s[id], units= "secs")
+#   dur <- as.numeric(dur, units="hours")
+mtext(paste("Flight ID: ", flight)
+      , side = 3, line = 0, cex = 1)
+
+dev.off()
+
+#End of figure
+
+# is.data.frame(vec.all)
+# 
+# write.table(vec.all, "clipboard", sep="\t")
+# write.table(vec.all, "clipboard", fileEncoding = "UTF-16LE")
+# 
+
+
+
+
+
+# Drift and compensation angle calculation ####
+
+# 1. Produce data.frame with all neccessary tracks
+# Wind, track, goal (nest), heading, with both bearing and speed
+# Use 'vec.all' created above
+
+# 2. Subtract goal direction from all (i.e. so goal is zero, and others
+# are now deviations from goal direction.
+names(vec.all)
+
+ang.cor2 <- function(x) if(x < 0) return(360 + x) else return(x)
+
+angle.comp <- abs(head.info$head.dir   -   nest_bear)
+angle.comp <-sapply(angle.comp, angle.cor) *-1
+
+v.wind  <- sapply(vec.all$wind.dir.10m - vec.all$nest_bear,ang.cor2)
+v.head  <- sapply(vec.all$head.dir - vec.all$nest_bear,ang.cor2)
+v.track <- sapply(vec.all$ground.dir - vec.all$nest_bear,ang.cor2)
+
+# negative deviation if 180 - 360, and positive if 0 - 180
+ang.cor3 <- function(x) if(x <360 & x > 180) return(-1*(180 -(x - 180))) else return(x)
+
+v.wind2  <- sapply(v.wind,ang.cor3)
+v.head2  <- sapply(v.head,ang.cor3)
+v.track2 <- sapply(v.track,ang.cor3)
+
+ang.cor.drift <- function(x,y) if(x < 0) return(y*-1) else return(y)
+ang.cor.comp  <- function(x,y) if(x < 0) return(y) else return(y*-1)
+
+
+a.drift <- mapply(v.wind2, FUN = ang.cor.drift, y = v.track2)
+a.comp  <- mapply(v.wind2, FUN = ang.cor.comp, y = v.head2)
+
+names(vec.all)
+#Need to remove the first and final points
+v.wind2[-length(v.wind2)] [-1]
+
+a.comp.full <- asin((vec.all$wind.speed[-length(v.wind2)] [-1]/vec.all$head.speed[-length(v.wind2)] [-1])*sin(abs(v.wind2[-length(v.wind2)] [-1])*pi/180))
+a.comp.full <- a.comp.full/pi *180
+a.comp.full <- c(NA,a.comp.full,NA)
+# v.wind2
+# asin(1.1)
+comp.dif <- a.comp.full - a.comp
+
+# Add to dataframe
+vec.all.names <- names(vec.all)
+vec.all <- cbind(vec.all,a.drift,a.comp,a.comp.full,comp.dif)
+names(vec.all) <- c(vec.all.names,"drift_angle","compensation_angle","full_compensation_angle","angle_dif")
+
+# ?write.table
+#' Output HTML table.
+library(xtable)
+print.xtable(xtable(vec.all), type="html", file=paste0("flight_",flight,".html"))
+
+#useing anser from: http://stackoverflow.com/questions/6190051/how-can-i-remove-all-objects-but-one-from-the-workspace-in-r
+# rm(list=setdiff(ls(), c("i","flights.sample")))
+# }
+# rm(list=ls())
+# warnings()
+>>>>>>> 861417703a98291db4d741096ac889d48bc508bb
