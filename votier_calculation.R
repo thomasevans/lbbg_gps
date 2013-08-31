@@ -1,15 +1,9 @@
-
-# long = c(0,1,2)
-# lat = c(2,3,4)
-# for(i in 1:10){
+#This script includes functions to analyse and visualise GPS tracks.
 
 
 #Get test data
 test10min <- read.table ("C:/Users/Tom/Dropbox/jose_shearwaters/test10min.txt", head = T, dec =",")
 
-# names(test10min)
-
-# 
 
 #Make vector with combined date and time. This will be character formatted
 test_date_time_txt <- paste(test10min$Date, " ", test10min$Time, sep = "")
@@ -20,12 +14,9 @@ test_date_time_txt <- paste(test10min$Date, " ", test10min$Time, sep = "")
 test_date_time_posix <- as.POSIXct(test_date_time_txt, format = "%d/%m/%Y %H:%M:%S", tz = "UTC")
 #View first 10 lines
 # test_date_time_posix[1:10]
-# # date_time <- "sljasd"
-#  date_time2 <- test_date_time_posix
-# 
-# date_time <- date_time2
 
-#Testing
+
+#Testing (run these lines if testing things within the functions).
 # long <- test10min$Longitude
 # lat <- test10min$Latitude
 # r1 <- 10000
@@ -34,18 +25,32 @@ test_date_time_posix <- as.POSIXct(test_date_time_txt, format = "%d/%m/%Y %H:%M:
 # date_time <- test_date_time_posix
 
 
-# length(long)
-# length(lat)
-# length(date_time)
-
-#Function to calculate tortoisity and '
+#Function to calculate tortoisity and 'Derived ground speed'.
 votier_calc <- function(long, lat, date_time, r1 = 1000, r2 = 10000, r3 = 100000){
   #Long - a vector of longitude values
   #Lat - a vector of latitude values
-  #r1, r2, r3  - the radii, in km, for which values will be calculated, r3 > r2 > r1. Default values are provided (1, 10, 100 km).
+  #r1, r2, r3  - the radii, in metres, for which values will be calculated, r3 > r2 > r1. Default values are provided (1, 10, 100 km).
   #date_time should be in POSIXct format
   
-  require(fossil)
+    #Function to calculate grand-circle distance. Copied from package 'fossil'. As this is the only function required from this package, it seems better to include it in the script.
+  #Vavrek (2012) 'fossil' v0.3.7. Palaeoecological and Palaeogeographical Analysis Tools. http://matthewvavrek.com/programs-and-code/fossil/
+  deg.dist <- function (long1, lat1, long2, lat2) 
+  {
+    rad <- pi/180
+    a1 <- lat1 * rad
+    a2 <- long1 * rad
+    b1 <- lat2 * rad
+    b2 <- long2 * rad
+    dlon <- b2 - a2
+    dlat <- b1 - a1
+    a <- (sin(dlat/2))^2 + cos(a1) * cos(b1) * (sin(dlon/2))^2
+    c <- 2 * atan2(sqrt(a), sqrt(1 - a))
+    R <- 40041.47/(2 * pi)
+    d <- R * c
+    return(d)
+  }
+  
+#   require(fossil)
   
   #Test that the longitude and latitude vectors are of equal length.
   if(length(long) != length(lat) | length(lat) != length(date_time)){warning("ERROR: Longitude, latitude, or date_time vector lengths differ, please provide vectors for longitude and latitude of equal length (i.e. x,y coordinates for each GPS fix), and date_time for each GPS fix")
@@ -93,7 +98,7 @@ votier_calc <- function(long, lat, date_time, r1 = 1000, r2 = 10000, r3 = 100000
 #     idz <- 50
     
     #Package required for calculating geographical distances
-    require(fossil)
+#     require(fossil)
     #library(fossil)
     
     #for all trip locations, set distance to focal point to NA
@@ -137,7 +142,7 @@ votier_calc <- function(long, lat, date_time, r1 = 1000, r2 = 10000, r3 = 100000
       #Takes calculated values from above, then calculates paramaters for that GPS point (id), and the defined redius (r).
       
       #package required for distance calculations
-      require(fossil)
+#       require(fossil)
       
       #Get minimum index (i.e. entering circle)  
         d <- rx 
@@ -216,18 +221,27 @@ votier_calc <- function(long, lat, date_time, r1 = 1000, r2 = 10000, r3 = 100000
   all.points <-  sapply(idx,gps_calc)
   all.points2 <- t(all.points)
   all.points3 <- as.data.frame(all.points2)
-  names(all.points3) <- c("r1","v1","r2","v2","r3","v3")
+  names(all.points3) <- c("tort1","v1","tort2","v2","tort3","v3")
   
   
   return(all.points3)
 }
 #End of calculation 'votier_calc'
 
+
+
+
+
+
+#Run for test data-set.
 gps_vot_calc <- votier_calc(long = test10min$Longitude, lat = test10min$Latitude, date_time = test_date_time_posix, r1 = 5000, r2 = 10000, r3 = 20000)
 
+#Look at final lines
 gps_vot_calc[1000:1336,]
+
+#Plot graphs to visualise results.
 par(mfrow=c(1,1))
-names(gps_vot_calc)
+# names(gps_vot_calc)
 hist(gps_vot_calc$r1, breaks = 20)
 hist(gps_vot_calc$r2, breaks = 20)
 hist(gps_vot_calc$r3, breaks = 20)
@@ -235,61 +249,117 @@ hist(gps_vot_calc$v1, breaks = 20)
 hist(gps_vot_calc$v2, breaks = 20)
 hist(gps_vot_calc$v3, breaks = 20)
 
-plot(gps_vot_calc$v1 ~ gps_vot_calc$r1, main = "5 km")
-plot(gps_vot_calc$v2 ~ gps_vot_calc$r2, main = "10 km")
-plot(gps_vot_calc$v3 ~ gps_vot_calc$r3, main = "20 km")
-# 
-# #Package to make colour palates
-# library(RColorBrewer)
-# #Make a colour scale for blue - 100 shades of blue
-# col.graph <-    colorRampPalette(brewer.pal(9,"Blues"))(100)
-# 
-# #Plot map with points coloured by tortoisity (dark is low straightness - i.e. high tortoisity).
-# plot(test10min$Latitude ~ test10min$Longitude, col = col.graph[100-floor(gps_vot_calc$r1*100)])
-# 
-# #As above but for speed.
-# plot(test10min$Latitude ~ test10min$Longitude, col = col.graph[100-floor(gps_vot_calc$v1/max(gps_vot_calc$v1)*100)])
-# 
-# 
-# #Plot map with points coloured by tortoisity (dark is low straightness - i.e. high tortoisity).
-# plot(test10min$Latitude ~ test10min$Longitude, col = col.graph[100-floor(gps_vot_calc$r2*100)])
-# 
-# #As above but for speed.
-# plot(test10min$Latitude ~ test10min$Longitude, col = col.graph[100-floor(gps_vot_calc$v2/max(gps_vot_calc$v2)*100)])
+plot(gps_vot_calc$v1 , gps_vot_calc$r1, main = "5 km")
+plot(gps_vot_calc$v2 , gps_vot_calc$r2, main = "10 km")
+plot(gps_vot_calc$v3 , gps_vot_calc$r3, main = "20 km")
 
-
+mov.param <- gps_vot_calc$r2
 
 #THIS FOLLOWING PART IS TO DRAW A MAP WITH THE POINTS.
+map.track <- function(col.points = "PuBuGn", long, lat, mov.param, asc = TRUE){
+#col.points, give the colour pallete for the colour to be used for GPS points. See 'function brewer.pal in package 'RColorBrewer' for details. Acceptable arguments are: Blues BuGn BuPu GnBu Greens Greys Oranges OrRd PuBu PuBuGn PuRd Purples RdPu Reds YlGn YlGnBu YlOrBr YlOrRd
+#long and lat, the longitude and latitude of points.
+#mov.param, the movement paramater to plot. Must be numeric vector. 
+#asc, colour with darker colour for high value or low values?                      
 
-library(graphics)
-library(maps)
-library(mapdata)
+#Required packages for maps                     
+require(graphics)
+require(maps)
+require(mapdata)
 #Package to make colour palates
-library(RColorBrewer)
-#Make a colour scale for blue - 100 shades of blue
-col.graph <-    colorRampPalette(brewer.pal(9,"Reds"))(100)
+require(RColorBrewer)
+                      
+#Make a colour scale with 100 shades.
+col.graph <-    colorRampPalette(brewer.pal(9,col.points))(100)
 
-
-
+                      
 #Determine range/ bounding for x and y axis. Here we choose the range of values for which the points represent plus some margin either side of this.
-long.bound <-  range(test10min$Longitude)
+long.bound <-  range(long)
 long.bound[1] <- long.bound[1] -  (0.35 * abs(long.bound[2]-long.bound[1]))
 long.bound[2] <- long.bound[2] +  (0.25 * abs(long.bound[2]-long.bound[1]))
 
-lat.bound <-  range(test10min$Latitude)
+lat.bound <-  range(lat)
 lat.bound[1] <- lat.bound[1] -  (0.25 * abs(lat.bound[2]-lat.bound[1]))
 lat.bound[2] <- lat.bound[2] +  (0.25 * abs(lat.bound[2]-lat.bound[1]))
 
 #Draw background map
 map(database = "worldHires", regions = ".", fill=TRUE, col="grey",bg = "white",bty="7", xlim = long.bound, ylim=lat.bound)
-#Add GPS points to map, coloured by previously determined colour scale. Here we invert the colour scale, so that low values of tortoisity (i.e. very tortuos) have darker colours.
-points(test10min$Longitude,test10min$Latitude,col = col.graph[100-(floor(gps_vot_calc$r3*100))], cex = 0.4)
 
+                      #Add GPS points to map, coloured by previously determined colour scale.
+if(asc == TRUE){                      
+points(long,lat,col = col.graph[100-abs(floor(mov.param*100))], cex = 0.4)
+} else points(long,lat,col = col.graph[abs(floor(mov.param*100))], cex = 0.4)
+                      
 #Addd a border to the map.
 box()
+                      
 #Add axis and labels
 axis(side=(1),las=1)
 axis(side=(2),las=1)
+                      
 #Add a scale bar
 map.scale(ratio=FALSE,relwidth = 0.4, cex = 0.6)
-# ?map.scale
+}
+             
+#Map the example data
+map.track(col.points = "Greys", test10min$Longitude, test10min$Latitude, mov.param = gps_vot_calc$r1, asc = TRUE)
+
+
+
+
+
+
+#Brownian-bridge thing
+# Kranstauber B, Kays R, LaPoint SD, Wikelski M, Safi K (2012) A dynamic Brownian bridge movement model to estimate utilization distributions for heterogeneous animal movement. Journal of Animal Ecology
+
+#First load in required package
+library("move")
+
+#Make 'move' trajectory object from example file data.
+gps.track <- move(x = test10min$Longitude, y = test10min$Latitude, time= test_date_time_posix, proj=CRS("+proj=longlat"), data = test10min, animal= 1, sensor = 1)
+
+#Plot above created object to check that it looks sensible.
+plot(gps.track)
+
+#Summary info for this.
+show(gps.track)
+#More summary info - not sure what units these are in - values look a bit odd. It looks like some are in metres and others in km.
+summary(gps.track)
+
+# View the help document for the 'move' package.
+vignette("move")
+
+# Brownian Bridge Movement Model Utilization Distribution
+# I couldn't get this to work!! I have emailed one of the package authors for help, and I couldn't even get the example code to work!/Tom
+
+# 
+# data(state)
+# states <- data.frame(state.x77, state.center)
+# states <- states[states$x > -121,]
+# coordinates(states) <- c("x", "y")
+# proj4string(states) <- CRS("+proj=longlat +ellps=clrk66")
+# summary(states)
+# state.ll83 <- spTransform(states, CRS("+proj=longlat +ellps=GRS80"))
+# 
+
+
+
+data <- move(system.file("extdata","leroy.csv.gz", package="move"))[1:80,]
+# ?spTransform
+data <- gps.track
+data2 <- spTransform(data, CRSobj="+proj=aeqd", center=TRUE)
+dBMvar <- brownian.motion.variance.dyn(object=data2, location.error=rep(23.5,n.locs(data2)), margin=13, window.size=31)
+
+
+
+# Brownian Bridge Movement Model 
+
+# Calculating home range thing
+# install.packages("adehabitatHR")
+hrBootstrap(x = gps.track, rep = 100, unin = 'km', unout = 'km2')
+# ?hrBootstrap
+
+
+#FPT thing
+
+

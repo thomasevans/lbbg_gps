@@ -2,12 +2,12 @@
 #You are welcome to use parts of this code, but please give credit when using it extensively.
 
 # Description #########
-#This script analyses various flight paramaters, including
-#reanalysing weather data extracted from NCEP reanalysis I 
-#(see 'weather_details.R'), using standard wind-shear equations
-#to calculate wind-speed at height (it does not make any allowance
-#for variation in wind-direction at different heights) - it should
-#only be trusted probably for lower altitudes.
+# This script analyses various flight paramaters, including
+# reanalysing weather data extracted from NCEP reanalysis I 
+# (see 'weather_details.R'), using standard wind-shear equations
+# to calculate wind-speed at height (it does not make any allowance
+# for variation in wind-direction at different heights) - it should
+# probably only be trusted  for lower altitudes.
 
 
 
@@ -92,12 +92,21 @@ wind.shear <- function(uwind10, vwind10, ht.med){
   
   # Remove negative altitude values, if x is 1 m or less, replace with 1 m
   # Leave NA values as is.
+#   rem.neg <- function(x){
+#     if(is.na(NA) == FALSE){
+#       if(x < 1) x <- 1
+#     }
+#     return(x)
+#   }
+  
   rem.neg <- function(x){
-    if(is.na(NA) == FALSE){
+    if(is.na(x) == FALSE){
       if(x < 1) x <- 1
     }
     return(x)
   }
+  
+  
   
   #For median flight height, remove values less than 1, and replace with
   # 1. See function 'rem.neg' above.
@@ -154,32 +163,65 @@ names(flights.characteristics) <- new.names
 
 #uwind10 <- 1
 #vwind10 <- -1
+# 
+# wind.dir.speed <- function(uwind10, vwind10){
+#   # This function calculates the wind speed and direction based the u
+#   # v wind vectors
+#   
+#   #Wind speed Pythanogras theorem
+#   wind.speed <- sqrt((uwind10 * uwind10) + (vwind10 * vwind10))
+#   
+#   # Calculate direction in radians (0 - 90 deg)
+#   dir <- atan(abs(uwind10/ vwind10))
+#   
+#   # Direction in degrees (0 - 90)
+#   dir <- dir * 180 / pi
+#   
+#   # Make into bearing from North
+#   if(uwind10 > 0 && vwind10 < 0){
+#     wind.dir <- (dir + 90)
+#   }else if(uwind10 < 0 && vwind10 < 0){
+#     wind.dir <- (dir + 180)
+#   }else  if(uwind10 < 0 && vwind10 > 0){
+#     wind.dir <- (dir + 270)
+#   }else   wind.dir <- (dir)
+#   
+#   x <- cbind(wind.speed, wind.dir)
+#   return(x)
+# }
 
+# Changed this on 2013-08-29, realised part of it was wrong.
 wind.dir.speed <- function(uwind10, vwind10){
   # This function calculates the wind speed and direction based the u
   # v wind vectors
   
-  #Wind speed Pythanogras theorem
+  #Wind speed Pythagoras theorem
   wind.speed <- sqrt((uwind10 * uwind10) + (vwind10 * vwind10))
   
   # Calculate direction in radians (0 - 90 deg)
   dir <- atan(abs(uwind10/ vwind10))
   
+  #   atan(1)
+  #   atan(0.5)
+  #   dir <- atan(0.5)
+  #   ?atan
   # Direction in degrees (0 - 90)
   dir <- dir * 180 / pi
   
   # Make into bearing from North
   if(uwind10 > 0 && vwind10 < 0){
-    wind.dir <- (dir + 90)
+    wind.dir <- (180 - dir)
   }else if(uwind10 < 0 && vwind10 < 0){
     wind.dir <- (dir + 180)
   }else  if(uwind10 < 0 && vwind10 > 0){
-    wind.dir <- (dir + 270)
+    wind.dir <- (360 - dir)
   }else   wind.dir <- (dir)
   
   x <- cbind(wind.speed, wind.dir)
   return(x)
 }
+
+
 
 # Testing
 # wind.dir.speed(1,1)

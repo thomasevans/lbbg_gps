@@ -77,7 +77,6 @@ colnames(nest_pos) <- c("lat","long")
 #calculate grand circle distance from nest for each GPS location             
 gc_dist <- deg.dist(gps$longitude, gps$latitude, nest_pos$long, nest_pos$lat)
 
-
 #calculating distance between consequative points#####
 lat.next  <- gps$latitude[-1]
 long.next <- gps$longitude[-1]
@@ -185,10 +184,11 @@ turning_angle <- c(0, (abs(bearing_next[-c(1,length(bearing_next))]
 
 
 #bearing from nest, uses Haversine formula
-nest_bear <- earth.bear(gps$latitude,gps$longitude,nest_pos$lat,nest_pos$long)
+nest_bear <- earth.bear(gps$longitude,gps$latitude,nest_pos$long,nest_pos$lat)
+#Corrected above on 2013-08-28
 #hist(nest_bear)
 # abs(-5)
-
+# ?earth.bear
 
 #replace first values for each bird with zero, where calculations were made between birds
 #need to put this in here
