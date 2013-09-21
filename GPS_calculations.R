@@ -24,22 +24,22 @@ library(maptools)
 #Establish a connection to the database
 gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
-
+# ?odbcConnectAccess2007
 #See what tables are available
 # sqlTables(gps.db)
-
 
 
 #for all of data_base, except pre-deployment and null records
 #excluding individuals with start north of 59 (i.e. those birds
 #from Fågelsundet)
 gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.*
-  FROM gps_uva_tracking_speed_3d_limited AS g, gps_uva_track_session_limited AS t
+  FROM gps_uva_tracking_speed_3d_limited AS g, gps_uva_track_session_limited AS t, gps_uva_individual_limited as i
   WHERE g.device_info_serial = t.device_info_serial
-    AND g.date_time >= t.start_date
-    AND g.date_time <= t.end_date
-    AND g.latitude IS NOT NULL
+    AND t.ring_number = i.ring_number
+    AND i.species = 'Larus fuscus'
+    AND g.date_time >= t. start_date
     AND t.start_latitude < 59 
+    AND g.latitude IS NOT NULL
   ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
                 ,as.is=TRUE)
 
@@ -53,12 +53,15 @@ gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
 #Query the gull db to extract bird_id, nest_id, and nest locations
 nest_loc <- sqlQuery(gps.db, query="SELECT DISTINCT n.ring_number,
       n.nest_id, n.latitude, n.longitude, t.device_info_serial
-      FROM gps_uva_nest_limited AS n, gps_uva_track_session_limited AS t
+      FROM gps_uva_nest_limited AS n, gps_uva_track_session_limited AS t,  gps_uva_individual_limited as i
       WHERE n.ring_number = t.ring_number
+      AND t.ring_number = i.ring_number
+      AND i.species = 'Larus fuscus'
       ORDER BY n.ring_number ASC;")
 
 #list available devices###########
-gps_devices <- sort(unique(nest_loc$device_info_serial))
+#Not used.
+#gps_devices <- sort(unique(nest_loc$device_info_serial))
 
 
 #Nest location #############
@@ -125,7 +128,7 @@ inst_ground_speed <- sqrt((gps$veast*gps$veast)
 diff_speed <- (inst_ground_speed - calculated_speed)
 
 # To view this
-hist(diff_speed[diff_speed < 100])
+hist(diff_speed[diff_speed < 12 & diff_speed > -7])
 
 # Angles/ bearing calculations #######
 
@@ -173,12 +176,15 @@ trackAngle <- function(xy) {
   angles[-c(1, length(angles))]
 }
 
+# ?trackAzimuth 
+
 # long <- c(15,20,25,25,25)
 # lat  <- c(50,51,52,52,52)
 # pos <- cbind(long,lat)
 
-turning_angle <- c(NA,trackAngle(cbind(gps$longitude,gps$latitude)),turn,NA)
+turning_angle <- c(NA,trackAngle(cbind(gps$longitude,gps$latitude)),NA)
 
+# hist(turning_angle)
 
 # Turning angle is scale dependent, for with long time intervals larger
 # turning angles must be expected than those for small time intervals.
@@ -245,12 +251,14 @@ for(i in seq(along = devices )){
 # Export to database ######
 # Put it all together in data_frame, with device_info_serial and
 # date_time for primary keys. Then export direct to access. 
-export_table <- as.data.frame(cbind(gps$device_info_serial,
-                                    gps$date_time, bearing_next,
-                                    bearing_prev, calculated_speed
-                                    ,diff_speed, gc_dist,nest_bear
-                                    ,inst_ground_speed, p2p_dist,
-                                    time_interval_s,turning_angle))
+export_table <- as.data.frame(
+  cbind(
+    gps$device_info_serial,
+    gps$date_time, bearing_next,
+    bearing_prev, calculated_speed
+    ,diff_speed, gc_dist,nest_bear
+    ,inst_ground_speed, p2p_dist,
+    time_interval_s,turning_angle))
 
 names(export_table) <- c("device_info_serial", "date_time", 
                          "bearing_next", "bearing_prev", 
