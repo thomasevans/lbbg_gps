@@ -117,11 +117,16 @@ points.weather <- cbind(points.weather,vwnd.sig995,vwnd.sig995.sd)
 
 
 #Wind Speed in E-W direction 'uwnd.10m' (ms^-1) '10 m'
-uwnd10 <- NCEP.interp(variable = "uwnd.10m", level = "gaussian",
-                      lat = points$latitude, lon = points$longitude,  
-                      dt = points$date_time,
-                      reanalysis2 = FALSE, keep.unpacking.info = TRUE,
-                      interp = 'linear')
+uwnd10 <- NCEP.interp(
+  variable = "uwnd.10m",
+  level = "gaussian",
+  lat = points$latitude,
+  lon = points$longitude,
+  dt = points$date_time,
+  reanalysis2 = FALSE,
+  keep.unpacking.info = TRUE,
+  interp = 'linear'
+  )
 
 
 
@@ -134,11 +139,13 @@ points.weather <- cbind(points.weather,uwnd.10m,uwnd.10m.sd)
 
 
 #Wind Speed in N-S direction 'vwnd.10m' (ms^-1) '10 m'
-vwnd10 <- NCEP.interp(variable = "vwnd.10m", level = "gaussian",
-                      lat = points$latitude, lon = points$longitude,  
-                      dt = points$date_time,
-                      reanalysis2 = FALSE, keep.unpacking.info = TRUE,
-                      interp = 'linear')
+vwnd10 <- NCEP.interp(
+  variable = "vwnd.10m", level = "gaussian",
+  lat = points$latitude, lon = points$longitude,  
+  dt = points$date_time,
+  reanalysis2 = FALSE, keep.unpacking.info = TRUE,
+  interp = 'linear'
+  )
 
 #Add values to points.weather table
 vwnd.10m <- (as.numeric(vwnd10))
@@ -212,13 +219,17 @@ alt.cor <- sapply(points$altitude, rep.neg.alt)
 wind.calculated    <- wind.shear(points.weather$uwnd.10m,
                                  points.weather$vwnd.10m,
                                  alt.cor)
-names(points.weather)
+  
+
+#names(points.weather)
+
 # Make into dataframe
 wind.calculated    <- as.data.frame(wind.calculated)
 
 # Give column names
 names(wind.calculated) <- c("uwind.10m.flt.ht", "vwind.10m.flt.ht",
                             "wind.10m.flt.ht")
+  
 points.weather <- cbind(points.weather,wind.calculated)
 
 

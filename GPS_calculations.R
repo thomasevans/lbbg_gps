@@ -1,5 +1,6 @@
-#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
-#You are welcome to use parts of this code, but please give credit when using it extensively.
+# Developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+# You are welcome to use parts of this code, but please give credit when using it extensively.
+# Code available at https://github.com/thomasevans/lbbg_gps
 
 #NB Some of following code is copied/ edited from a script by Michael Kemp for a course held in Amsterdam in 2010
 
@@ -17,12 +18,15 @@ library(RODBC)
 #For spatial functions
 library(fossil)
 
+#More spatial functions
+library(maptools)
+
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 
 #See what tables are available
-sqlTables(gps.db)
+# sqlTables(gps.db)
 
 
 
@@ -30,9 +34,10 @@ sqlTables(gps.db)
 #excluding individuals with start north of 59 (i.e. those birds
 #from Fågelsundet)
 gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.*
-  FROM gps_uva_tracking_limited AS g, gps_uva_track_session_limited AS t
+  FROM gps_uva_tracking_speed_3d_limited AS g, gps_uva_track_session_limited AS t
   WHERE g.device_info_serial = t.device_info_serial
     AND g.date_time >= t.start_date
+    AND g.date_time <= t.end_date
     AND g.latitude IS NOT NULL
     AND t.start_latitude < 59 
   ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
@@ -77,7 +82,7 @@ colnames(nest_pos) <- c("lat","long")
 #calculate grand circle distance from nest for each GPS location             
 gc_dist <- deg.dist(gps$longitude, gps$latitude, nest_pos$long, nest_pos$lat)
 
-#calculating distance between consequative points#####
+#calculating distance between consecutive points#####
 lat.next  <- gps$latitude[-1]
 long.next <- gps$longitude[-1]
 
@@ -93,8 +98,8 @@ time_interval_s <-
                       gps$date_time[(1:length(gps$date_time)-1)],
                       units="s"))
 
+#Add 0 at beggining for first point.
 time_interval_s <- c(0,time_interval_s)
-
 
 
 # Speed calculations ##############
@@ -103,15 +108,14 @@ time_interval_s <- c(0,time_interval_s)
 calculated_speed  <- p2p_dist/time_interval_s
 
 # Calculate instaneous ground_speed recorded by GPS using the
-# X and Y speeds from the GPS (Pythagoras theorem)
-inst_ground_speed <- sqrt((gps$x_speed*gps$x_speed) 
-                          + (gps$y_speed*gps$y_speed))                       
+# veast and vnorth speeds from the GPS (Pythagoras theorem)
+#
+# **2013-09-21 corrected this to noth and east movment,
+# not x and y, as these are different - earth coordinates
+# rather than perpendicular to geoid (which we require here.)
 
-
-#have a look at the data
-# par(mfrow=c(2,1))
-# hist(inst_ground_speed,breaks=40)
-# hist(calculated_speed,breaks=40)
+inst_ground_speed <- sqrt((gps$veast*gps$veast) 
+                          + (gps$vnorth*gps$vnorth))                       
 
 
 
@@ -120,37 +124,62 @@ inst_ground_speed <- sqrt((gps$x_speed*gps$x_speed)
 # instaneous speed >> calculated speed.
 diff_speed <- (inst_ground_speed - calculated_speed)
 
+# To view this
+hist(diff_speed[diff_speed < 100])
 
 # Angles/ bearing calculations #######
 
+# ?earth.bear
+
 #bearing to next point
-bearing_next <- c(earth.bear(gps$longitude[-length(gps$longitude)]
-                             ,gps$latitude[-length(gps$longitude)]
-                             ,gps$longitude[-1], gps$latitude[-1]), 0)
+bearing_next <- c(earth.bear(
+  gps$longitude[-length(gps$longitude)]
+ ,gps$latitude[-length(gps$longitude)]
+ ,gps$longitude[-1],
+  gps$latitude[-1]), 0)
+
+
 # bearing_next[1:10]
 
 #bearing from previous point
-bearing_prev <- c(0, earth.bear(gps$longitude[-1], gps$latitude[-1]
-                                ,gps$longitude[-length(gps$longitude)]
-                                ,gps$latitude[-length(gps$longitude)]))
+bearing_prev <- c(0, earth.bear(
+  gps$longitude[-1], gps$latitude[-1]
+  ,gps$longitude[-length(gps$longitude)]
+  ,gps$latitude[-length(gps$longitude)]))
 # bearing_prev[1:100]
 
-#turning angle
-turning_angle <- c(0, (abs(bearing_next[-c(1,length(bearing_next))]
-                           - bearing_next[-c(length(bearing_next)-1,
-                                             length(bearing_next))])
-                       %%180), 0)
+# a <- c(1,2,3,4)
+# a[-1]
+# a[-length(a)]
 
-# par(mfrow=c(2, 2))
-# hist(turning_angle)
-# hist(inst_ground_speed)
-# plot(turning_angle~inst_ground_speed)
-# 
-# plot(turning_angle~calculated_speed)
-# 
-# par(mfrow=c(1,1))
-# plot(turning_angle~time_interval_s,xlim=c(0,1500))
-# 
+#turning angle
+# turning_angle <- 
+#   c(0, (abs(
+#           bearing_next[-c(1,length(bearing_next))]
+#          - bearing_next[-c(length(bearing_next)-1,
+#          length(bearing_next))])
+#   %%180), 0)
+
+#install.packages('maptools')
+
+
+
+#using code from http://stackoverflow.com/a/11185378/1172358
+trackAngle <- function(xy) {
+  angles <- abs(c(trackAzimuth(xy), 0) -
+                  c(0, rev(trackAzimuth(xy[nrow(xy):1, ]))))
+  angles <- ifelse(angles > 180, 360 - angles, angles)
+  angles[is.na(angles)] <- 180
+  angles[-c(1, length(angles))]
+}
+
+# long <- c(15,20,25,25,25)
+# lat  <- c(50,51,52,52,52)
+# pos <- cbind(long,lat)
+
+turning_angle <- c(NA,trackAngle(cbind(gps$longitude,gps$latitude)),turn,NA)
+
+
 # Turning angle is scale dependent, for with long time intervals larger
 # turning angles must be expected than those for small time intervals.
 # Here we compare turning angle frequency according to intervals <500s
@@ -186,13 +215,9 @@ turning_angle <- c(0, (abs(bearing_next[-c(1,length(bearing_next))]
 #bearing from nest, uses Haversine formula
 nest_bear <- earth.bear(gps$longitude,gps$latitude,nest_pos$long,nest_pos$lat)
 #Corrected above on 2013-08-28
-#hist(nest_bear)
-# abs(-5)
-# ?earth.bear
 
 #replace first values for each bird with zero, where calculations were made between birds
-#need to put this in here
-x <- 1  #for some reason seems neccessary to declare this vairable
+#Not done
 
 #make a list of devices and put this in assending order
 devices <- sort(unique(gps$device_info_serial))
@@ -200,6 +225,8 @@ devices <- sort(unique(gps$device_info_serial))
 #for each device present in data_set get the value for the minimum
 #date_time value (i.e. the first record for that bird)
 index <- seq(along = gps$device_info_serial)
+
+x <- NA  #initialise vairable to be used within loop
 
 
 for(i in seq(along = devices )){
@@ -237,7 +264,7 @@ export_table$date_time <- gps$date_time
 #export these calculated values to the database
 #will be neccessary to edit table in Access after to define data-types and primary keys
 
-sqlSave(gps.db, export_table, tablename = "cal_mov_paramaters",
+sqlSave(gps.db, export_table, tablename = "lund_gps_parameters",
         append = FALSE, rownames = FALSE, colnames = FALSE,
         verbose = FALSE, safer = TRUE, addPK = FALSE,
         fast = TRUE, test = FALSE, nastring = NULL,
@@ -245,13 +272,3 @@ sqlSave(gps.db, export_table, tablename = "cal_mov_paramaters",
 
 
 
-
-x <- c(1,2,3,4,5,6,7)
-y <- c(1,4,2,6,27,7,2)
-
-z <- x + y
-vectorise
-
-for(i in 1:length(x)){
-  z[i] <- x[i] + y[i]
-}
