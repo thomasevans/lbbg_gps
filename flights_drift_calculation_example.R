@@ -25,15 +25,15 @@
 # flight 21290
 # Inward flights 21290, 15475, 20446, 5604, 13108, 21862, 10053, 19946, 18729,15873
 
-# flights.sample <- c(21290, 15475, 20446, 5604, 13108, 21862, 10053, 19946, 18729,15873)
+flights.sample <- c(21290, 15475, 20446, 5604, 13108, 21862, 10053, 19946, 18729,15873)
 
 # Outward flight: 5576, 10049, 17033, 15309
 
-flight <- 5576
+# flight <- 18729
 # Switch between calculating with nest as destination  and final point
 # as destination (aka. goal).
-type <- "out"
-# type <- "in"
+#type <- "out"
+ type <- "in"
 
 # x <- c(1,2,3,4)
 # for( i in x){
@@ -42,9 +42,9 @@ type <- "out"
 # }
 
 
-# for(i in 1:length(flights.sample)){
-#   print(flights.sample[i])
-# }
+for(i in 1:length(flights.sample)){
+  flight <- (flights.sample[i])
+
 
 #   i <- 5
 
@@ -402,7 +402,7 @@ names(vec.all) <- c("nest_bear" , "head.dir", "wind.dir.10m", "ground.dir","grou
 #Mapping flight ####
 
 # pdf(paste0("flight_",flight,".pdf"))
-#win.metafile(paste0("flight_",flight,".wmf"))
+win.metafile(paste0("flight_",flight,".wmf"))
 
 library(maps)
 
@@ -495,7 +495,7 @@ axis(side=(2),las=1)
 mtext(paste("Flight ID: ", flight)
       , side = 3, line = 0, cex = 1)
 
-#dev.off()
+dev.off()
 
 #End of figure
 
@@ -551,7 +551,7 @@ a.comp.full <- a.comp.full/pi *180
 a.comp.full <- c(NA,a.comp.full,NA)
 # v.wind2
 # asin(1.1)
-comp.dif <- a.comp.full - a.comp
+comp.dif <-  a.comp - a.comp.full
 
 # Add to dataframe
 vec.all.names <- names(vec.all)
@@ -561,10 +561,17 @@ names(vec.all) <- c(vec.all.names,"drift_angle","compensation_angle","full_compe
 # ?write.table
 #' Output HTML table.
 library(xtable)
-#print.xtable(xtable(vec.all), type="html", file=paste0("flight_",flight,".html"))
-vec.all
+print.xtable(xtable(vec.all), type="html", file=paste0("flight_",flight,".html"))
+# vec.all
+
+
+win.metafile(paste0("flight_compfig_",flight,".wmf"))
+plot(vec.all$angle_dif ~ points$nest_gc_dist, xlim = c(max(points$nest_gc_dist)+2,min(points$nest_gc_dist)-1))
+dev.off()
+
+
 #useing anser from: http://stackoverflow.com/questions/6190051/how-can-i-remove-all-objects-but-one-from-the-workspace-in-r
-# rm(list=setdiff(ls(), c("i","flights.sample")))
-# }
+rm(list=setdiff(ls(), c("i","flights.sample","type")))
+}
 # rm(list=ls())
 # warnings()
