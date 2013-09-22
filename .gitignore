@@ -1,10 +1,10 @@
-.Rproj.user
-.Rhistory
-.RData
-.png
-.html
-.ps
-.wmf
+*.Rproj.user
+*.Rhistory
+*.RData
+*.png
+*.html
+*.ps
+*.wmf
 flights_drift_calculation_example.html
 flight_compfig_21290.wmf
 figure

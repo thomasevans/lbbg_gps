@@ -1,5 +1,7 @@
-#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
-#You are welcome to use parts of this code, but please give credit when using it extensively.
+# Developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+# You are welcome to use parts of this code, but please give credit when using it extensively.
+# Code available at https://github.com/thomasevans/lbbg_gps
+
 
 
 #********************************
@@ -10,14 +12,14 @@
 library(RODBC)
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #See what tables are available
-sqlTables(gps.db)
+#sqlTables(gps.db)
 
 #for all of data_base, except pre-deployment and null records
 gps <- sqlQuery(gps.db, query="SELECT DISTINCT c.*, g.longitude, g.latitude, g.altitude
-  FROM gps_uva_tracking_limited AS g, cal_mov_paramaters AS c
+  FROM gps_uva_tracking_speed_3d_limited AS g, lund_gps_parameters AS c
   WHERE g.device_info_serial = c.device_info_serial
     AND g.date_time = c.date_time
     ORDER BY c.device_info_serial ASC, c.date_time ASC ;"
@@ -34,7 +36,7 @@ gps$date_time <- as.POSIXct(gps$date_time,
 
 #if we want to check which columns are present
 #names(gps)
-str(gps)
+# str(gps)
 #produce a vector of trip numbers
 trip_id <- sort(unique(gps$trip_id))
 f <- length(trip_id)

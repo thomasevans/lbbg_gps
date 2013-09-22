@@ -1,6 +1,7 @@
-#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
-#You are welcome to use parts of this code, but please give credit
-#when using it extensively.
+# Developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+# You are welcome to use parts of this code, but please give credit when using it extensively.
+# Code available at https://github.com/thomasevans/lbbg_gps
+
 #NB Some of following code is based on a script by Michael Kemp for a course held in Amsterdam in 2010
 
 
@@ -24,25 +25,26 @@ library(fossil)
 
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #See what tables are available
-sqlTables(gps.db)
+# sqlTables(gps.db)
 
 
 #for all of data_base, except pre-deployment and null records
 gps <- sqlQuery(gps.db,
-          query = "SELECT DISTINCT g.device_info_serial,
-                  g.date_time, g.longitude, g.latitude,
-                  c.calculated_speed, c.nest_gc_dist,
-                  c.nest_bear, c.inst_ground_speed,
-                  c.p2p_dist, c.time_interval_s,
-                  c.turning_angle, g.altitude
-                  FROM gps_uva_tracking_limited AS g,
-                    cal_mov_paramaters AS c
-                  WHERE g.device_info_serial = c.device_info_serial
-                    AND g.date_time = c.date_time
-                  ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
+          query =
+  "SELECT DISTINCT g.device_info_serial,
+  g.date_time, g.longitude, g.latitude,
+  c.calculated_speed, c.nest_gc_dist,
+  c.nest_bear, c.inst_ground_speed,
+  c.p2p_dist, c.time_interval_s,
+  c.turning_angle, g.altitude
+  FROM gps_uva_tracking_speed_3d_limited AS g,
+    lund_gps_parameters AS c
+  WHERE g.device_info_serial = c.device_info_serial
+    AND g.date_time = c.date_time
+  ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
                 ,as.is=TRUE)
 
 #for testing purposes we only take the first 100 lines
@@ -146,7 +148,7 @@ devices <- sort(unique(gps$device_info_serial))
 # First load neccessary packages
 require(foreach)
 require(doParallel)
-
+# install.packages("doParallel")
 #use x cores, general solution for any windows machine.
 cl <- makeCluster(parallel::detectCores())     
 
@@ -179,7 +181,9 @@ system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
 
 #close cluster
 stopCluster(cl)
-
+# rand on 2013-09-22
+# user  system elapsed 
+# 5.76   10.77 1223.86 
 
 # Number foraging trips ####
 
@@ -213,7 +217,7 @@ gps$trip_id <- all.points
 
 # Export to database ####
 
-# Output the new data columns to the 'cal_mov_paramaters' database table
+# Output the new data columns to the 'lund_gps_parameters' database table
 # put it all together in data_frame, with device_info_serial and
 # date_time for primary keys.
 export_table <- as.data.frame(cbind(gps$device_info_serial,
@@ -228,18 +232,21 @@ names(export_table) <- c("device_info_serial", "date_time",
 export_table$date_time <- gps$date_time
 
 # Export these calculated values to the database, updating the
-# existing 'cal_mov_paramaters' table.
+# existing 'lund_gps_parameters' table.
 # First added the three new columns to the table useing access
 # These must be numeric fields
-sqlUpdate(gps.db, export_table, tablename = "cal_mov_paramaters",
-          index = c("device_info_serial", "date_time"), fast=TRUE)
+sqlUpdate(gps.db, export_table,
+          tablename = "lund_gps_parameters",
+          index = c("device_info_serial",
+          "date_time"), fast=TRUE)
 
 #str(export_table)
 
 
 #Output files ####
 #Output data to shape file, csv, and unicsv (for GPS babel)
-
+wd <- getwd()
+setwd("D:/Dropbox/R_projects/lbbg_gps/processed_data")
 
 #***************************************
 #for each bird create a subset of the table 'gps'
@@ -332,3 +339,4 @@ system.time({foreach(i = seq(along = devices )) %dopar%
 
 #close the cluster
 stopCluster(cl)
+setwd(wd)
