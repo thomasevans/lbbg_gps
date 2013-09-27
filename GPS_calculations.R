@@ -278,5 +278,7 @@ sqlSave(gps.db, export_table, tablename = "lund_gps_parameters",
         fast = TRUE, test = FALSE, nastring = NULL,
         varTypes = c(date_time = "Date"))
 
+# After exporting, neccessary to open table in Access and specify which columns are primary keys (date_time and device_info_serial - i.e. a combined primary key)
 
+message("**After exporting, neccessary to open table in Access and specify which columns are primary keys (date_time and device_info_serial - i.e. a combined primary key)!!")
 

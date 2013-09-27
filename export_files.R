@@ -240,6 +240,7 @@ sqlUpdate(gps.db, export_table,
           index = c("device_info_serial",
           "date_time"), fast=TRUE)
 
+
 #str(export_table)
 
 
