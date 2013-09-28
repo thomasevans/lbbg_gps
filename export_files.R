@@ -26,9 +26,11 @@ library(fossil)
 
 #Establish a connection to the database
 gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
-
+# ?odbcConnectAccess2007
 #See what tables are available
 # sqlTables(gps.db)
+
+# odbcCloseAll()
 
 
 #for all of data_base, except pre-deployment and null records
@@ -181,7 +183,7 @@ system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
 
 #close cluster
 stopCluster(cl)
-# rand on 2013-09-22
+# ran on 2013-09-22
 # user  system elapsed 
 # 5.76   10.77 1223.86 
 
@@ -229,7 +231,20 @@ names(export_table) <- c("device_info_serial", "date_time",
                          "pos_type", "loc_type", "trip_id")
 
 #add date_time to dataframe
-export_table$date_time <- gps$date_time
+# export_table$date_time <- as.character(gps$date_time)
+
+export_table$date_time <- as.POSIXct(gps$date_time,
+     tz="GMT",format="%Y-%m-%d %H:%M:%S")
+# 
+# 
+# 
+# old.export_table <- export_table
+# export_table <- old.export_table
+# export_table <- export_table[export_table$device_info_serial == 519,]
+
+# export_table$date_time[1:100]
+
+warning("Before outputing the 3 newly calculated columns to the database table 'lund_gps_paramaters', it is neccessary to create three empty fields in the database to recieve the new data. These columns are: 'pos_type', 'loc_type', 'trip_id'")
 
 # Export these calculated values to the database, updating the
 # existing 'lund_gps_parameters' table.
@@ -239,7 +254,7 @@ sqlUpdate(gps.db, export_table,
           tablename = "lund_gps_parameters",
           index = c("device_info_serial",
           "date_time"), fast=TRUE)
-
+# names(export_table)
 
 #str(export_table)
 
@@ -262,12 +277,14 @@ gps$index <- seq(along = gps$device_info_serial)
 
 #function to output range of data files
 #produce three files, a shape file for Arcgis including a spatial reference. A csv file of all the data for that device (all data columns). A second csv file in the unicsv format of GPS Babel; this file can later be converted to various other files, such as kml.
-out.data <- function(xi,gps=get("gps", envir=environment(out.data)),
-                     devices = get("devices", envir = 
-                                     environment(out.data))){
+out.data <- 
+  function(xi, gps = get("gps",
+               envir = environment(out.data)),
+               devices = get("devices",
+               envir = environment(out.data))){
   require(sp)
   require(rgdal)
-  
+#   install.packages("rgdal")
   # first make a subset of the gps dataframe, containing data for 
   # device xi only.
   gps_sub <- subset(gps, gps$device_info_serial == devices[xi])
