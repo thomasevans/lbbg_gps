@@ -18,19 +18,21 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 #sqlTables(gps.db)
 
 #for all of data_base, except pre-deployment and null records
-gps <- sqlQuery(gps.db, query="SELECT DISTINCT c.*, g.longitude, g.latitude, g.altitude
+gps <- sqlQuery(gps.db, query=
+  "SELECT DISTINCT c.*, g.longitude, g.latitude, g.altitude
   FROM gps_uva_tracking_speed_3d_limited AS g, lund_gps_parameters AS c
   WHERE g.device_info_serial = c.device_info_serial
-    AND g.date_time = c.date_time
-    ORDER BY c.device_info_serial ASC, c.date_time ASC ;"
+  AND g.date_time = c.date_time
+  ORDER BY c.device_info_serial ASC, c.date_time ASC ;"
                 ,as.is=TRUE)
 
 #for testing purposes we only take the first x lines
 #gps <- gps[1:100000,]
 
 #a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
-gps$date_time <- as.POSIXct(gps$date_time,
-                            tz="GMT",format="%Y-%m-%d %H:%M:%S")
+gps$date_time <- 
+  as.POSIXct(gps$date_time,
+             tz="GMT", format="%Y-%m-%d %H:%M:%S")
 
 #gps$date_time[1:10]
 
@@ -63,25 +65,37 @@ trip.info <- function(t, gps = gps){
   end_time  <-  max(sub01$date_time)  #end time
   duration <- as.numeric(difftime(end_time,start_time,units="secs"))   #get trip duration in seconds
   dist_max  <-  max(sub01$nest_gc_dist)   #greatest distance reached from nest
-  dist_total <- sum(sub01$p2p_dist[2:n])   #total distance travelled, exclude first point p2p distance, as this includes distance to point before trip 'strated'.
+  dist_total <- sum(sub01$p2p_dist[2:n])   #total distance travelled, exclude first point p2p distance, as this includes distance to point before trip 'started'.
   interval_mean <- mean(sub01$time_interval_s)   #mean log interval
   interval_min <- min(sub01$time_interval_s)     #min log interval, may be useful for highlighting trips where high resolution GPS data is available (i.e. where the conditional log mode was used). It might make more sense to floor or round this value.
   trip_type <- ifelse(min(sub01$latitude) < 50, 1, 0) #label trips, zero if non-migratory, and 1 if migratory.
   device_info_serial <- sub01$device_info_serial[1]  #get device_info_serial
 
-gotland_long   <-  c(18.69902, 18.63378, 18.61279, 18.56489, 18.49318, 18.44077, 18.30666, 18.2061, 18.09348, 18.10016, 18.17383, 18.15944, 18.08482, 18.09232, 18.13166, 18.15832, 18.13748, 18.16773, 18.20654, 18.19873, 18.23659, 18.28966, 18.28202, 18.23032, 18.19989, 18.17564, 18.12695, 18.19584, 18.31607, 18.38137, 18.41146, 18.37254, 18.35202, 18.42005, 18.4743, 18.53251, 18.53104, 18.51167, 18.40778, 18.69513, 18.78849, 18.69069, 18.8719, 18.94208, 19.02026, 18.9025, 18.80552, 18.83831, 18.82224, 19.04768, 19.19782, 19.39945, 19.32853, 19.2397, 19.1699, 19.02679, 18.84733, 18.81656, 18.77957, 18.69902)
-gotland_lat    <-  c(57.94159, 57.89255, 57.85448, 57.84177, 57.83054, 57.82949, 57.65937, 57.61784, 57.54344, 57.4375, 57.38398, 57.318, 57.28085, 57.26383, 57.23233, 57.18662, 57.16356, 57.13989, 57.12689, 57.05876, 57.06099, 57.09378, 57.04784, 57.03813, 57.02055, 56.98026, 56.91038, 56.89589, 56.92512, 56.97002, 56.98702, 57.01864, 57.05858, 57.09776, 57.11539, 57.11611, 57.1273, 57.13386, 57.12617, 57.22258, 57.26402, 57.29327, 57.38018, 57.40429, 57.43351, 57.45097, 57.45049, 57.60669, 57.66888, 57.73525, 57.88962, 57.94424, 57.97617, 57.99029, 57.99399, 57.93041, 57.92847, 57.87778, 57.92259, 57.94159)
-# sub01$longitude
-# sub01$latitude
+  #' Aproximately define a polygon for Gotland, then determine
+  #' if trip includes points within this area.
   
-library(sp)  
-gotland <- sum(point.in.polygon(sub01$longitude, sub01$latitude,
-                 gotland_long , gotland_lat))
+  gotland_long   <-  c(18.69902, 18.63378, 18.61279, 18.56489, 18.49318, 18.44077, 18.30666, 18.2061, 18.09348, 18.10016, 18.17383, 18.15944, 18.08482, 18.09232, 18.13166, 18.15832, 18.13748, 18.16773, 18.20654, 18.19873, 18.23659, 18.28966, 18.28202, 18.23032, 18.19989, 18.17564, 18.12695, 18.19584, 18.31607, 18.38137, 18.41146, 18.37254, 18.35202, 18.42005, 18.4743, 18.53251, 18.53104, 18.51167, 18.40778, 18.69513, 18.78849, 18.69069, 18.8719, 18.94208, 19.02026, 18.9025, 18.80552, 18.83831, 18.82224, 19.04768, 19.19782, 19.39945, 19.32853, 19.2397, 19.1699, 19.02679, 18.84733, 18.81656, 18.77957, 18.69902)
+    
+  gotland_lat    <-  c(57.94159, 57.89255, 57.85448, 57.84177, 57.83054, 57.82949, 57.65937, 57.61784, 57.54344, 57.4375, 57.38398, 57.318, 57.28085, 57.26383, 57.23233, 57.18662, 57.16356, 57.13989, 57.12689, 57.05876, 57.06099, 57.09378, 57.04784, 57.03813, 57.02055, 56.98026, 56.91038, 56.89589, 56.92512, 56.97002, 56.98702, 57.01864, 57.05858, 57.09776, 57.11539, 57.11611, 57.1273, 57.13386, 57.12617, 57.22258, 57.26402, 57.29327, 57.38018, 57.40429, 57.43351, 57.45097, 57.45049, 57.60669, 57.66888, 57.73525, 57.88962, 57.94424, 57.97617, 57.99029, 57.99399, 57.93041, 57.92847, 57.87778, 57.92259, 57.94159)
   
-gotland <- if(gotland > 2){TRUE}  else{FALSE}
+  library(sp)  
+  #Number of GPS fixes from withing the Gotland polygon
+  gotland <- 
+    sum(point.in.polygon(sub01$longitude,
+                         sub01$latitude,
+                         gotland_long ,
+                         gotland_lat))
+  
+  #Define as a Gotland trip if at least 2 points are within Gotland polygon.
+  gotland <- if(gotland > 2){TRUE}  else{FALSE}
   
   #make a vector containing all this data
-  data.out <- c(t,device_info_serial,trip_type,n,start_time,end_time,duration,dist_max,dist_total,interval_mean,interval_min,gotland)  
+  data.out <- c(t, device_info_serial, 
+                trip_type,n, start_time,
+                end_time, duration,
+                dist_max, dist_total,
+                interval_mean, interval_min,
+                gotland)  
   
   return(data.out)            #output a vector for the bird of trip id
 }
@@ -91,7 +105,9 @@ gotland <- if(gotland > 2){TRUE}  else{FALSE}
 require(foreach)
 require(doParallel)
 cl <- makeCluster(parallel::detectCores())     #use x cores, general solution for any windows machine.
+
 registerDoParallel(cl)   #start the parellel session of R; the 'slaves', which will run the analysis.
+
 clusterExport(cl, c("gps","trip.info"))   #this maybe neccessary so that the clustered instances or R have the required vairables/ functions in their scope, i.e. those functions and vairables which are referred to within the 'foreach' function.
 
 #NB see: http://stackoverflow.com/questions/9404881/writing-to-global-variables-in-using-dosnow-and-doing-parallelization-in-r
@@ -139,3 +155,5 @@ sqlSave(gps.db, trips, tablename = "lund_trips", append = FALSE,
         rownames = FALSE, colnames = FALSE, verbose = FALSE,
         safer = TRUE, addPK = FALSE,
         fast = TRUE, test = FALSE, nastring = NULL,varTypes=c(start_time="Date",end_time="Date"))
+
+message("After output of new table to the database it is neccessary to open the table in the database software (Access) and define primary keys, and possibly modify data types.")
