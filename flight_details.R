@@ -1,38 +1,44 @@
-#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
-#You are welcome to use parts of this code, but please give credit when using it extensively.
+# Developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+# You are welcome to use parts of this code, but please give credit when using it extensively.
+# Code available at https://github.com/thomasevans/lbbg_gps
 
 # Description ####
 #'A script to process data on individual flights.
-#'It will summarise flights by distance travelled, altitude, speed etc.
+#'It will summarise flights by distance travelled,
+#' altitude, speed etc.
 #'They will also be labelled by foraging trip and device_info_serial.
-#'The flights should be numbered for each foraging trip. Perhaps also labelling the first and final flight of a foraging trip - which may contitute 'commuting' flight.
+#'The flights should be numbered for each foraging trip. Perhaps also labelling the first and final flight of a foraging trip - which may constitute 'commuting' flight.
 
 
 # Database functions ####
-#To link to database
+# To link to database
 library(RODBC)
 
 #Establish a connection to the database
 gps.db <- odbcConnectAccess2007(
-  'F:/Documents/Work/GPS_DB/GPS_db.accdb')
+  'D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #See what tables are available
-sqlTables(gps.db)
+# sqlTables(gps.db)
 
 #for all of data_base, except pre-deployment and null records
-gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude, g.latitude, g.x_speed, g.y_speed, g.z_speed, g.positiondop, g.speed_accuracy, c.bearing_next, c.bearing_prev, c.nest_gc_dist, c.nest_bear, c.inst_ground_speed, c.p2p_dist, c.time_interval_s, c.turning_angle
-  FROM gps_uva_tracking_limited AS g, cal_mov_paramaters AS c
+gps <- sqlQuery(gps.db, 
+  query="SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude, g.latitude, g.x_speed, g.y_speed, g.z_speed, g.positiondop, g.speed_accuracy, c.bearing_next, c.bearing_prev, c.nest_gc_dist, c.nest_bear, c.inst_ground_speed, c.p2p_dist, c.time_interval_s, c.turning_angle
+  FROM gps_uva_tracking_speed_3d_limited AS g, lund_gps_parameters AS c
   WHERE g.device_info_serial = c.device_info_serial
     AND g.date_time = c.date_time
     ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
                 ,as.is=TRUE)
 
 
-#check structure of object - does it contain what we expect it to?
-#str(gps)
+# rm(list=setdiff(ls(), c("gps")))
+
+
 
 #a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
-gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
+gps$date_time <- as.POSIXct(gps$date_time,
+                            tz="GMT",
+                            format="%Y-%m-%d %H:%M:%S")
 
 
 
@@ -47,7 +53,7 @@ gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",format="%Y-%m-%d %H:%M:%S")
 # Testing with subset ####
 # Preserve a copy of original, before taking a subset for testing.
 # gps.original <- gps
-gps <- gps.original
+# gps <- gps.original
 #for testing purposes we take the first x lines
 # gps <- gps[1:50000,]
 
@@ -65,10 +71,12 @@ gps$flight_class <- ifelse(gps$inst_ground_speed > 3.5, 1, 0)
 flight1 <- gps$flight_class + 1
 
 #make vector of next point value
-flight2 <- (2* c(gps$flight_class[2:length(gps$flight_class)], 0)) + 1
+flight2 <- 
+  (2* c(gps$flight_class[2:length(gps$flight_class)], 0)) + 1
 
 #make vector of prev point value
-flight3 <- (3* c(0,gps$flight_class[1:(length(gps$flight_class)-1)]))+1
+flight3 <- 
+  (3* c(0,gps$flight_class[1:(length(gps$flight_class)-1)])) + 1
 
 
 
@@ -123,11 +131,14 @@ flight.lab <- function(d, gps=get("gps", envir = environment(flight.lab))){
                     device_info_serial == d,
                   select = c(flight_class_2, flight_id))
   
-  #the number of gps positions
+  #added to deal with cases where there is no data for a device
+  if(length(sub01$flight_class_2) < 1) return()
+  
+  # the number of gps positions
   n <- length(sub01$flight_class_2) 
   
   
-  #A windows progress bar to monitor progress
+  # A windows progress bar to monitor progress
   pb <- winProgressBar(title = 
                          paste( "progress bar for device", d),
                        min = 0, max = n, width = 300)
@@ -196,6 +207,8 @@ registerDoParallel(cl)
 # from foreach to the global environment.
 clusterExport(cl, c("devices", "gps"))
 
+# Create an empty list to recieve data
+lst <- list()
 
 # Work out flight numbers for each device id, then
 # add these to a list of lists (lst)
@@ -203,14 +216,13 @@ clusterExport(cl, c("devices", "gps"))
 # so far has taken around 10-15 minutes on 8 thread machine.
 system.time(
   {lst <- foreach(i = seq(along = devices )) %dopar%{
-    
+#     i <- 21
   # Calculate the trip numbers for the device i.
   # I.e. the function which we wish to run for each device.     
   x <- flight.lab(devices[i], gps)
-  
   # Output x as list
-  list(x) 
-
+#   x.new <- list(x) 
+  list(x)
   #end of foreach functions
   } 
    
@@ -235,7 +247,10 @@ z <- 0
 x <- 0    
 
 # For testing
-i <- 1
+# i <- 1
+
+
+
 
 # Loop through all devices, making flight numbers unique,
 # by adding number of highest numbered existing flight,
@@ -288,8 +303,19 @@ export_table$date_time <- gps$date_time
 # updating existing 'cal_mov_paramaters' table.
 # First added the two new columns to the table
 # useing Access.
-sqlUpdate(gps.db, export_table, tablename =
-            "cal_mov_paramaters", index =
-            c("device_info_serial", "date_time"),
-          fast=TRUE)
+
+message("First add two new columns to DB table 'lund_gps_paramaters', add 'flight_class' and 'flight_id'")
+
+sqlUpdate(gps.db, export_table,
+          tablename = "lund_gps_parameters",
+          index = c("device_info_serial",
+                    "date_time"), fast=TRUE)
+
+
+# sqlUpdate(gps.db, export_table,
+#           tablename = "lund_gps_parameters",
+#           index = c("device_info_serial",
+#                     "date_time"), fast=TRUE)
+
+
 close(gps.db)

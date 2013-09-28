@@ -157,3 +157,5 @@ sqlSave(gps.db, trips, tablename = "lund_trips", append = FALSE,
         fast = TRUE, test = FALSE, nastring = NULL,varTypes=c(start_time="Date",end_time="Date"))
 
 message("After output of new table to the database it is neccessary to open the table in the database software (Access) and define primary keys, and possibly modify data types.")
+
+close(gps.db)
