@@ -1,5 +1,6 @@
-#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
-#You are welcome to use parts of this code, but please give credit when using it extensively.
+# Developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+# You are welcome to use parts of this code, but please give credit when using it extensively.
+# Code available at https://github.com/thomasevans/lbbg_gps
 
 # Description #########
 # This script analyses various flight paramaters, including
@@ -7,7 +8,7 @@
 # (see 'weather_details.R'), using standard wind-shear equations
 # to calculate wind-speed at height (it does not make any allowance
 # for variation in wind-direction at different heights) - it should
-# probably only be trusted  for lower altitudes.
+# probably only to be trusted  for lower altitudes.
 
 
 
@@ -19,7 +20,7 @@ library(RODBC)
 #Database queries #################################
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #See what tables are available
 #sqlTables(gps.db)
@@ -32,20 +33,21 @@ ORDER BY f.flight_id ASC;")
 # Hack to set time zone back to UTC rather than system locale.
 # See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
 
+
 tm <- as.POSIXlt(flights$start_time)
-tm[1:10]
+# tm[1:10]
 attr(tm,"tzone") <- "UTC"
-tm[1:10]
+# tm[1:10]
 flights$start_time <- tm
 
 tm <- as.POSIXlt(flights$end_time)
-tm[1:10]
+# tm[1:10]
 attr(tm,"tzone") <- "UTC"
-tm[1:10]
+# tm[1:10]
 flights$end_time <- tm
 
 
-flights$start_time[1:10]
+# flights$start_time[1:10]
 
 #str(flights)  #check structure
 

@@ -1,5 +1,6 @@
-#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
-#You are welcome to use parts of this code, but please give credit when using it extensively.
+# Developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+# You are welcome to use parts of this code, but please give credit when using it extensively.
+# Code available at https://github.com/thomasevans/lbbg_gps
 
 
 #This script gets weather data for each flight, using the NCEP/NCAR Reanalysis.
@@ -17,24 +18,44 @@ library(RNCEP)
 
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
-#See what tables are available
-#sqlTables(gps.db)
 
 #Get a copy of the flights DB table.
 flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
-FROM lund_flights AS f
-ORDER BY f.flight_id ASC;")
+  FROM lund_flights AS f
+  ORDER BY f.flight_id ASC ;"
+                  ,as.is=TRUE)
 
-#str(flights)  #check structure
+# flights$start_time
+flights$start_time  <- as.POSIXct(flights$start_time,
+                            tz="GMT",
+                            format="%Y-%m-%d %H:%M:%S")
+
+
+flights$end_time  <- as.POSIXct(flights$end_time,
+                                  tz="GMT",
+                                  format="%Y-%m-%d %H:%M:%S")
+
+# 
+# tm <- as.POSIXlt(flights$start_time)
+# # tm[1:10]
+# attr(tm,"tzone") <- "UTC"
+# # tm[1:10]
+# flights$start_time <- tm
+# 
+# tm <- as.POSIXlt(flights$end_time)
+# # tm[1:10]
+# attr(tm,"tzone") <- "UTC"
+# # tm[1:10]
+# flights$end_time <- tm
 
 
 #Testing##########################
 #make subset of the data
-flights_original <- flights
-flights <- flights_original
-#flights <- flights[1:10,]
+# flights_original <- flights
+# # flights <- flights_original
+# flights <- flights[1:10,]
 
 
 #Get weather data #################################
@@ -190,17 +211,6 @@ sqlSave(gps.db, flights_weather, tablename = "lund_flights_weather",
 
 
 
-# names(flights_weather)
-# 
-# getSqlTypeInfo("ACCESS")
-# 
-# 
-# ?sqlSave
-# 
-# 
-# vignette("RODBC")
-# 
-# 
 
 
 
