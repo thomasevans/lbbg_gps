@@ -1,14 +1,13 @@
-# Header##############
-# Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
-# You are welcome to use parts of this code, but please
-# give credit when using it extensively.
+# Developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+# You are welcome to use parts of this code, but please give credit when using it extensively.
+# Code available at https://github.com/thomasevans/lbbg_gps
 
 
 # A script to analyse each flight, with various
 # paramaters, such as maximum altitude, calculated.
-# First the database will be queried too pull out
+# First the database will be queried to pull out
 # the data columns we needd for our analysis.
-# Second. Various paramateerrs and information about
+# Second. Various paramaters and information about
 # the flights will be calculated.
 # Third. This will be ouput to a new database table
 # specifially for flights.
@@ -19,10 +18,10 @@
 library(RODBC)
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #See what tables are available
-sqlTables(gps.db)
+# sqlTables(gps.db)
 
 
 
@@ -40,22 +39,24 @@ nest_loc <- sqlQuery(gps.db, query=
 #get all the GPS info that we require
 
 #for all of data_base, except pre-deployment and null records
-# gps <- sqlQuery(gps.db, query =
-#   "SELECT DISTINCT g.device_info_serial, g.date_time,
-#   g.longitude, g.latitude, g.x_speed, g.y_speed,
-#   g.z_speed, g.positiondop, g.speed_accuracy,
-#   c.bearing_next, c.bearing_prev, c.nest_gc_dist,
-#   c.nest_bear, c.inst_ground_speed, c.p2p_dist,
-#   c.time_interval_s, c.turning_angle, c.flight_class,
-#   c.flight_id, g.altitude
-#   FROM gps_uva_tracking_limited AS g,
-#     cal_mov_paramaters AS c
-#   WHERE g.device_info_serial = c.device_info_serial
-#     AND g.date_time = c.date_time
-#     ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
-#                 ,as.is=TRUE)
+gps <- sqlQuery(gps.db, query =
+  "SELECT DISTINCT g.device_info_serial, g.date_time,
+  g.longitude, g.latitude, 
+  c.bearing_next, c.bearing_prev, c.nest_gc_dist,
+  c.nest_bear, c.inst_ground_speed, c.p2p_dist,
+  c.time_interval_s, c.flight_class,
+  c.flight_id, g.altitude
+  FROM gps_uva_tracking_speed_3d_limited AS g,
+    lund_gps_parameters AS c
+  WHERE g.device_info_serial = c.device_info_serial
+    AND g.date_time = c.date_time
+    ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
+                ,as.is=TRUE)
 
-load("flight_gps_data.Rdata")
+
+#  rm(list=setdiff(ls(), c("gps","nest_loc")))
+
+# load("flight_gps_data.Rdata")
 
 #a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
 gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",
@@ -64,15 +65,15 @@ gps$date_time <- as.POSIXct(gps$date_time, tz="GMT",
 
 
 #preserve a copy of original, before taking a subset for testing.
-gps.original <- gps
+# gps.original <- gps
 #gps <- gps.original
 #for testing purposes we only take the first x lines
-#gps <- gps[1:50000,]
+# gps <- gps[1:50000,]
 
 
 
-#nest postion#######################
-#function to produce two vectors of latitude and longitude positions
+# nest postion#######################
+# function to produce two vectors of latitude and longitude positions
 lookup_nest <- function(device_info){
   x <- nest_loc$device_info_serial == device_info
   lat <- nest_loc$latitude[x]
@@ -114,6 +115,7 @@ flight.info <- function(t, gps=gps){
   library(fossil)   #required for distance calculations
   library(circular) #required for some circular calculations
   #make a subset of 'gps' containing just data for flight, t.
+#   install.packages("circular")
   
   sub01 <- subset(gps, flight_id == t)
   
@@ -166,7 +168,7 @@ flight.info <- function(t, gps=gps){
   dist_nest_start    <-   1000 * 
     deg.dist(nest[2], nest[1], start_long, start_lat)
   
-  # Distance from next at end of flight.
+  # Distance from nest at end of flight.
   dist_nest_end      <-   1000 * 
     deg.dist(nest[2], nest[1], end_long, end_lat)
     
@@ -303,9 +305,8 @@ system.time({lst <- foreach(i = seq(along = flight_id )) %dopar%{
 
 #close cluster
 stopCluster(cl)
-#length(names(flights))
 #Time taken one time 4006.31 s (67 mins), 3105s another time
-
+#Time taken on 20130929 (now including data from 2011, 2012, 2013): 7425 seconds (124 minutes).
  
 
 
@@ -385,55 +386,7 @@ for(x in seq(along = devices)){
     trips$device_info_serial == devices[x]], na.rm = TRUE)
 }
   
-#   f <- (flights$device_info_serial == devices[x])
-#   
-#   summary(flights$trip_id)
-  
-  #   trip.excl[x] <- max(flights$trip_id[
-#     flights$device_info_serial == devices[x]], na.rm = TRUE)
-# # }
-#   max(flights$trip_id, na.rm = TRUE)
-#   max(flights$trip_id[
-#     flights$device_info_serial == devices[1]], na.rm = TRUE)
-#   #added this to exlude 'final' trip for each device - which is likely to get mixed up with data from following device.
-#   excl[flights$trip_id == max(flights$trip_id[
-#     flights$device_info_serial == devices[x]],
-#            na.rm = TRUE)] <- FALSE  
-#   
-  
-#   excl[flights$trip_id == (max(flights$trip_id[
-#     flights$device_info_serial == devices[x]],
-#               na.rm = TRUE))]
 
-
-# warnings()
-
-# ?any
-
-
-# ?max
-# x <- 1
-# 
-# i <-  1229
-#  i <- 1318
-# test <- seq(along = trips$trip_id)
-# length(test)
-# summary(test == i)
-# length(trips$trip_id)
-# length(unique(trips$trip_id))
-
-# test <- NA
-# for(i in 1228:1319){
-#   test[i] <- i
-# }
-
-# for(i in 1:10){
-#   if(i == 5){(print(8))} else (print(4))
-# }
-
-# save(gps, file = "flight_gps_data.Rdata")
-
-# summary(trips$trip_id == 1318)
 
 # For all trips, do the following
 system.time(for(i in seq(along = trips$trip_id)){
@@ -536,19 +489,9 @@ system.time(for(i in seq(along = trips$trip_id)){
   }
 })
 #about 80 s
+
+
 # warnings()
-#Check that this has worked and looks sensible.
-#summary(as.factor(flights$trip_flight_type))
-
-#warnings()
-
-#names(flights)
-#hist(flights$points[flights$points > 2 & flights$points < 600])
-#length(flights$points[flights$trip_flight_type == "inward" & flights$points > 1])
-#length(flights$points[flights$trip_flight_type == "inward" & flights$points > 5])
-
-# summary(flights$trip_id == 1318)
-
 
 
 #output data to database##################
@@ -560,6 +503,3 @@ sqlSave(gps.db, flights, tablename = "lund_flights", append = FALSE,
         safer = TRUE, addPK = FALSE,
         fast = TRUE, test = FALSE, nastring = NULL,varTypes=c(start_time="Date",end_time="Date"))
   
-
-#  flights[flights$flight_id == 1517,]
-# summary(as.factor((flights$trip_flight_type)))
