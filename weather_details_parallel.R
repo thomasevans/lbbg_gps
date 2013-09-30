@@ -44,9 +44,9 @@ flights$end_time  <- as.POSIXct(flights$end_time,
 
 
 #testing - take a subset of the data
-flights.original <- flights
+# flights.original <- flights
 # flights <- flights.original
-flights <- flights.original[c(1:10,20000:20010,30010:30015),]
+# flights <- flights.original[c(1:10,20000:20010,30010:30025),]
 
 # str(flights)
 
@@ -236,7 +236,7 @@ system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
 #close cluster
 stopCluster(cl)
 
-weather.data <-  data.frame(matrix(unlist(lst), nrow = length(flights$flight_id), byrow = F))
+weather.data <-  data.frame(matrix(unlist(lst), nrow = length(flights$flight_id), byrow = T))
 
 # 
 # y <- data.frame(matrix(unlist(x), nrow = 6, byrow = F))
