@@ -10,6 +10,11 @@
 #aproximate wind speed at the bird flight height using wind shear equations.
 
 
+
+#* Should try to parellelize this program, such that it uses all available process threads. For each or somthing similar.
+
+
+
 #Required packages
 library(RODBC) 
 library(RNCEP)
