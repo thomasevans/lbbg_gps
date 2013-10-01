@@ -221,6 +221,7 @@ lst <- list()
 
 #get weather data for each flight of each trip
 #Use system.time to time how long this takes.
+# On 2013-09-30 took 24875 s (<7 h)
 system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
   
   #calculate the trip numbers for the device i. i.e. the function 
