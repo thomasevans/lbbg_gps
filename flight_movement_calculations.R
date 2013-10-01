@@ -202,45 +202,6 @@ flights.characteristics <- cbind(flights.characteristics, wind.origin)
 
 
 
-# Heading vector####
-#' Calculating heading vector (we already have the wind vector
-#' and the track vector).
-#' In principle this is simple vector addition.
-#' 
-
-# Calculating x and z component of heading vector
-# Subtract wind vector from ground vector, leaving
-# heading vector
-# names(points)
-# names(points.weather)
-head.x <- points$veast  - points.weather$uwind.10m.flt.ht
-head.z <- points$vnorth - points.weather$vwind.10m.flt.ht
-
-head.info <- t(mapply(wind.dir.speed, head.x,
-                      head.z))
-# names(points.weather)
-# Make dataframe
-head.info <- as.data.frame(head.info)
-
-# Give names to columns
-names(head.info) <- c("head.speed", "head.dir")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #Output weather data to database #####
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
 sqlSave(gps.db, flights.characteristics, tablename = "lund_flight_paramaters",
