@@ -5,7 +5,7 @@
 # Description #########
 # This script analyses various flight paramaters, including
 # reanalysing weather data extracted from NCEP reanalysis I 
-# (see 'weather_details.R'), using standard wind-shear equations
+# (see 'weather_details_parallel.R'), using standard wind-shear equations
 # to calculate wind-speed at height (it does not make any allowance
 # for variation in wind-direction at different heights) - it should
 # probably only to be trusted  for lower altitudes.
@@ -27,48 +27,29 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #Get a copy of the flights DB table.
 flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
-FROM lund_flights AS f
-ORDER BY f.flight_id ASC;")
+  FROM lund_flights AS f
+  ORDER BY f.flight_id ASC ;"
+                    ,as.is=TRUE)
 
-# Hack to set time zone back to UTC rather than system locale.
-# See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
-
-
-tm <- as.POSIXlt(flights$start_time)
-# tm[1:10]
-attr(tm,"tzone") <- "UTC"
-# tm[1:10]
-flights$start_time <- tm
-
-tm <- as.POSIXlt(flights$end_time)
-# tm[1:10]
-attr(tm,"tzone") <- "UTC"
-# tm[1:10]
-flights$end_time <- tm
+# flights$start_time
+flights$start_time  <- as.POSIXct(flights$start_time,
+                                  tz="GMT",
+                                  format="%Y-%m-%d %H:%M:%S")
 
 
-# flights$start_time[1:10]
+flights$end_time  <- as.POSIXct(flights$end_time,
+                                tz="GMT",
+                                format="%Y-%m-%d %H:%M:%S")
 
-#str(flights)  #check structure
 
 #Get a copy of the flights_weather DB table.
 flights.weather <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
 FROM lund_flights_weather AS f
-ORDER BY f.flight_id ASC;")
+ORDER BY f.flight_id ASC;",as.is=TRUE)
 
-# Hack to set time zone back to UTC rather than system locale.
-# See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
-tm <- as.POSIXlt(flights.weather$start_time)
-#Check how this appears (i.e. time zone)
-# tm[1:10]
-attr(tm,"tzone") <- "UTC"
-#Check how appears after change of time-zone - i.e. is the absolute time
-#value unchanged?
-# tm[1:10]
-flights.weather$start_time <- tm
-
-#str(flights.weather)  #check structure
-
+flights.weather$start_time  <- as.POSIXct(flights.weather$start_time,
+                                tz="GMT",
+                                format="%Y-%m-%d %H:%M:%S")
 
 
 #Wind shear#############################################
@@ -94,13 +75,6 @@ wind.shear <- function(uwind10, vwind10, ht.med){
   
   # Remove negative altitude values, if x is 1 m or less, replace with 1 m
   # Leave NA values as is.
-#   rem.neg <- function(x){
-#     if(is.na(NA) == FALSE){
-#       if(x < 1) x <- 1
-#     }
-#     return(x)
-#   }
-  
   rem.neg <- function(x){
     if(is.na(x) == FALSE){
       if(x < 1) x <- 1
@@ -108,6 +82,7 @@ wind.shear <- function(uwind10, vwind10, ht.med){
     return(x)
   }
   
+  #   rem.neg(-1)
   
   
   #For median flight height, remove values less than 1, and replace with
@@ -118,7 +93,8 @@ wind.shear <- function(uwind10, vwind10, ht.med){
   uwind.new <- uwind10 * ((ht.med / 10) ^ 0.11)
   vwind.new <- vwind10 * ((ht.med / 10) ^ 0.11)
   
-  #New wind speed, using hypotenuse rule to calculate wind speed
+  
+  #New wind speed, using Pythagoras theorem to calculate wind speed
   wind.new  <- sqrt((uwind.new * uwind.new) + (vwind.new * vwind.new))
   
   #Vairables to export
@@ -127,11 +103,22 @@ wind.shear <- function(uwind10, vwind10, ht.med){
   return(vairables)
 }        #end of wind.shear function
 
+# Remove negative or <0.1 m altitudes with 0.1 value
+# First define function
+rep.neg.alt <- function(x){if(is.na(x)){return(NA)} else {if(x < 0.1){return(0.1)} else { return(x)}}}
+
+
+# rep.neg.alt(NA)
+
+# Then do for all flights
+alt.cor <- sapply(flights$alt_med, rep.neg.alt)
+
+
 # Calculate wind-speed at flight height
 # Get u and v vector at flight height, and scalar wind speed
 wind.calculated    <- wind.shear(flights.weather$uwnd10m,
                                  flights.weather$vwnd10m,
-                                 flights$alt_med)
+                                 alt.cor)
 
 # Make into dataframe
 wind.calculated    <- as.data.frame(wind.calculated)
@@ -139,6 +126,8 @@ wind.calculated    <- as.data.frame(wind.calculated)
 # Give column names
 names(wind.calculated) <- c("uwind.10m.flt.ht", "vwind.10m.flt.ht",
                             "wind.10m.flt.ht")
+
+
 
 # Add to new dataframe for newly calculated flight characteristics,
 # later to be exported to the database.
@@ -154,45 +143,8 @@ new.names <- c("flight_id", "start_time", "device_info_serial", new.names)
 names(flights.characteristics) <- new.names
 
 
-# names(flights.characteristics)
-# str(flights.characteristics)
-# flights.characteristics$start_time
-
-
-
-
-#Wind direction and speed#############
-
-#uwind10 <- 1
-#vwind10 <- -1
-# 
-# wind.dir.speed <- function(uwind10, vwind10){
-#   # This function calculates the wind speed and direction based the u
-#   # v wind vectors
-#   
-#   #Wind speed Pythanogras theorem
-#   wind.speed <- sqrt((uwind10 * uwind10) + (vwind10 * vwind10))
-#   
-#   # Calculate direction in radians (0 - 90 deg)
-#   dir <- atan(abs(uwind10/ vwind10))
-#   
-#   # Direction in degrees (0 - 90)
-#   dir <- dir * 180 / pi
-#   
-#   # Make into bearing from North
-#   if(uwind10 > 0 && vwind10 < 0){
-#     wind.dir <- (dir + 90)
-#   }else if(uwind10 < 0 && vwind10 < 0){
-#     wind.dir <- (dir + 180)
-#   }else  if(uwind10 < 0 && vwind10 > 0){
-#     wind.dir <- (dir + 270)
-#   }else   wind.dir <- (dir)
-#   
-#   x <- cbind(wind.speed, wind.dir)
-#   return(x)
-# }
-
-# Changed this on 2013-08-29, realised part of it was wrong.
+# Calculation wind direction and speed
+# Function defenition
 wind.dir.speed <- function(uwind10, vwind10){
   # This function calculates the wind speed and direction based the u
   # v wind vectors
@@ -223,13 +175,9 @@ wind.dir.speed <- function(uwind10, vwind10){
   return(x)
 }
 
+# wind.dir.speed(-10,-100)
 
 
-# Testing
-# wind.dir.speed(1,1)
-# wind.dir.speed(1,-1)
-# wind.dir.speed(-1,-1)
-# wind.dir.speed(-1,1)
 
 # Calculate wind speed (at 10m) and direction (bearing from north)
 # for all flights
@@ -248,13 +196,50 @@ flights.characteristics <- cbind(flights.characteristics, wind.info)
 
 wind.origin <- ((flights.characteristics$wind.dir+180) %% 360)
 
-# hist(wind.head)
-# hist(flights.characteristics$wind.dir)
 
 # Add wind origin direction to table.
 flights.characteristics <- cbind(flights.characteristics, wind.origin)
 
-#str(flights.characteristics)
+
+
+# Heading vector####
+#' Calculating heading vector (we already have the wind vector
+#' and the track vector).
+#' In principle this is simple vector addition.
+#' 
+
+# Calculating x and z component of heading vector
+# Subtract wind vector from ground vector, leaving
+# heading vector
+# names(points)
+# names(points.weather)
+head.x <- points$veast  - points.weather$uwind.10m.flt.ht
+head.z <- points$vnorth - points.weather$vwind.10m.flt.ht
+
+head.info <- t(mapply(wind.dir.speed, head.x,
+                      head.z))
+# names(points.weather)
+# Make dataframe
+head.info <- as.data.frame(head.info)
+
+# Give names to columns
+names(head.info) <- c("head.speed", "head.dir")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #Output weather data to database #####
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
