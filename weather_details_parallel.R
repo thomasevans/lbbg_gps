@@ -198,6 +198,8 @@ require(doParallel)
 #use x cores, general solution for any windows machine.
 cl <- makeCluster(parallel::detectCores())     
 
+# cl <- makeCluster(16)
+
 #start the parellel session of R; the 'slaves', which will run the analysis.
 registerDoParallel(cl)   
 
@@ -209,6 +211,7 @@ devices <- sort(unique(flights$device_info_serial))
 #required vairables/ functions in their scope, i.e. those functions
 #and vairables which are referred to within the 'foreach' function.
 clusterExport(cl, c("flights","devices"))   
+# clusterExport(cl, "test")
 
 #NB see: http://stackoverflow.com/questions/9404881/writing-to-global-variables-in-using-dosnow-and-doing-parallelization-in-r
 #There a solution is offered for exporting vairables from foreach to the global environment.

@@ -1,3 +1,83 @@
+# Developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+# You are welcome to use parts of this code, but please give credit when using it extensively.
+# Code available at https://github.com/thomasevans/lbbg_gps
+
+
+# Required packages #####
+#To link to database
+library(RODBC)
+
+
+# Database functions - get data from the database
+#Establish a connection to the database
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+
+
+#for all of data_base, except pre-deployment and null records
+#excluding individuals with start north of 59 (i.e. those birds
+#from Fågelsundet)
+gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time, g.latitude, g.longitude, g.altitude, g.vnorth, g.veast, t.trip_id 
+  FROM gps_uva_tracking_speed_3d_limited AS g, lund_gps_parameters AS t
+  WHERE g.device_info_serial = t.device_info_serial
+    AND g.date_time = t.date_time
+    AND t.trip_id > 0
+  ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
+                ,as.is=TRUE)
+
+
+# Load in requried data (GPS points, device_info_serial, date_time - anything else??)
+
+gps.points <- ...
+only points within foraging trips (trip_id >= 1??)
+
+# Calculate number of trips
+length(unique(...))
+
+# Make ten lists of foraging trips - to be used in for loop thing, so that we can save each one out to file/ workspace
+x <- unique(foraging_trips...)
+
+trip.list <- list()
+
+a <- 1
+b <- floor(length(x)/10)
+
+for( i in 1:9){
+  trip.list[i] <- list(x[a:(a+b)])
+  a <- a+b+1
+}
+trip.list[10] <- list(x[a:length(x)])
+
+
+# For each list of foraging trips...
+weather.points <- list()
+
+for (i in 1:10){
+  inialise foreach thing...
+  
+  foreach flight in list do this...{
+    get wind data
+      east-west
+    
+      north-south
+    
+    save to data.frame thing, then add to list
+    
+  }
+  
+  
+  weather.points[i] <- info
+  save(weather.points, file = "weather.points.RData")
+}
+
+# Reassemble data from weather.points list into dataframe or gps points,
+# containing columns for: device_info_serial, date_time, wind_date stuff...
+
+
+
+
+
+
+
 
 
 #Copied from 'flight_movement_calculations'
