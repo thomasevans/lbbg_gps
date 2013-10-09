@@ -6,9 +6,11 @@
 # Required packages #####
 #To link to database
 library(RODBC)
+require(foreach)
+require(doParallel)
 
 
-# Database functions - get data from the database
+# Database functions - get data from the database ####
 #Establish a connection to the database
 gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
@@ -16,25 +18,38 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 #for all of data_base, except pre-deployment and null records
 #excluding individuals with start north of 59 (i.e. those birds
 #from Fågelsundet)
-gps <- sqlQuery(gps.db, query="SELECT DISTINCT g.device_info_serial, g.date_time, g.latitude, g.longitude, g.altitude, g.vnorth, g.veast, t.trip_id 
-  FROM gps_uva_tracking_speed_3d_limited AS g, lund_gps_parameters AS t
-  WHERE g.device_info_serial = t.device_info_serial
-    AND g.date_time = t.date_time
-    AND t.trip_id > 0
-  ORDER BY g.device_info_serial ASC, g.date_time ASC ;"
-                ,as.is=TRUE)
+# gps <- sqlQuery(gps.db, query="SELECT DISTINCT t.device_info_serial, t.date_time, g.latitude, g.longitude, g.altitude, g.vnorth, g.veast, t.trip_id 
+#   FROM gps_uva_tracking_speed_3d_limited AS g, lund_gps_parameters AS t
+#   WHERE g.device_info_serial = t.device_info_serial
+#     AND g.date_time = t.date_time
+#     AND t.trip_id > 0
+#   ORDER BY t.device_info_serial ASC, t.date_time ASC ;"
+#                 ,as.is=TRUE)
 
+# save("gps", file = "gps_wind_drift_analysis.RData")
+# To speed things up - cached copy of GPS table above.
+load("gps_wind_drift_analysis.RData")
+
+# str(gps)
+
+
+# Correct date_time
+gps$date_time <- as.POSIXct(gps$date_time,
+                                  tz="GMT",
+                                  format="%Y-%m-%d %H:%M:%S")
 
 # Load in requried data (GPS points, device_info_serial, date_time - anything else??)
 
-gps.points <- ...
-only points within foraging trips (trip_id >= 1??)
+# gps.points <- ...
+# only points within foraging trips (trip_id >= 1??)
 
+
+#Make list of trips ####
 # Calculate number of trips
-length(unique(...))
+n_trips <- length(unique(gps$trip_id))
 
 # Make ten lists of foraging trips - to be used in for loop thing, so that we can save each one out to file/ workspace
-x <- unique(foraging_trips...)
+x <- unique(gps$trip_id)
 
 trip.list <- list()
 
@@ -48,26 +63,102 @@ for( i in 1:9){
 trip.list[10] <- list(x[a:length(x)])
 
 
-# For each list of foraging trips...
-weather.points <- list()
 
+#Make cluster of 16 instances
+cl <- makeCluster(16)
+
+#start the parellel session of R; the 'slaves', which will run the analysis.
+registerDoParallel(cl)  
+
+
+#export the gps data and trip list
+clusterExport(cl, c("gps","trip.list"))
+
+# For each list of foraging trips do ####
+# weather.points <- list()
+weather.points <-  NA
 for (i in 1:10){
-  inialise foreach thing...
   
-  foreach flight in list do this...{
-    get wind data
-      east-west
+
+  
+  #make a list object to recieve the data
+  lst <- list()
+  
+#   str(lst)
+  
+  lst <- foreach(z = seq(along = unlist(trip.list[x]))) %dopar%{
+    require(RNCEP)
+  
+#     z <- 5
     
-      north-south
+    #get trip id
+    d <- trip.list[[i]][z]
     
-    save to data.frame thing, then add to list
+    #make a subset of GPS data for only this trip
+    sub01 <- subset(gps, gps$trip_id == d)
+      
+    
+    
+    #Wind Speed in E-W direction 'uwnd.10m' (ms^-1) '10 m'
+#     uwnd10 <- NCEP.interp(
+#       variable = "uwnd.10m",
+#       level = "gaussian",
+#       lat = sub01$latitude,
+#       lon = sub01$longitude,
+#       dt = sub01$date_time,
+#       reanalysis2 = FALSE,
+#       keep.unpacking.info = TRUE,
+#       interp = 'linear'
+#     )
+    uwnd.10m <- sub01$latitude + 1  #test
+    uwnd.10m.sd  <- sub01$latitude + 2  #test
+    
+    
+    #Add values to points.weather table
+#     uwnd.10m <- (as.numeric(uwnd10))
+#     uwnd.10m.sd <- (attr(uwnd10, which = "standard deviation"))
+    points.weather <- cbind(uwnd.10m,uwnd.10m.sd)
+    
+    
+    #Wind Speed in N-S direction 'vwnd.10m' (ms^-1) '10 m'
+#     vwnd10 <- NCEP.interp(
+#       variable = "vwnd.10m", level = "gaussian",
+#       lat = sub01$latitude, lon = sub01$longitude,  
+#       dt = sub01$date_time,
+#       reanalysis2 = FALSE, keep.unpacking.info = TRUE,
+#       interp = 'linear'
+#     )
+#     
+#     #Add values to points.weather table
+#     vwnd.10m <- (as.numeric(vwnd10))
+#     vwnd.10m.sd <- (attr(vwnd10, which = "standard deviation"))
+    
+    vwnd.10m <- sub01$latitude + 1  #test
+    vwnd.10m.sd  <- sub01$latitude + 2  #test
+    points.weather <- cbind(sub01$device_info_serial, sub01$date_time, points.weather,vwnd.10m,vwnd.10m.sd)
+    
+    list(points.weather)
     
   }
   
   
-  weather.points[i] <- info
+  #Get length of above - number of GPS points - how to count?
+  #Then unlist, and reshape into data.frame, add to previously existing dataframe if present.
+  
+#   x <- 3
+  n <- length(gps$trip_id[(gps$trip_id >= trip.list[[i]][1]) & (gps$trip_id <= trip.list[[i]][length(trip.list[[i]])])])
+  
+  weather.data <-  data.frame(matrix(unlist(lst), nrow = n, byrow = T))
+  
+  
+  weather.points <- rbind(weather.points,weather.data)
+  weather.data <- NA
   save(weather.points, file = "weather.points.RData")
 }
+
+
+#close cluster
+stopCluster(cl)
 
 # Reassemble data from weather.points list into dataframe or gps points,
 # containing columns for: device_info_serial, date_time, wind_date stuff...
