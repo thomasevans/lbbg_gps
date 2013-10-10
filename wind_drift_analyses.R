@@ -148,7 +148,8 @@ for (i in 1:10){
 #   x <- 3
   n <- length(gps$trip_id[(gps$trip_id >= trip.list[[i]][1]) & (gps$trip_id <= trip.list[[i]][length(trip.list[[i]])])])
   
-  weather.data <-  data.frame(matrix(unlist(lst), nrow = n, byrow = T))
+#   weather.data <-  data.frame(matrix(unlist(lst), nrow = n, byrow = T))
+  weather.data <-  data.frame(matrix(unlist(lst), nrow = n))
   
   
   weather.points <- rbind(weather.points,weather.data)
@@ -160,6 +161,14 @@ for (i in 1:10){
 #close cluster
 stopCluster(cl)
 
+#drop first row (NAs)
+weather.points <- weather.points[2:length(weather.points$X1),]
+
+names(weather.points) <- c("device_info_serial","date_time","uwnd.10m","uwnd.10m.sd","vwnd.10m", "vwnd.10m.sd")
+
+
+
+
 # Reassemble data from weather.points list into dataframe or gps points,
 # containing columns for: device_info_serial, date_time, wind_date stuff...
 
@@ -170,8 +179,10 @@ stopCluster(cl)
 
 
 
-
 #Copied from 'flight_movement_calculations'
+
+
+
 
 
 
