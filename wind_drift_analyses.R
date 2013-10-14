@@ -38,11 +38,6 @@ gps$date_time <- as.POSIXct(gps$date_time,
                                   tz="GMT",
                                   format="%Y-%m-%d %H:%M:%S")
 
-# Load in requried data (GPS points, device_info_serial, date_time - anything else??)
-
-# gps.points <- ...
-# only points within foraging trips (trip_id >= 1??)
-
 
 #Make list of trips ####
 # Calculate number of trips
@@ -89,8 +84,9 @@ for (i in 1:10){
   lst <- foreach(z = seq(along = unlist(trip.list[x]))) %dopar%{
     require(RNCEP)
   
-#     z <- 5
-    
+#     z <- 326
+#       i <- 10
+#     d <- 3332
     #get trip id
     d <- trip.list[[i]][z]
     
@@ -144,27 +140,45 @@ for (i in 1:10){
   
   #Get length of above - number of GPS points - how to count?
   #Then unlist, and reshape into data.frame, add to previously existing dataframe if present.
-# lst[2]
+#  lst[1500]
+  
+  
+  
   
   #   x <- 3
   n <- length(gps$trip_id[(gps$trip_id >= trip.list[[i]][1]) & (gps$trip_id <= trip.list[[i]][length(trip.list[[i]])])])
 
 #   length(unlist(lst))/(n+1)
   
-#    weather.data <-  data.frame(matrix(unlist(lst), nrow = n, byrow = T))
+    weather.data <-  data.frame(matrix(unlist(lst), nrow = n, byrow = T))
   
-  length(lst)
+    test <- as.matrix(lst)
   
-  test <-  data.frame(unlist(lst))
-  test <-  data.frame(matrix(unlist(lst), ncol = 6, byrow = F))
+#   length(lst)
   
-  test <-  data.frame(matrix(unlist(lst), nrow = n, byrow = T))
+#   x <- unlist(lst)
+#   x[1:100]
+  
+#   test <-  data.frame(unlist(lst))
+#   test <-  data.frame(matrix(unlist(lst), ncol = 6, byrow = F))
+  
+#   test <-  data.frame(matrix(unlist(lst), nrow = n, byrow = T))
 #   test <- data.frame(as.matrix(lst))
   
   
-  ?matrix
+#   z <- NA
+#   for (i in 1: length(lst)){
+#     y <- unlist(lst[i])
+#     if( length(y) > 6){
+#     y <- matrix(y, nrow = (length(y)/6), byrow = T)
+#     z <- rbind(z,y)}
+#   }
   
-   weather.data <-  data.frame(matrix(unlist(lst), nrow = n))
+#   lst[i]
+  
+#   ?matrix
+  
+#    weather.data <-  data.frame(matrix(unlist(lst), nrow = n))
   
   
   weather.points <- rbind(weather.points,weather.data)
