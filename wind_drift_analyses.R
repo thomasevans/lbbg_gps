@@ -38,27 +38,6 @@ gps$date_time <- as.POSIXct(gps$date_time,
                                   tz="GMT",
                                   format="%Y-%m-%d %H:%M:%S")
 
-
-#Make list of trips ####
-# Calculate number of trips
-n_trips <- length(unique(gps$trip_id))
-
-# Make ten lists of foraging trips - to be used in for loop thing, so that we can save each one out to file/ workspace
-x <- unique(gps$trip_id)
-
-trip.list <- list()
-
-a <- 1
-b <- floor(length(x)/10)
-
-for( i in 1:9){
-  trip.list[i] <- list(x[a:(a+b)])
-  a <- a+b+1
-}
-trip.list[10] <- list(x[a:length(x)])
-
-
-
 #Make cluster of 16 instances
 cl <- makeCluster(16)
 
@@ -66,148 +45,114 @@ cl <- makeCluster(16)
 registerDoParallel(cl)  
 
 
+# clusterExport(cl, c("gps"))
+
+
+# Make a list of available devices
+devices <- sort(unique(gps$device_info_serial))
+
 #export the gps data and trip list
-clusterExport(cl, c("gps","trip.list"))
 
-# For each list of foraging trips do ####
-# weather.points <- list()
-weather.points <-  NA
-for (i in 1:10){
-  
+clusterExport(cl, c("gps","devices"))  
 
+
+#make a list object to recieve the data
+lst <- list()
+
+
+
+#get weather data for each flight of each trip
+#Use system.time to time how long this takes.
+# On 2013-09-30 took 24875 s (<7 h)
+system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
   
-  #make a list object to recieve the data
-  lst <- list()
+  d <- devices[i]
+  sub01 <- subset(gps, gps$device_info_serial == d)
   
-#   str(lst)
   
-  lst <- foreach(z = seq(along = unlist(trip.list[x]))) %dopar%{
-    require(RNCEP)
+  #Wind Speed in E-W direction 'uwnd.10m' (ms^-1) '10 m'
+  #     uwnd10 <- NCEP.interp(
+  #       variable = "uwnd.10m",
+  #       level = "gaussian",
+  #       lat = sub01$latitude,
+  #       lon = sub01$longitude,
+  #       dt = sub01$date_time,
+  #       reanalysis2 = FALSE,
+  #       keep.unpacking.info = TRUE,
+  #       interp = 'linear'
+  #     )
+  uwnd.10m <-  1  #test
+  uwnd.10m.sd  <-  2  #test
   
-#     z <- 326
-#       i <- 10
-#     d <- 3332
-    #get trip id
-    d <- trip.list[[i]][z]
-    
-    #make a subset of GPS data for only this trip
-    sub01 <- subset(gps, gps$trip_id == d)
-      
-    
-    
-    #Wind Speed in E-W direction 'uwnd.10m' (ms^-1) '10 m'
-#     uwnd10 <- NCEP.interp(
-#       variable = "uwnd.10m",
-#       level = "gaussian",
-#       lat = sub01$latitude,
-#       lon = sub01$longitude,
-#       dt = sub01$date_time,
-#       reanalysis2 = FALSE,
-#       keep.unpacking.info = TRUE,
-#       interp = 'linear'
-#     )
-    uwnd.10m <-  1  #test
-    uwnd.10m.sd  <-  2  #test
-    
-    
-    #Add values to points.weather table
-#     uwnd.10m <- (as.numeric(uwnd10))
-#     uwnd.10m.sd <- (attr(uwnd10, which = "standard deviation"))
-#     points.weather <- cbind(uwnd.10m,uwnd.10m.sd)
-    
-    
-    #Wind Speed in N-S direction 'vwnd.10m' (ms^-1) '10 m'
-#     vwnd10 <- NCEP.interp(
-#       variable = "vwnd.10m", level = "gaussian",
-#       lat = sub01$latitude, lon = sub01$longitude,  
-#       dt = sub01$date_time,
-#       reanalysis2 = FALSE, keep.unpacking.info = TRUE,
-#       interp = 'linear'
-#     )
-#     
-#     #Add values to points.weather table
-#     vwnd.10m <- (as.numeric(vwnd10))
-#     vwnd.10m.sd <- (attr(vwnd10, which = "standard deviation"))
-    
-    vwnd.10m <- 3  #test
-    vwnd.10m.sd  <- 4  #test
-    points.weather <- cbind(sub01$device_info_serial,sub01$date_time, uwnd.10m,uwnd.10m.sd, vwnd.10m,vwnd.10m.sd)
-    
-    list(points.weather)
-    
+  
+  #Add values to points.weather table
+  #     uwnd.10m <- (as.numeric(uwnd10))
+  #     uwnd.10m.sd <- (attr(uwnd10, which = "standard deviation"))
+  #     points.weather <- cbind(uwnd.10m,uwnd.10m.sd)
+  
+  
+  #Wind Speed in N-S direction 'vwnd.10m' (ms^-1) '10 m'
+  #     vwnd10 <- NCEP.interp(
+  #       variable = "vwnd.10m", level = "gaussian",
+  #       lat = sub01$latitude, lon = sub01$longitude,  
+  #       dt = sub01$date_time,
+  #       reanalysis2 = FALSE, keep.unpacking.info = TRUE,
+  #       interp = 'linear'
+  #     )
+  #     
+  #     #Add values to points.weather table
+  #     vwnd.10m <- (as.numeric(vwnd10))
+  #     vwnd.10m.sd <- (attr(vwnd10, which = "standard deviation"))
+  
+  vwnd.10m <- 3  #test
+  vwnd.10m.sd  <- 4  #test
+  
+  
+  x <- cbind(sub01$device_info_serial,sub01$date_time, uwnd.10m,uwnd.10m.sd, vwnd.10m,vwnd.10m.sd)
+  
+  
+  
+  #output data as list (this will be appended to the global list, lst.
+  list(x)   
+} #end of foreach functions
+}) #end of things being timed by system.time
+
+
+
+
+
+z <- 0
+  for (i in 1: length(lst)){
+    y <- matrix(unlist(lst[i]), ncol = 6, byrow = F)
+    z <- rbind(z,y)
   }
-  
-  
-  #Get length of above - number of GPS points - how to count?
-  #Then unlist, and reshape into data.frame, add to previously existing dataframe if present.
-#  lst[1500]
-  
-  
-  
-  
-  #   x <- 3
-  n <- length(gps$trip_id[(gps$trip_id >= trip.list[[i]][1]) & (gps$trip_id <= trip.list[[i]][length(trip.list[[i]])])])
 
-#   length(unlist(lst))/(n+1)
-  
-    weather.data <-  data.frame(matrix(unlist(lst), nrow = n, byrow = T))
-  
-    test <- as.matrix(lst)
-  
-#   length(lst)
-  
-#   x <- unlist(lst)
-#   x[1:100]
-  
-#   test <-  data.frame(unlist(lst))
-#   test <-  data.frame(matrix(unlist(lst), ncol = 6, byrow = F))
-  
-#   test <-  data.frame(matrix(unlist(lst), nrow = n, byrow = T))
-#   test <- data.frame(as.matrix(lst))
-  
-  
-#   z <- NA
-#   for (i in 1: length(lst)){
-#     y <- unlist(lst[i])
-#     if( length(y) > 6){
-#     y <- matrix(y, nrow = (length(y)/6), byrow = T)
-#     z <- rbind(z,y)}
-#   }
-  
-#   lst[i]
-  
-#   ?matrix
-  
-#    weather.data <-  data.frame(matrix(unlist(lst), nrow = n))
-  
-  
-  weather.points <- rbind(weather.points,weather.data)
-  weather.data <- NA
-  save(weather.points, file = "weather.points.RData")
-}
+dz <- dim(z)
+z2 <- z[2:dz[1],]
+weather.data <- as.data.frame(z2)
+row.names(weather.data)<-NULL
+names(weather.data) <- c("device_info_serial","date_time","uwnd.10m","uwnd.10m.sd","vwnd.10m", "vwnd.10m.sd")
+
+weather.data$date_time <- as.POSIXct(weather.data$date_time, tz = "UTC", origin = "1970-01-01")
 
 
-#close cluster
-stopCluster(cl)
-
-# load("weather.points.RData")
-#  weather.points[2,]
-# weather.points[1,]
-# weather.points[2,]
-# weather.points[100,]
-# weather.points[2000,]
-
-#drop first row (NAs)
-weather.points <- weather.points[2:length(weather.points$X1),]
-
-names(weather.points) <- c("device_info_serial","date_time","uwnd.10m","uwnd.10m.sd","vwnd.10m", "vwnd.10m.sd")
-
-summary(unique(as.factor(weather.points$device_info_serial)))
-str(weather.points)
 
 
-# Reassemble data from weather.points list into dataframe or gps points,
-# containing columns for: device_info_serial, date_time, wind_date stuff...
+#Output weather data to database #####
+#will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
+sqlSave(gps.db, weather.data, tablename = "lund_points_weather",
+        append = FALSE, rownames = FALSE, colnames = FALSE,
+        verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
+        test = FALSE, nastring = NULL, varTypes = 
+          c(date_time = "datetime"))
+
+
+
+
+
+
+
+
 
 
 
