@@ -1,5 +1,5 @@
 # Developed by Tom Evans at Lund University: tom.evans@biol.lu.se
-# You are welcome to use parts of this code, but please give credit when using it extensively.
+ # You are welcome to use parts of this code, but please give credit when using it extensively.
 # Code available at https://github.com/thomasevans/lbbg_gps
 
 
@@ -110,14 +110,14 @@ for (i in 1:10){
 #       keep.unpacking.info = TRUE,
 #       interp = 'linear'
 #     )
-    uwnd.10m <- sub01$latitude + 1  #test
-    uwnd.10m.sd  <- sub01$latitude + 2  #test
+    uwnd.10m <-  1  #test
+    uwnd.10m.sd  <-  2  #test
     
     
     #Add values to points.weather table
 #     uwnd.10m <- (as.numeric(uwnd10))
 #     uwnd.10m.sd <- (attr(uwnd10, which = "standard deviation"))
-    points.weather <- cbind(uwnd.10m,uwnd.10m.sd)
+#     points.weather <- cbind(uwnd.10m,uwnd.10m.sd)
     
     
     #Wind Speed in N-S direction 'vwnd.10m' (ms^-1) '10 m'
@@ -133,9 +133,9 @@ for (i in 1:10){
 #     vwnd.10m <- (as.numeric(vwnd10))
 #     vwnd.10m.sd <- (attr(vwnd10, which = "standard deviation"))
     
-    vwnd.10m <- sub01$latitude + 1  #test
-    vwnd.10m.sd  <- sub01$latitude + 2  #test
-    points.weather <- cbind(sub01$device_info_serial, sub01$date_time, points.weather,vwnd.10m,vwnd.10m.sd)
+    vwnd.10m <- 3  #test
+    vwnd.10m.sd  <- 4  #test
+    points.weather <- cbind(sub01$device_info_serial,sub01$date_time, uwnd.10m,uwnd.10m.sd, vwnd.10m,vwnd.10m.sd)
     
     list(points.weather)
     
@@ -144,12 +144,27 @@ for (i in 1:10){
   
   #Get length of above - number of GPS points - how to count?
   #Then unlist, and reshape into data.frame, add to previously existing dataframe if present.
+# lst[2]
   
-#   x <- 3
+  #   x <- 3
   n <- length(gps$trip_id[(gps$trip_id >= trip.list[[i]][1]) & (gps$trip_id <= trip.list[[i]][length(trip.list[[i]])])])
+
+#   length(unlist(lst))/(n+1)
   
-#   weather.data <-  data.frame(matrix(unlist(lst), nrow = n, byrow = T))
-  weather.data <-  data.frame(matrix(unlist(lst), nrow = n))
+#    weather.data <-  data.frame(matrix(unlist(lst), nrow = n, byrow = T))
+  
+  length(lst)
+  
+  test <-  data.frame(unlist(lst))
+  test <-  data.frame(matrix(unlist(lst), ncol = 6, byrow = F))
+  
+  test <-  data.frame(matrix(unlist(lst), nrow = n, byrow = T))
+#   test <- data.frame(as.matrix(lst))
+  
+  
+  ?matrix
+  
+   weather.data <-  data.frame(matrix(unlist(lst), nrow = n))
   
   
   weather.points <- rbind(weather.points,weather.data)
@@ -161,12 +176,20 @@ for (i in 1:10){
 #close cluster
 stopCluster(cl)
 
+# load("weather.points.RData")
+#  weather.points[2,]
+# weather.points[1,]
+# weather.points[2,]
+# weather.points[100,]
+# weather.points[2000,]
+
 #drop first row (NAs)
 weather.points <- weather.points[2:length(weather.points$X1),]
 
 names(weather.points) <- c("device_info_serial","date_time","uwnd.10m","uwnd.10m.sd","vwnd.10m", "vwnd.10m.sd")
 
-
+summary(unique(as.factor(weather.points$device_info_serial)))
+str(weather.points)
 
 
 # Reassemble data from weather.points list into dataframe or gps points,
