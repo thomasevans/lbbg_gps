@@ -235,14 +235,24 @@ flight.info <- function(t, gps=gps){
     
   # 'circular' package functions#############
   
+#   vignette("Circular")
+  
+#   library("circular")
+#   x <- c(100,90,120)
+#   x <- circular(x,units = "degrees")
+#   rho.circular(x)
+  
+  
+  bear.circ <- circular(sub01$bearing_next,units="degrees"))
+  
   # Value of rho
-  rho        <- rho.circular(sub01$bearing_next,
+  rho        <- rho.circular(bear.circ,
                              na.rm = TRUE)
   
-  ang_dev    <- angular.deviation(sub01$bearing_next,
+  ang_dev    <- angular.deviation(bear.circ,
                                   na.rm = TRUE)
   
-  ang_var    <- angular.variance(sub01$bearing_next,
+  ang_var    <- angular.variance(bear.circ,
                                  na.rm = TRUE)
   
   #make a vector containing all this data
@@ -466,7 +476,7 @@ system.time(for(i in seq(along = trips$trip_id)){
 #export trip information to the database
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
 sqlSave(
-  gps.db, flights, tablename = "lund_flights",
+  gps.db, flights, tablename = "lund_flights2",
   append = FALSE, rownames = FALSE,
   colnames = FALSE, verbose = FALSE,
   safer = TRUE, addPK = FALSE,
