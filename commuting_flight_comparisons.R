@@ -12,7 +12,7 @@
 library(RODBC)
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('F:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #See what tables are available
 #sqlTables(gps.db)
@@ -81,8 +81,9 @@ attr(tm,"tzone") <- "UTC"
 trips$end_time <- tm
 
 
+#Edited this to reference 'lund_flight_paramaters' rather than 'lund_flight_characteristics' as table name changed.
 flights.characteristics <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
-                    FROM lund_flights_characteristics AS f
+                    FROM lund_flight_paramaters AS f
                     ORDER BY f.flight_id ASC;")
 
 
@@ -109,6 +110,7 @@ for(i in seq(along = flights$trip_id)){
 
 
 
+
 # Add some more paramaters to filter
 # Non full trips (i.e. where there is a gap of > 25 minutes?)
 # Trips to Gotland
@@ -119,13 +121,19 @@ trip_gotland <- as.factor(trip_gotland)
 # summary(trip_gotland)
 #filters####
 # hist(trip_distmax[outward])
+
+par(mfrow = c(1,1))
 hist(trip_distmax[trip_distmax < 1000])
 names(flights)
 
-outward <- (flights$trip_flight_type == "outward") & trip_gotland == 0 & (flights$interval_mean < 800) & (trip_distmax > 2) & (trip_distmax < 400) & flights$points > 4 & flights$dist_a_b > 2000
-  hist(flights$dist_a_b[outward])
+par(mfrow = c(1,2))
 
-inward  <- (flights$trip_flight_type == "inward")  & (trip_gotland == 0) & (flights$interval_mean < 800) & (trip_distmax > 2) & (trip_distmax < 400) & flights$points > 4  & flights$dist_a_b > 2000
+outward <- (flights$trip_flight_type == "outward") & trip_gotland == 0 & (flights$interval_mean < 800) & (trip_distmax > 4) & (trip_distmax < 400) & flights$points > 4 & flights$dist_a_b > 2000
+  hist(flights$dist_a_b[outward]/1000, breaks = 20, main = "out", xlab = "Distance (km)", xlim = c(0,120))
+
+inward  <- (flights$trip_flight_type == "inward")  & (trip_gotland == 0) & (flights$interval_mean < 800) & (trip_distmax > 4) & (trip_distmax < 400) & flights$points > 4  & flights$dist_a_b > 2000
+hist(flights$dist_a_b[inward]/1000, breaks = 40, main = "in", xlab = "Distance (km)", xlim = c(0,120))
+
 
 summary(inward)
 summary(outward)
@@ -139,22 +147,24 @@ summary(outward)
 
 # pdf("out_vs_in_inst_speed.pdf")
 par(mfrow = c(1,2))
-hist(flights$speed_inst_mean[outward ],ylim = c(0,120), xlim = c(0,20),breaks="Scott", xlab = "Speed ms-1", main = "",las=1, cex.axis = 1.3, cex.lab = 1.4, col = "grey")
+hist(flights$speed_inst_mean[outward ],ylim = c(0,140), xlim = c(0,20),breaks="Scott", xlab = "Speed ms-1",las=1, cex.axis = 1, cex.lab = 1, col = "grey", main = "out")
 
 x1 <- mean(flights$speed_inst_mean[outward], na.rm = TRUE)
 abline(v = x1, lwd = 2, lty = 2, col = "red")
 
-hist(flights$speed_inst_mean[inward],ylim = c(0,120), xlim = c(0,20),breaks="Scott", xlab = "Speed ms-1", main = "",las=1, cex.axis = 1.3, cex.lab = 1.4, col = "grey")
+hist(flights$speed_inst_mean[inward],ylim = c(0,140), xlim = c(0,20),breaks="Scott", xlab = "Speed ms-1",las=1, cex.axis = 1, cex.lab = 1, col = "grey", main = "in")
 
 x2 <- mean(flights$speed_inst_mean[inward], na.rm = TRUE)
-abline(v = x1, lwd = 2, lty = 2, col = "red")
+abline(v = x1, lwd = 2, lty = 2, col = "red", main = "in")
 
 # dev.off()
 
 x1
 x2
 
-?t.test
+sd(flights$speed_inst_mean[outward], na.rm = TRUE)
+
+# ?t.test
 
 t.test(flights$speed_inst_mean[inward], flights$speed_inst_mean[outward])
 
@@ -163,8 +173,8 @@ t.test(flights$speed_inst_mean[inward], flights$speed_inst_mean[outward])
 
 win.metafile("Out_in_straightness_comparison.wmf")
 par(mfrow = c(1,2))
-hist(1-flights$rho[outward],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,200), xlim = c(0,1), main = "Outward")
-hist(1-flights$rho[inward] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,200), xlim = c(0,1), main = "Inward")
+hist(flights$rho[outward],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,250), xlim = c(0,1), main = "Outward")
+hist(flights$rho[inward] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,250), xlim = c(0,1), main = "Inward")
 dev.off()
 
 

@@ -7,3 +7,4 @@
 *.wmf
 .Rproj.user
 processed_data
+figure/*
