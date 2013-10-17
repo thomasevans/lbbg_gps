@@ -141,9 +141,70 @@ summary(outward)
 # hist(flights$interval_mean[outward])
 # length(flights$interval_mean[outward])
 
-# Speed comparision######
-# names(flights)
 
+
+*********************
+  # Paired data comparisons ####
+
+# Angle with respect to wind
+dif.angle <- flights$bearing_a_b - flights.characteristics$winddir
+# hist(dif.angle)
+dif.angle <- abs(dif.angle)
+# hist(dif.angle)
+# hist(dif.angle[outward] %% 180)
+# hist(dif.angle[inward] %% 180)
+# dif.angle <- dif.angle %% 180
+cor.ang <- function(x){
+  if(x > 180){ y <- 180 - (x - 180)}
+  else y <- x
+  return(y)
+}
+# cor.ang(181)
+dif.angle <- sapply(dif.angle, cor.ang)
+#  hist(dif.angle)
+
+
+# Paired data   ####
+#' Re-arrange the data for paired data comparison
+
+flights.out <- cbind(flights[outward,],flights.characteristics[outward,],flights.weather[outward,],dif.angle[outward])
+flights.in <- cbind(flights[inward,],flights.characteristics[inward,],flights.weather[inward,],dif.angle[inward])
+
+# Re-order these by trip_id
+flights.out  <- flights.out[order(flights.out$trip_id),]
+flights.in   <- flights.in[order(flights.in$trip_id),]
+
+#Find and index those flights for which there is a corresponding outward or inward flight for same trip.
+x <- NA
+for( i in seq(along = flights.out$trip_id)){
+  if(any(flights.out$trip_id[i] == flights.in$trip_id)) x[i] = TRUE else{x[i] = FALSE}
+}
+
+y <- NA
+for( i in seq(along = flights.in$trip_id)){
+  if(any(flights.in$trip_id[i] == flights.out$trip_id)) y[i] = TRUE else{y[i] = FALSE}
+}
+
+# Check that this has worked
+all.equal(flights.in$trip_id[y] , flights.out$trip_id[x])
+
+flights.in <- flights.in[y,]
+flights.out <- flights.out[x,]
+
+length(flights.in$flight_id)
+# ?t.test
+
+length(unique(flights.in$device_info_serial))
+
+install.packages("reshape2")
+library(reshape2)
+
+aggregate(speed_inst_mean ~ device_info_serial, data =flights.in, FUN=length)
+
+
+
+
+# Speed comparision######
 
 # pdf("out_vs_in_inst_speed.pdf")
 par(mfrow = c(1,2))
@@ -155,7 +216,7 @@ abline(v = x1, lwd = 2, lty = 2, col = "red")
 hist(flights$speed_inst_mean[inward],ylim = c(0,140), xlim = c(0,20),breaks="Scott", xlab = "Speed ms-1",las=1, cex.axis = 1, cex.lab = 1, col = "grey", main = "in")
 
 x2 <- mean(flights$speed_inst_mean[inward], na.rm = TRUE)
-abline(v = x1, lwd = 2, lty = 2, col = "red", main = "in")
+abline(v = x2, lwd = 2, lty = 2, col = "red", main = "in")
 
 # dev.off()
 
@@ -163,14 +224,23 @@ x1
 x2
 
 sd(flights$speed_inst_mean[outward], na.rm = TRUE)
-
-# ?t.test
-
-t.test(flights$speed_inst_mean[inward], flights$speed_inst_mean[outward])
-wilcox.test(flights$speed_inst_mean[inward], flights$speed_inst_mean[outward])
+sd(flights$speed_inst_mean[inward], na.rm = TRUE)
 
 
 
+par(mfrow = c(1,1))
+hist(flights.in$speed_inst_mean-flights.out$speed_inst_mean, main = "Speed difference between outward and inward flights",xlab = "Speed ms-1", col = "grey", cex.main = 0.8)
+x3 <- mean(flights.in$speed_inst_mean-flights.out$speed_inst_mean)
+abline(v = x3, lwd = 2, lty = 2, col = "red", main = "in")
+sd3 <- sd(flights.in$speed_inst_mean-flights.out$speed_inst_mean)
+
+# paired t-test to compare inward and outward flight speeds.
+t.test(flights.in$speed_inst_mean,flights.out$speed_inst_mean, paired = TRUE)
+
+
+
+
+# Rho comparison ####
 win.metafile("Out_in_straightness_comparison.wmf")
 par(mfrow = c(1,2))
 hist(flights$rho[outward],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,220), xlim = c(0,1), main = "Outward")
@@ -182,13 +252,31 @@ sd(flights$rho[inward])
 sd(flights$rho[outward])
 t.test(flights$rho[outward], flights$rho[inward])
 wilcox.test(flights$rho[outward], flights$rho[inward])
+t.test(flights.in$rho,flights.out$rho, paired = TRUE)
+
+#Rearrange data for comparison:
+
+
 
 
 # Altitude ####
+
 names(flights)
 par(mfrow = c(1,2))
 hist(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ],xlab = "Altitude (m)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",  main = "Outward", xlim = c(-20,150), ylim = c(0,150),breaks="Scott")
 hist(flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ] ,xlab = "Altitude (m)", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",  main = "Inward", xlim = c(-20,150), ylim = c(0,150),breaks="Scott")
+
+
+summary(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ] - flights$alt_mean[outward & (flights$alt_med > -50) & flights$alt_med < 500 ])
+all.equal((flights$alt_med - flights$alt_mean) , rep(0,length(flights$alt_mean)))
+
+flights$alt_med[1:20]
+flights$alt_mean[1:20]
+
+par(mfrow = c(1,2))
+hist(flights$alt_mean[outward & (flights$alt_med > -50) & flights$alt_med < 500 ],xlab = "Altitude (m)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",  main = "Outward", xlim = c(-20,150), ylim = c(0,150),breaks="Scott")
+hist(flights$alt_mean[inward& (flights$alt_med > -50) & flights$alt_med < 500 ] ,xlab = "Altitude (m)", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",  main = "Inward", xlim = c(-20,150), ylim = c(0,150),breaks="Scott")
+
 
 mean(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ])
 mean(flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ])
@@ -219,28 +307,54 @@ wilcox.test(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med 
 *********************************
 
 
-names(flights.weather)
-names(flights)
-names(flights.characteristics)
-hist(abs(flights.weather$vwnd10m[outward]*flights.weather$uwnd10m[outward]))
+  
+# Rho - wind condition ####
+par(mfrow = c(2,2))
+hist(flights.out$rho[flights.out$dif.angle < 90],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,100), xlim = c(0,1), main = "Out - tail")
+hist(flights.out$rho[flights.out$dif.angle > 90],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,100), xlim = c(0,1), main = "Out - head")
+hist(flights.in$rho[flights.in$dif.angle < 90],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,100), xlim = c(0,1), main = "In - tail")
+hist(flights.in$rho[flights.in$dif.angle > 90],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,100), xlim = c(0,1), main = "In - head")
 
-# hist(flights$bearing_a_b[outward])
-# hist(flights.characteristics$winddir[outward])
-dif.angle <- flights$bearing_a_b - flights.characteristics$winddir
-# hist(dif.angle)
-dif.angle <- abs(dif.angle)
-# hist(dif.angle)
-# hist(dif.angle[outward] %% 180)
-# hist(dif.angle[inward] %% 180)
-# dif.angle <- dif.angle %% 180
-cor.ang <- function(x){
-  if(x > 180){ y <- 180 - (x - 180)}
-  else y <- x
-  return(y)
-}
-# cor.ang(181)
-dif.angle <- sapply(dif.angle, cor.ang)
-#  hist(dif.angle)
+
+mean(flights.out$rho[flights.out$dif.angle < 90])
+mean(flights.out$rho[flights.out$dif.angle > 90])
+mean(flights.in$rho[flights.in$dif.angle < 90])
+mean(flights.in$rho[flights.in$dif.angle > 90])
+
+#Rearrange data for comparision
+flights.out$flight.type <- "out"
+flights.in$flight.type <- "in"
+
+flights.out$wind.type <- NA
+flights.in$wind.type <- NA
+
+flights.out$wind.type[flights.out$dif.angle < 90] <- "tail"
+flights.out$wind.type[flights.out$dif.angle > 90] <- "head"
+flights.in$wind.type[flights.in$dif.angle < 90] <- "tail"
+flights.in$wind.type[flights.in$dif.angle > 90] <- "head"
+
+
+
+names(flights.out)[65] <- "dif.angle"
+names(flights.in)[65] <- "dif.angle"
+names(flights.out) == names(flights.in)
+
+flights.combined <- rbind(flights.out,flights.in)
+names(flights.combined)
+
+
+mod1 <- aov(flights.combined$rho ~ flights.combined$flight.type * flights.combined$wind.type)
+summary(mod1)
+
+mod2 <- aov(flights.combined$rho ~ flights.combined$flight.type + flights.combined$wind.type)
+summary(mod2)
+
+
+aggregate(rho ~ flight.type + wind.type, data =flights.combined, FUN=mean)
+aggregate(rho ~ flight.type + wind.type, data =flights.combined, FUN=sd)
+
+aggregate(rho ~  wind.type, data =flights.combined, FUN=mean)
+aggregate(rho ~  wind.type, data =flights.combined, FUN=sd)
 
 
 par(mfrow = c(2,2))
@@ -745,59 +859,10 @@ abline(v = mean(flights$straigtness[f & inward & cloud.low]), lty = 2, lwd = 2)
 
 
 
-*********************
-# Paired data comparisons ####
 
-# Angle with respect to wind
-dif.angle <- flights$bearing_a_b - flights.characteristics$winddir
-# hist(dif.angle)
-dif.angle <- abs(dif.angle)
-# hist(dif.angle)
-# hist(dif.angle[outward] %% 180)
-# hist(dif.angle[inward] %% 180)
-# dif.angle <- dif.angle %% 180
-cor.ang <- function(x){
-  if(x > 180){ y <- 180 - (x - 180)}
-  else y <- x
-  return(y)
-}
-# cor.ang(181)
-dif.angle <- sapply(dif.angle, cor.ang)
-#  hist(dif.angle)
-
-
-#' Paired data
-#' Re-arrange the data for paired data comparison
-
-flights.out <- cbind(flights[outward,],flights.characteristics[outward,],flights.weather[outward,],dif.angle[outward])
-flights.in <- cbind(flights[inward,],flights.characteristics[inward,],flights.weather[inward,],dif.angle[inward])
-
-# Re-order these by trip_id
-flights.out  <- flights.out[order(flights.out$trip_id),]
-flights.in   <- flights.in[order(flights.in$trip_id),]
-
-#Find and index those flights for which there is a corresponding outward or inward flight for same trip.
-x <- NA
-for( i in seq(along = flights.out$trip_id)){
-  if(any(flights.out$trip_id[i] == flights.in$trip_id)) x[i] = TRUE else{x[i] = FALSE}
-}
-
-y <- NA
-for( i in seq(along = flights.in$trip_id)){
-  if(any(flights.in$trip_id[i] == flights.out$trip_id)) y[i] = TRUE else{y[i] = FALSE}
-}
-
-# Check that this has worked
-all.equal(flights.in$trip_id[y] , flights.out$trip_id[x])
-
-flights.in <- flights.in[y,]
-flights.out <- flights.out[x,]
-
-# ?t.test
 
 # Paired t-tests ####
-t.test(flights.in$speed_inst_mean,flights.out$speed_inst_mean, paired = TRUE)
-t.test(flights.in$rho,flights.out$rho, paired = TRUE)
+
 t.test(flights.in$alt_mean,flights.out$alt_mean, paired = TRUE)
 
 
