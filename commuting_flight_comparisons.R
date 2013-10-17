@@ -167,33 +167,56 @@ sd(flights$speed_inst_mean[outward], na.rm = TRUE)
 # ?t.test
 
 t.test(flights$speed_inst_mean[inward], flights$speed_inst_mean[outward])
-
+wilcox.test(flights$speed_inst_mean[inward], flights$speed_inst_mean[outward])
 
 
 
 win.metafile("Out_in_straightness_comparison.wmf")
 par(mfrow = c(1,2))
-hist(flights$rho[outward],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,250), xlim = c(0,1), main = "Outward")
-hist(flights$rho[inward] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,250), xlim = c(0,1), main = "Inward")
+hist(flights$rho[outward],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,220), xlim = c(0,1), main = "Outward")
+hist(flights$rho[inward] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,220), xlim = c(0,1), main = "Inward")
 dev.off()
 
 
-mean(1-flights$rho[inward])
-mean(1-flights$rho[outward])
-t.test(1-flights$rho[outward], 1-flights$rho[inward])
+sd(flights$rho[inward])
+sd(flights$rho[outward])
+t.test(flights$rho[outward], flights$rho[inward])
+wilcox.test(flights$rho[outward], flights$rho[inward])
 
 
+# Altitude ####
 names(flights)
 par(mfrow = c(1,2))
-hist(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ],xlab = "Altitude (m)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",  main = "Outward", xlim = c(-20,150), ylim = c(0,250))
-hist(flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ] ,xlab = "Altitude (m)", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",  main = "Inward", xlim = c(-20,150), ylim = c(0,250))
+hist(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ],xlab = "Altitude (m)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",  main = "Outward", xlim = c(-20,150), ylim = c(0,150),breaks="Scott")
+hist(flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ] ,xlab = "Altitude (m)", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",  main = "Inward", xlim = c(-20,150), ylim = c(0,150),breaks="Scott")
 
 mean(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ])
 mean(flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ])
+
+sd(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ])
+sd(flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ])
+
+median(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ], na.rm = TRUE)
+median(flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ], na.rm = TRUE)
+
+names(flights)
+
+
+hist(flights$alt_max[outward & (flights$alt_max > -50) & flights$alt_max < 500 ],xlab = "Altitude (m)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",  main = "Outward",breaks=20)
+hist(flights$alt_max[inward & (flights$alt_max > -50) & flights$alt_max < 500 ] ,xlab = "Altitude (m)", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",  main = "Inward",breaks=20)
+mean(flights$alt_max[outward & (flights$alt_max > -50) & flights$alt_max < 500 ])
+mean(flights$alt_max[inward & (flights$alt_max > -50) & flights$alt_max < 500 ])
+
+t.test(flights$alt_max[outward & (flights$alt_max > -50) & flights$alt_max < 500 ],flights$alt_max[inward & (flights$alt_max > -50) & flights$alt_max < 500 ])
+# ?median
+wilcox.test(flights$alt_max[outward & (flights$alt_max > -50) & flights$alt_max < 500 ],flights$alt_max[inward & (flights$alt_max > -50) & flights$alt_max < 500 ])
+
+
+
 t.test(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ],flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ])
+wilcox.test(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ],flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ])
 
-
-
+*********************************
 
 
 names(flights.weather)
@@ -221,18 +244,18 @@ dif.angle <- sapply(dif.angle, cor.ang)
 
 
 par(mfrow = c(2,2))
-hist(1-flights$rho[outward & dif.angle < 90],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,110), xlim = c(0,1), main = "Outward")
-hist(1-flights$rho[outward & dif.angle > 90],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,110), xlim = c(0,1), main = "Outward")
-hist(1-flights$rho[inward & dif.angle < 90] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,110), xlim = c(0,1), main = "Inward")
-hist(1-flights$rho[inward & dif.angle > 90] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,110), xlim = c(0,1), main = "Inward")
+hist(flights$rho[outward & dif.angle < 90],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,110), xlim = c(0,1), main = "Outward")
+hist(flights$rho[outward & dif.angle > 90],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,110), xlim = c(0,1), main = "Outward")
+hist(flights$rho[inward & dif.angle < 90] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,110), xlim = c(0,1), main = "Inward")
+hist(flights$rho[inward & dif.angle > 90] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,110), xlim = c(0,1), main = "Inward")
 
 length(outward)
 # length(dif.angle)
 
-mean(1-flights$rho[outward & dif.angle < 90])
-mean(1-flights$rho[outward & dif.angle > 90])
-mean(1-flights$rho[inward & dif.angle < 90])
-mean(1-flights$rho[inward & dif.angle > 90])
+# mean(flights$rho[outward & dif.angle < 90])
+# mean(flights$rho[outward & dif.angle > 90])
+# mean(flights$rho[inward & dif.angle < 90])
+# mean(flights$rho[inward & dif.angle > 90])
 
 
 alt.f <- flights$alt_med > -50 & flights$alt_med < 200 
@@ -245,8 +268,95 @@ mean(flights$alt_med[outward & (dif.angle < 60) & alt.f])
 mean(flights$alt_med[outward & (dif.angle > 120) & alt.f])
 mean(flights$alt_med[inward & (dif.angle < 60) & alt.f])
 mean(flights$alt_med[inward & (dif.angle > 120) & alt.f])
+mean(flights$alt_med[inward & (dif.angle > 60 & dif.angle < 120) & alt.f])
+mean(flights$alt_med[outward & (dif.angle > 60 & dif.angle < 120) & alt.f])
 
 
+par(mfrow = c(2,3))
+hist(flights$alt_med[outward & (dif.angle < 60) & alt.f],main="out - tail", col = "blue", xlab = "Altitude (m)")
+hist(flights$alt_med[outward & (dif.angle > 120) & alt.f],main="out - head", col = "blue", xlab = "Altitude (m)")
+hist(flights$alt_med[outward & (dif.angle > 60 & dif.angle < 120) & alt.f],main="out - side", col = "blue", xlab = "Altitude (m)")
+hist(flights$alt_med[inward & (dif.angle < 60) & alt.f],main="in - tail", col = "red", xlab = "Altitude (m)")
+hist(flights$alt_med[inward & (dif.angle > 120) & alt.f],main="in - head", col = "red", xlab = "Altitude (m)")
+hist(flights$alt_med[inward & (dif.angle > 60 & dif.angle < 120) & alt.f],main="in - side", col = "red", xlab = "Altitude (m)")
+
+mean(flights$alt_med[outward & (dif.angle < 60) & alt.f])
+mean(flights$alt_med[outward & (dif.angle > 120) & alt.f])
+mean(flights$alt_med[outward & (dif.angle > 60 & dif.angle < 120) & alt.f])
+mean(flights$alt_med[inward & (dif.angle < 60) & alt.f])
+mean(flights$alt_med[inward & (dif.angle > 120) & alt.f])
+mean(flights$alt_med[inward & (dif.angle > 60 & dif.angle < 120) & alt.f])
+
+sd(flights$alt_med[outward & (dif.angle < 60) & alt.f])
+sd(flights$alt_med[outward & (dif.angle > 120) & alt.f])
+sd(flights$alt_med[outward & (dif.angle > 60 & dif.angle < 120) & alt.f])
+sd(flights$alt_med[inward & (dif.angle < 60) & alt.f])
+sd(flights$alt_med[inward & (dif.angle > 120) & alt.f])
+sd(flights$alt_med[inward & (dif.angle > 60 & dif.angle < 120) & alt.f])
+
+
+f <- !is.na(flight.type.dir)  &  !is.na(flight.type.wind)
+summary(f)
+
+alt.start <- flights$alt_med
+
+flights$alt_med <- sqrt(flights$alt_mean + 0)
+hist(flights$alt_med)
+hist(flights$alt_mean, xlim = c(-20,100))
+
+
+mean(flights$alt_med[f & (dif.angle < 60) ])
+mean(flights$alt_med[f &  (dif.angle > 120) ])
+mean(flights$alt_med[f & (dif.angle > 60 & dif.angle < 120) ])
+
+sd(flights$alt_med[f & (dif.angle < 60) ])
+sd(flights$alt_med[f &  (dif.angle > 120) ])
+sd(flights$alt_med[f & (dif.angle > 60 & dif.angle < 120) ])
+
+mean(flights$alt_med[f & outward])
+mean(flights$alt_med[f & inward])
+
+sd(flights$alt_med[f & outward])
+sd(flights$alt_med[f & inward])
+
+mean(flights$alt_med[f])
+
+sd(flights$alt_med[f])
+
+
+flight.type.wind <- rep(NA,length(flights$alt_med))
+flight.type.wind[(dif.angle < 60) & alt.f] <- "tail"
+flight.type.wind[(dif.angle > 120) & alt.f] <- "head"
+flight.type.wind[(dif.angle > 60 & dif.angle < 120) & alt.f] <- "side"
+flight.type.wind <- as.factor(flight.type.wind)
+summary(flight.type.wind)
+
+flight.type.dir <- rep(NA,length(flights$alt_med))
+flight.type.dir[outward & alt.f] <- "out"
+flight.type.dir[inward & alt.f] <- "in"
+flight.type.dir <- as.factor(flight.type.dir)
+summary(flight.type.dir)
+
+
+
+
+mod1 <- aov(flights$alt_med[f] ~ flight.type.dir[f]  * flight.type.wind[f] )
+summary(mod1)
+
+mod2 <- aov(flights$alt_med[f] ~ flight.type.dir[f] + flight.type.wind[f])
+summary(mod2)
+
+mod3 <- aov(flights$alt_med[f] ~ flight.type.wind[f])
+summary(mod3)
+
+par(mfrow=c(1,1))
+# plot(sqrt(flights$alt_med) ~ flight.type.wind)
+
+par(mfrow=c(1,1))
+plot(TukeyHSD(mod3))
+
+
+plot(mod3)
 
 par(mfrow = c(2,2))
 hist(flights$alt_med[outward & (dif.angle < 60) & alt.f], ylim = c(0,55), xlim = c(-10, 150), breaks=20, main ="", xlab = "Altitude (m)", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue")
@@ -627,3 +737,75 @@ median(flights$straigtness[f & outward & cloud.low])
 hist(arcsine(flights$straigtness[f & inward & cloud.low]) ,xlab = "straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", main = "", breaks = 20)
 abline(v = mean(flights$straigtness[f & inward & cloud.low]), lty = 2, lwd = 2)
   
+
+
+
+
+
+
+
+
+*********************
+# Paired data comparisons ####
+
+# Angle with respect to wind
+dif.angle <- flights$bearing_a_b - flights.characteristics$winddir
+# hist(dif.angle)
+dif.angle <- abs(dif.angle)
+# hist(dif.angle)
+# hist(dif.angle[outward] %% 180)
+# hist(dif.angle[inward] %% 180)
+# dif.angle <- dif.angle %% 180
+cor.ang <- function(x){
+  if(x > 180){ y <- 180 - (x - 180)}
+  else y <- x
+  return(y)
+}
+# cor.ang(181)
+dif.angle <- sapply(dif.angle, cor.ang)
+#  hist(dif.angle)
+
+
+#' Paired data
+#' Re-arrange the data for paired data comparison
+
+flights.out <- cbind(flights[outward,],flights.characteristics[outward,],flights.weather[outward,],dif.angle[outward])
+flights.in <- cbind(flights[inward,],flights.characteristics[inward,],flights.weather[inward,],dif.angle[inward])
+
+# Re-order these by trip_id
+flights.out  <- flights.out[order(flights.out$trip_id),]
+flights.in   <- flights.in[order(flights.in$trip_id),]
+
+#Find and index those flights for which there is a corresponding outward or inward flight for same trip.
+x <- NA
+for( i in seq(along = flights.out$trip_id)){
+  if(any(flights.out$trip_id[i] == flights.in$trip_id)) x[i] = TRUE else{x[i] = FALSE}
+}
+
+y <- NA
+for( i in seq(along = flights.in$trip_id)){
+  if(any(flights.in$trip_id[i] == flights.out$trip_id)) y[i] = TRUE else{y[i] = FALSE}
+}
+
+# Check that this has worked
+all.equal(flights.in$trip_id[y] , flights.out$trip_id[x])
+
+flights.in <- flights.in[y,]
+flights.out <- flights.out[x,]
+
+# ?t.test
+
+# Paired t-tests ####
+t.test(flights.in$speed_inst_mean,flights.out$speed_inst_mean, paired = TRUE)
+t.test(flights.in$rho,flights.out$rho, paired = TRUE)
+t.test(flights.in$alt_mean,flights.out$alt_mean, paired = TRUE)
+
+
+
+
+# Angle with respect to wind - appears that inward flights more often have head-winds and outward flight more tail-winds.
+t.test(flights.in$dif.angle,flights.out$dif.angle, paired = TRUE)
+hist(flights.in$dif.angle)
+hist(flights.out$dif.angle)
+
+

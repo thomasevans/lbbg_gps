@@ -243,7 +243,7 @@ flight.info <- function(t, gps=gps){
 #   rho.circular(x)
   
   
-  bear.circ <- circular(sub01$bearing_next,units="degrees"))
+  bear.circ <- circular(sub01$bearing_next,units="degrees")
   
   # Value of rho
   rho        <- rho.circular(bear.circ,
