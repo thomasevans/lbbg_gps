@@ -221,13 +221,13 @@ flight.info <- function(t, gps=gps){
                     [sub01$flight_class == 3],
                     na.rm = TRUE)
   
-  alt_min    <- min(median(sub01$altitude
+  alt_min    <- min(sub01$altitude
                            [sub01$flight_class == 3],
-                           na.rm = TRUE))
+                           na.rm = TRUE)
   
-  alt_mean   <- mean(median(sub01$altitude
+  alt_mean   <- mean(sub01$altitude
                             [sub01$flight_class == 3],
-                            na.rm = TRUE))
+                            na.rm = TRUE)
   
   alt_med    <- median(sub01$altitude
                        [sub01$flight_class == 3],
