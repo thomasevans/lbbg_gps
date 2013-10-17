@@ -185,7 +185,7 @@ flight.info <- function(t, gps=gps){
   # Straight-line distance from start to end of flight.
   dist_a_b    <-   1000 * deg.dist(
       start_long, start_lat, end_long, end_lat)              
-  
+#   ?deg.dist
   # Straightness of flight.
   straigtness <-   dist_a_b/dist_total
   
