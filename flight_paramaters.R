@@ -242,9 +242,17 @@ flight.info <- function(t, gps=gps){
 #   x <- circular(x,units = "degrees")
 #   rho.circular(x)
   
-  
+#   library(circular)
   bear.circ <- circular(sub01$bearing_next,units="degrees")
   
+#   x <- c(100,100,100,100)
+#   x <- c(90,180,90,180)
+#   x2 <- circular(x, units = "degrees")
+#   x2
+#   rho.circular(x2)
+#   angular.deviation(x2)
+#   angular.variance(x2)
+#   ?angular.variance
   # Value of rho
   rho        <- rho.circular(bear.circ,
                              na.rm = TRUE)

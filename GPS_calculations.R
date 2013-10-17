@@ -141,7 +141,11 @@ bearing_next <- c(earth.bear(
  ,gps$longitude[-1],
   gps$latitude[-1]), 0)
 
+# x <- c(1:10)
+# x[-length(x)]
+# x[-1]
 
+# ?earth.bear
 # bearing_next[1:10]
 
 #bearing from previous point
