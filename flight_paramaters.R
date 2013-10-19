@@ -184,7 +184,7 @@ flight.info <- function(t, gps=gps){
   
   # Straight-line distance from start to end of flight.
   dist_a_b    <-   1000 * deg.dist(
-      start_long, start_lat, end_long, end_lat)              
+      start_long, start_lat, end_long, end_lat)     
 #   ?deg.dist
   # Straightness of flight.
   straigtness <-   dist_a_b/dist_total
@@ -243,7 +243,8 @@ flight.info <- function(t, gps=gps){
 #   rho.circular(x)
   
 #   library(circular)
-  bear.circ <- circular(sub01$bearing_next,units="degrees")
+  # Change to circular object, and exclude final point - bearing then is to following (i.e. not in flight) point.
+  bear.circ <- circular(sub01$bearing_next[-length(sub01$bearing_next)],units="degrees")
   
 #   x <- c(100,100,100,100)
 #   x <- c(90,180,90,180)
