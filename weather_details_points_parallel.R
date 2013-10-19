@@ -74,41 +74,54 @@ system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
   
   
 #   Wind Speed in E-W direction 'uwnd.10m' (ms^-1) '10 m'
-#       uwnd10 <- NCEP.interp(
-#         variable = "uwnd.10m",
-#         level = "gaussian",
-#         lat = sub01$latitude,
-#         lon = sub01$longitude,
-#         dt = sub01$date_time,
-#         reanalysis2 = FALSE,
-#         keep.unpacking.info = TRUE,
-#         interp = 'linear'
-#       )
-  uwnd.10m <-  1  #test
-  uwnd.10m.sd  <-  2  #test
+      uwnd10 <- NCEP.interp(
+        variable = "uwnd.10m",
+        level = "gaussian",
+        lat = sub01$latitude,
+        lon = sub01$longitude,
+        dt = sub01$date_time,
+        reanalysis2 = FALSE,
+        keep.unpacking.info = TRUE,
+        interp = 'linear'
+      )
+  
+  
+  
+#   uwnd10 <- NCEP.interp(
+#     variable = "uwnd.10m",
+#     level = "gaussian",
+#     lat = gps$latitude[1],
+#     lon = gps$longitude[1],
+#     dt = gps$date_time[1],
+#     reanalysis2 = FALSE,
+#     keep.unpacking.info = TRUE,
+#     interp = 'linear'
+#   )
+#   uwnd.10m <-  1  #test
+#   uwnd.10m.sd  <-  2  #test
   
   
   #Add values to points.weather table
-  #     uwnd.10m <- (as.numeric(uwnd10))
-  #     uwnd.10m.sd <- (attr(uwnd10, which = "standard deviation"))
-  #     points.weather <- cbind(uwnd.10m,uwnd.10m.sd)
+      uwnd.10m <- (as.numeric(uwnd10))
+      uwnd.10m.sd <- (attr(uwnd10, which = "standard deviation"))
+#       points.weather <- cbind(uwnd.10m,uwnd.10m.sd)
   
   
   #Wind Speed in N-S direction 'vwnd.10m' (ms^-1) '10 m'
-  #     vwnd10 <- NCEP.interp(
-  #       variable = "vwnd.10m", level = "gaussian",
-  #       lat = sub01$latitude, lon = sub01$longitude,  
-  #       dt = sub01$date_time,
-  #       reanalysis2 = FALSE, keep.unpacking.info = TRUE,
-  #       interp = 'linear'
-  #     )
-  #     
-  #     #Add values to points.weather table
-  #     vwnd.10m <- (as.numeric(vwnd10))
-  #     vwnd.10m.sd <- (attr(vwnd10, which = "standard deviation"))
+      vwnd10 <- NCEP.interp(
+        variable = "vwnd.10m", level = "gaussian",
+        lat = sub01$latitude, lon = sub01$longitude,  
+        dt = sub01$date_time,
+        reanalysis2 = FALSE, keep.unpacking.info = TRUE,
+        interp = 'linear'
+      )
+      
+      #Add values to points.weather table
+      vwnd.10m <- (as.numeric(vwnd10))
+      vwnd.10m.sd <- (attr(vwnd10, which = "standard deviation"))
   
-  vwnd.10m <- 3  #test
-  vwnd.10m.sd  <- 4  #test
+#   vwnd.10m <- 3  #test
+#   vwnd.10m.sd  <- 4  #test
   
   
   x <- cbind(sub01$device_info_serial,sub01$date_time, uwnd.10m,uwnd.10m.sd, vwnd.10m,vwnd.10m.sd)
