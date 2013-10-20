@@ -40,8 +40,16 @@ gps$date_time <- as.POSIXct(gps$date_time,
 
 
 #For testing take just 100 points
-# x <- sample(1:length(gps$date_time), 100)
-# gps <- gps[x,]
+x <- sample(1:length(gps$date_time), 500)
+gps <- gps[x,]
+
+
+#Writing a new version which will make 40 instances dividing the data evenly between each
+n <- length(gps$date_time)
+s <- floor(n/40)
+v <- seq(1,40*s,s)
+vt <- v-1
+vt <- c(vt[-1],n)
 
 
 # clusterExport(cl, c("gps"))
@@ -75,6 +83,7 @@ system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
   # Package to extract weather data from NOAA
   require(RNCEP)
   
+#   i <- 1
   # Get device ID
   d <- devices[i]
   
@@ -105,11 +114,12 @@ system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
   x <- cbind(sub01$device_info_serial,sub01$date_time, uwnd.10m,uwnd.10m.sd)
   
 #   x <- cbind(1,3,4)
-  paste("data_uwnd10m_", d, ".Rdata", sep = "")
+#   paste("data_uwnd10m_", d, ".Rdata", sep = "")
   x.df <- as.data.frame(x)
 #   ?save
+  names(x.df) <- c("device_info_serial","date_time","uwnd.10m", "uwnd.10m.sd")
   save(x.df,
-       file = paste("data_uwnd10m_", d, ".Rdata", sep = ""))
+       file = paste("testdata_uwnd10m_", d, ".Rdata", sep = ""))
   
   #output data as list (this will be appended to the global list, lst.
   list(x)   
@@ -183,9 +193,12 @@ system.time({lst2 <- foreach(i = seq(along = devices )) %dopar%{
   #   x <- cbind(1,3,4)
 #   paste("data_vwnd10m_", d, ".Rdata", sep = "")
   x.df <- as.data.frame(x)
+  
+  names(x.df) <- c("device_info_serial","date_time","vwnd.10m", "vwnd.10m.sd")
+  
   #   ?save
   save(x.df,
-       file = paste("data_vwnd10m_", d, ".Rdata", sep = ""))
+       file = paste("testdata_vwnd10m_", d, ".Rdata", sep = ""))
   
   #output data as list (this will be appended to the global list, lst.
   list(x)   
@@ -210,9 +223,8 @@ z <- 0
 dz <- dim(z)
 z2 <- z[2:dz[1],]
 weather.data <- as.data.frame(z2)
-row.names(weather.data)<-NULL
 names(weather.data) <- c("device_info_serial","date_time","uwnd.10m","uwnd.10m.sd")
-
+row.names(weather.data)<-NULL
 weather.data  <- weather.data[order(weather.data$device_info_serial,weather.data$date_time),]
 
 
@@ -227,13 +239,14 @@ for (i in 1: length(lst2)){
 dz <- dim(z)
 z2 <- z[2:dz[1],]
 weather.data2 <- as.data.frame(z2)
-row.names(weather.data2)<-NULL
 names(weather.data2) <- c("device_info_serial","date_time","vwnd.10m","vwnd.10m.sd")
-
+row.names(weather.data2)<-NULL
 weather.data2  <- weather.data2[order(weather.data2$device_info_serial,weather.data2$date_time),]
 
 
 final.data <- cbind(weather.data,weather.data2$vwnd.10m,weather.data2$vwnd.10m.sd)
+
+names(final.data) <- c("device_info_serial", "date_time", "uwnd.10m", "uwnd.10m.sd", "vwnd.10m", "vwnd.10m.sd")
 
 
 final.data$date_time <- as.POSIXct(final.data$date_time, tz = "UTC", origin = "1970-01-01")
@@ -248,3 +261,35 @@ sqlSave(gps.db, final.data, tablename = "lund_points_weather",
         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
         test = FALSE, nastring = NULL, varTypes = 
           c(date_time = "datetime"))
+
+
+
+
+# Rescue data from above, when list writing failed ####
+for (i in seq(along = devices )){
+  
+for (i in 2:4){
+    
+  
+  # Get device ID
+  d <- devices[2]
+  
+  load(paste("data_uwnd10m_", d, ".Rdata", sep = ""))
+  
+  y <- x.df
+  load(paste("data_vwnd10m_", d, ".Rdata", sep = ""))
+  x.df <- x.df[,-c(1:2)]
+  test <- cbind(y,x.df)
+  
+  if( i == 2){
+    z <- test
+  }else{
+    z <- rbind(z,test)
+  }
+    
+  
+}
+
+
+
+
