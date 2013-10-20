@@ -40,8 +40,8 @@ gps$date_time <- as.POSIXct(gps$date_time,
 
 
 #For testing take just 100 points
-x <- sample(1:length(gps$date_time), 500)
-gps <- gps[x,]
+# x <- sample(1:length(gps$date_time), 1000)
+# gps <- gps[x,]
 
 
 #Writing a new version which will make 40 instances dividing the data evenly between each
@@ -60,14 +60,14 @@ devices <- sort(unique(gps$device_info_serial))
 
 
 #Make cluster of number of devices instances
-cl <- makeCluster(length(devices))
+cl <- makeCluster(40)
 
 #start the parellel session of R; the 'slaves', which will run the analysis.
 registerDoParallel(cl)  
 # ?registerDoParallel
 #export the gps data and trip list
 
-clusterExport(cl, c("gps","devices"))  
+clusterExport(cl, c("gps","v","vt"))  
 
 
 #make a list object to recieve the data
@@ -78,17 +78,19 @@ lst <- list()
 #get weather data for each flight of each trip
 #Use system.time to time how long this takes.
 # On 2013-09-30 took 24875 s (<7 h)
-system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
+system.time({lst <- foreach(i = 1:40 ) %dopar%{
   
   # Package to extract weather data from NOAA
   require(RNCEP)
   
 #   i <- 1
   # Get device ID
-  d <- devices[i]
+#   d <- devices[i]
   
   # Make subset of GPS points for this device.
-  sub01 <- subset(gps, gps$device_info_serial == d)
+#   sub01 <- subset(gps, gps$device_info_serial == d)
+  sub01 <- gps[v[i]:vt[i],]
+  
   
 #   ?NCEP.interp
 #   Wind Speed in E-W direction 'uwnd.10m' (ms^-1) '10 m'
@@ -119,7 +121,7 @@ system.time({lst <- foreach(i = seq(along = devices )) %dopar%{
 #   ?save
   names(x.df) <- c("device_info_serial","date_time","uwnd.10m", "uwnd.10m.sd")
   save(x.df,
-       file = paste("testdata_uwnd10m_", d, ".Rdata", sep = ""))
+       file = paste("testdata_uwnd10m_", i, ".Rdata", sep = ""))
   
   #output data as list (this will be appended to the global list, lst.
   list(x)   
@@ -138,14 +140,14 @@ stopCluster(cl)
 
 
 #Make cluster of number of devices instances
-cl <- makeCluster(length(devices))
+cl <- makeCluster(40)
 
 #start the parellel session of R; the 'slaves', which will run the analysis.
 registerDoParallel(cl)  
 # ?registerDoParallel
 #export the gps data and trip list
 
-clusterExport(cl, c("gps","devices"))  
+clusterExport(cl, c("gps","v","vt"))  
 
 
 #make a list object to recieve the data
@@ -156,17 +158,18 @@ lst2 <- list()
 #get weather data for each flight of each trip
 #Use system.time to time how long this takes.
 # On 2013-09-30 took 24875 s (<7 h)
-system.time({lst2 <- foreach(i = seq(along = devices )) %dopar%{
+system.time({lst <- foreach(i = 1:40 ) %dopar%{
   
   # Package to extract weather data from NOAA
   require(RNCEP)
   
+  #   i <- 1
   # Get device ID
-  d <- devices[i]
+  #   d <- devices[i]
   
   # Make subset of GPS points for this device.
-  sub01 <- subset(gps, gps$device_info_serial == d)
-  
+  #   sub01 <- subset(gps, gps$device_info_serial == d)
+  sub01 <- gps[v[i]:vt[i],]
   
   #Wind Speed in N-S direction 'vwnd.10m' (ms^-1) '10 m'
   vwnd10 <- NCEP.interp(
@@ -198,7 +201,7 @@ system.time({lst2 <- foreach(i = seq(along = devices )) %dopar%{
   
   #   ?save
   save(x.df,
-       file = paste("testdata_vwnd10m_", d, ".Rdata", sep = ""))
+       file = paste("testdata_vwnd10m_", i, ".Rdata", sep = ""))
   
   #output data as list (this will be appended to the global list, lst.
   list(x)   
@@ -251,7 +254,11 @@ names(final.data) <- c("device_info_serial", "date_time", "uwnd.10m", "uwnd.10m.
 
 final.data$date_time <- as.POSIXct(final.data$date_time, tz = "UTC", origin = "1970-01-01")
 
+row.names(final.data)<-NULL
 
+#make sure that the data is in order
+final.data   <- final.data[order(final.data$device_info_serial,final.data$date_time),]
+# ?order
 
 
 #Output weather data to database #####
@@ -266,30 +273,30 @@ sqlSave(gps.db, final.data, tablename = "lund_points_weather",
 
 
 # Rescue data from above, when list writing failed ####
-for (i in seq(along = devices )){
-  
-for (i in 2:4){
-    
-  
-  # Get device ID
-  d <- devices[2]
-  
-  load(paste("data_uwnd10m_", d, ".Rdata", sep = ""))
-  
-  y <- x.df
-  load(paste("data_vwnd10m_", d, ".Rdata", sep = ""))
-  x.df <- x.df[,-c(1:2)]
-  test <- cbind(y,x.df)
-  
-  if( i == 2){
-    z <- test
-  }else{
-    z <- rbind(z,test)
-  }
-    
-  
-}
-
+# for (i in seq(along = devices )){
+#   
+## for (i in 2:4){
+#     
+#   
+#   # Get device ID
+#   d <- devices[2]
+#   
+#   load(paste("data_uwnd10m_", d, ".Rdata", sep = ""))
+#   
+#   y <- x.df
+#   load(paste("data_vwnd10m_", d, ".Rdata", sep = ""))
+#   x.df <- x.df[,-c(1:2)]
+#   test <- cbind(y,x.df)
+#   
+#   if( i == 2){
+#     z <- test
+#   }else{
+#     z <- rbind(z,test)
+#   }
+#     
+#   
+# }
+# 
 
 
 
