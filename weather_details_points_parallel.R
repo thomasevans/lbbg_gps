@@ -36,26 +36,21 @@ load("gps_wind_drift_analysis.RData")
 
 
 # Correct date_time
-gps$date_time <- as.POSIXct(gps$date_time,
-                                  tz="GMT",
-                                  format="%Y-%m-%d %H:%M:%S")
+# gps$date_time <- as.POSIXct(gps$date_time,
+#                                   tz="GMT",
+#                                   format="%Y-%m-%d %H:%M:%S")
 
-gps$date_time[v[i]+5056-1]
+# gps$date_time[v[i]+5056-1]
 
-as.POSIXct(gps$date_time[v[i]+5056-1],
-           tz="GMT",
-           format="%Y-%m-%d %H:%M:%S")
-ISOdatetime(gps$date_time[v[i]+5056-1],
-            tz="GMT",
-            format="%Y-%m-%d %H:%M:%S")
+
 
 #Drop some columns to reduce memory usage
 gps <- gps[,-c(6:8)]
 
-example.dates <- c("2011-11-02 00:31:00","2011-11-02 00:00:00","2011-11-02 00:20:22")
-posix.dates   <- as.POSIXct(example.dates, tz="GMT", format="%Y-%m-%d %H:%M:%S")
-posix.dates
-posix.dates[2]
+# example.dates <- c("2011-11-02 00:31:00","2011-11-02 00:00:00","2011-11-02 00:20:22")
+# posix.dates   <- as.POSIXct(example.dates, tz="GMT", format="%Y-%m-%d %H:%M:%S")
+# posix.dates
+# posix.dates[2]
 
 
 #For testing take just 100 points
@@ -79,7 +74,7 @@ devices <- sort(unique(gps$device_info_serial))
 
 
 #Make cluster of number of devices instances
-cl <- makeCluster(20)
+cl <- makeCluster(3)
 
 #start the parellel session of R; the 'slaves', which will run the analysis.
 registerDoParallel(cl)  
@@ -93,12 +88,17 @@ clusterExport(cl, c("gps","v","vt"))
 #make a list object to recieve the data
 lst <- list()
 
-
+# x <- 0
+# for(i in c(1,5,7)){
+#   x <- x + i
+# }
+# 
+# i
 
 #get weather data for each flight of each trip
 #Use system.time to time how long this takes.
 # On 2013-09-30 took 24875 s (<7 h)
-system.time({lst <- foreach(i = 1:100 ) %dopar%{
+system.time({lst <- foreach(i = c(6,53,100) ) %dopar%{
   
   # Package to extract weather data from NOAA
   require(RNCEP)
@@ -110,7 +110,7 @@ system.time({lst <- foreach(i = 1:100 ) %dopar%{
   # Make subset of GPS points for this device.
 #   sub01 <- subset(gps, gps$device_info_serial == d)
   sub01 <- gps[v[i]:vt[i],]
-  gps[v[i]+5056-1,]
+#   gps[v[i]+5056-1,]
   
   # debug code #####################################
   
@@ -126,60 +126,60 @@ system.time({lst <- foreach(i = 1:100 ) %dopar%{
 #   x[1]
 #   summary(x)
 #   sub01$date_time[2]
-  
-test.class <- function(x){
-  inherits(x, c("POSIXct" ,"POSIXt"))
-}
-  x <- sapply(sub01$date_time,test.class)
-  summary(x)
-  
-  y <- abs(difftime(sub01$date_time[1], sub01$date_time))
-  year5 <- as.difftime(100, units = "weeks")
-  z <- y > year5
-  summary(z)
-  
-#   library(parallel)
-#   cl <- makeCluster(8)
-#   # one or more parLapply calls
-#   x <- parSapply(cl = cl, gps$date_time,test.class)
-#   x <- unlist(x)
-#   warnings()
-#   #   ?parSapply
-#   stopCluster(cl)
+#   
+# test.class <- function(x){
+#   inherits(x, c("POSIXct" ,"POSIXt"))
+# }
+#   x <- sapply(sub01$date_time,test.class)
 #   summary(x)
- x1 <-  as.POSIXct(sub01$date_time[5056],
-             tz="GMT",
-             format="%Y-%m-%d %H:%M:%S")
-  
-  
-  
-  dt <- x1
-  dt.f <- strptime(dt, "%Y-%m-%d %H:%M:%S",'UTC')
-  dt.f.x <- format(dt.f, "%m-%d %H:%M:%S")
-  test <- dt.f.x > "12-31 17:59:59"
-  summary(test)
-  
-  if(format(NA, "%m-%d %H:%M:%S")  > 1){1}else 2
-  i <- 5056
-  x <- rep(NA,length(sub01$date_time))
-  for(i in 1:length(sub01$date_time)){
-    x[i] <- NCEP.interp(
-      variable = "uwnd.10m",
-      level = "gaussian",
-      lat = sub01$latitude[i],
-      lon = sub01$longitude[i],
-      dt = sub01$date_time[i],
-      reanalysis2 = FALSE,
-      keep.unpacking.info = TRUE,
-      interp = 'linear'
-    )
-  }
-  
-  sub01[i-1,]
-  
-  sub01[i+1,]
-  
-  i
+#   
+#   y <- abs(difftime(sub01$date_time[1], sub01$date_time))
+#   year5 <- as.difftime(100, units = "weeks")
+#   z <- y > year5
+#   summary(z)
+#   
+# #   library(parallel)
+# #   cl <- makeCluster(8)
+# #   # one or more parLapply calls
+# #   x <- parSapply(cl = cl, gps$date_time,test.class)
+# #   x <- unlist(x)
+# #   warnings()
+# #   #   ?parSapply
+# #   stopCluster(cl)
+# #   summary(x)
+#  x1 <-  as.POSIXct(sub01$date_time[5056],
+#              tz="GMT",
+#              format="%Y-%m-%d %H:%M:%S")
+#   
+#   
+#   
+#   dt <- x1
+#   dt.f <- strptime(dt, "%Y-%m-%d %H:%M:%S",'UTC')
+#   dt.f.x <- format(dt.f, "%m-%d %H:%M:%S")
+#   test <- dt.f.x > "12-31 17:59:59"
+#   summary(test)
+#   
+#   if(format(NA, "%m-%d %H:%M:%S")  > 1){1}else 2
+#   i <- 5056
+#   x <- rep(NA,length(sub01$date_time))
+#   for(i in 1:length(sub01$date_time)){
+#     x[i] <- NCEP.interp(
+#       variable = "uwnd.10m",
+#       level = "gaussian",
+#       lat = sub01$latitude[i],
+#       lon = sub01$longitude[i],
+#       dt = sub01$date_time[i],
+#       reanalysis2 = FALSE,
+#       keep.unpacking.info = TRUE,
+#       interp = 'linear'
+#     )
+#   }
+#   
+#   sub01[i-1,]
+#   
+#   sub01[i+1,]
+#   
+#   i
   
   #############################
   
@@ -236,7 +236,7 @@ stopCluster(cl)
 
 
 #Make cluster of number of devices instances
-cl <- makeCluster(20)
+cl <- makeCluster(3)
 
 #start the parellel session of R; the 'slaves', which will run the analysis.
 registerDoParallel(cl)  
@@ -254,7 +254,7 @@ lst2 <- list()
 #get weather data for each flight of each trip
 #Use system.time to time how long this takes.
 # On 2013-09-30 took 24875 s (<7 h)
-system.time({lst <- foreach(i = 1:100 ) %dopar%{
+system.time({lst <- foreach(i = c(6,53,100) ) %dopar%{
   
   # Package to extract weather data from NOAA
   require(RNCEP)
