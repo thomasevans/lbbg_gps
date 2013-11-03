@@ -1,5 +1,5 @@
 # Developed by Tom Evans at Lund University: tom.evans@biol.lu.se
- # You are welcome to use parts of this code, but please give credit when using it extensively.
+# You are welcome to use parts of this code, but please give credit when using it extensively.
 # Code available at https://github.com/thomasevans/lbbg_gps
 
 
@@ -14,7 +14,6 @@ require(doParallel)
 #Establish a connection to the database
 gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
-setwd("D:/Dropbox/R_projects/lbbg_gps")
 
 #for all of data_base, except pre-deployment and null records
 #excluding individuals with start north of 59 (i.e. those birds
@@ -27,41 +26,28 @@ setwd("D:/Dropbox/R_projects/lbbg_gps")
 #   ORDER BY t.device_info_serial ASC, t.date_time ASC ;"
 #                 ,as.is=TRUE)
 
-# save("gps", file = "gps_wind_drift_analysis2.RData")
+# save("gps", file = "gps_wind_drift_analysis.RData")
 # To speed things up - cached copy of GPS table above.
-# load("gps_wind_drift_analysis.RData")
 load("gps_wind_drift_analysis.RData")
 
 # str(gps)
 
 
 # Correct date_time
-# gps$date_time <- as.POSIXct(gps$date_time,
-#                                   tz="GMT",
-#                                   format="%Y-%m-%d %H:%M:%S")
-
-# gps$date_time[v[i]+5056-1]
-
-
-
-#Drop some columns to reduce memory usage
-gps <- gps[,-c(6:8)]
-
-# example.dates <- c("2011-11-02 00:31:00","2011-11-02 00:00:00","2011-11-02 00:20:22")
-# posix.dates   <- as.POSIXct(example.dates, tz="GMT", format="%Y-%m-%d %H:%M:%S")
-# posix.dates
-# posix.dates[2]
+gps$date_time <- as.POSIXct(gps$date_time,
+                            tz="GMT",
+                            format="%Y-%m-%d %H:%M:%S")
 
 
 #For testing take just 100 points
-# x <- sample(1:length(gps$date_time), 500)
+# x <- sample(1:length(gps$date_time), 1000)
 # gps <- gps[x,]
 
-# rm(gps)
-#Writing a new version which will make x instances dividing the data evenly between each
+
+#Writing a new version which will make 40 instances dividing the data evenly between each
 n <- length(gps$date_time)
-s <- floor(n/100)
-v <- seq(1,100*s,s)
+s <- floor(n/40)
+v <- seq(1,40*s,s)
 vt <- v-1
 vt <- c(vt[-1],n)
 
@@ -74,7 +60,7 @@ devices <- sort(unique(gps$device_info_serial))
 
 
 #Make cluster of number of devices instances
-cl <- makeCluster(3)
+cl <- makeCluster(40)
 
 #start the parellel session of R; the 'slaves', which will run the analysis.
 registerDoParallel(cl)  
@@ -82,142 +68,60 @@ registerDoParallel(cl)
 #export the gps data and trip list
 
 clusterExport(cl, c("gps","v","vt"))  
-# ?clusterExport
 
 
 #make a list object to recieve the data
 lst <- list()
 
-# x <- 0
-# for(i in c(1,5,7)){
-#   x <- x + i
-# }
-# 
-# i
+
 
 #get weather data for each flight of each trip
 #Use system.time to time how long this takes.
 # On 2013-09-30 took 24875 s (<7 h)
-system.time({lst <- foreach(i = c(6,53,100) ) %dopar%{
+system.time({lst <- foreach(i = 1:40 ) %dopar%{
   
   # Package to extract weather data from NOAA
   require(RNCEP)
   
-#    i <- 6
+  #   i <- 1
   # Get device ID
-#   d <- devices[i]
+  #   d <- devices[i]
   
   # Make subset of GPS points for this device.
-#   sub01 <- subset(gps, gps$device_info_serial == d)
+  #   sub01 <- subset(gps, gps$device_info_serial == d)
   sub01 <- gps[v[i]:vt[i],]
-#   gps[v[i]+5056-1,]
   
-  # debug code #####################################
   
-#   class(sub01$date_time[1])
-#   
-#   
-#   summary(sub01$date_time == "12-31 17:59:59")
-#   ?is.date
-#   ?is.character
+  #   ?NCEP.interp
+  #   Wind Speed in E-W direction 'uwnd.10m' (ms^-1) '10 m'
+  uwnd10 <- NCEP.interp(
+    variable = "uwnd.10m",
+    level = "gaussian",
+    lat = sub01$latitude,
+    lon = sub01$longitude,
+    dt = sub01$date_time,
+    reanalysis2 = FALSE,
+    keep.unpacking.info = TRUE,
+    interp = 'linear'
+  )
   
-#   x <- inherits(sub01$date_time, c("POSIXct" ,"POSIXt"))
-#   
-#   x[1]
-#   summary(x)
-#   sub01$date_time[2]
-#   
-# test.class <- function(x){
-#   inherits(x, c("POSIXct" ,"POSIXt"))
-# }
-#   x <- sapply(sub01$date_time,test.class)
-#   summary(x)
-#   
-#   y <- abs(difftime(sub01$date_time[1], sub01$date_time))
-#   year5 <- as.difftime(100, units = "weeks")
-#   z <- y > year5
-#   summary(z)
-#   
-# #   library(parallel)
-# #   cl <- makeCluster(8)
-# #   # one or more parLapply calls
-# #   x <- parSapply(cl = cl, gps$date_time,test.class)
-# #   x <- unlist(x)
-# #   warnings()
-# #   #   ?parSapply
-# #   stopCluster(cl)
-# #   summary(x)
-#  x1 <-  as.POSIXct(sub01$date_time[5056],
-#              tz="GMT",
-#              format="%Y-%m-%d %H:%M:%S")
-#   
-#   
-#   
-#   dt <- x1
-#   dt.f <- strptime(dt, "%Y-%m-%d %H:%M:%S",'UTC')
-#   dt.f.x <- format(dt.f, "%m-%d %H:%M:%S")
-#   test <- dt.f.x > "12-31 17:59:59"
-#   summary(test)
-#   
-#   if(format(NA, "%m-%d %H:%M:%S")  > 1){1}else 2
-#   i <- 5056
-#   x <- rep(NA,length(sub01$date_time))
-#   for(i in 1:length(sub01$date_time)){
-#     x[i] <- NCEP.interp(
-#       variable = "uwnd.10m",
-#       level = "gaussian",
-#       lat = sub01$latitude[i],
-#       lon = sub01$longitude[i],
-#       dt = sub01$date_time[i],
-#       reanalysis2 = FALSE,
-#       keep.unpacking.info = TRUE,
-#       interp = 'linear'
-#     )
-#   }
-#   
-#   sub01[i-1,]
-#   
-#   sub01[i+1,]
-#   
-#   i
   
-  #############################
-  
-#   ?spam
-  #remove gps object to release memory
-  rm(gps)
-  
-#   ?NCEP.interp
-#   Wind Speed in E-W direction 'uwnd.10m' (ms^-1) '10 m'
-      uwnd10 <- NCEP.interp(
-        variable = "uwnd.10m",
-        level = "gaussian",
-        lat = sub01$latitude,
-        lon = sub01$longitude,
-        dt = sub01$date_time,
-        reanalysis2 = FALSE,
-        keep.unpacking.info = TRUE,
-        interp = 'linear'
-      )
-#   source(RNCEP)
-
-#   names(gps)
   
   #Add values to points.weather table
-      uwnd.10m <- (as.numeric(uwnd10))
-      uwnd.10m.sd <- (attr(uwnd10, which = "standard deviation"))
-#       points.weather <- cbind(uwnd.10m,uwnd.10m.sd)
+  uwnd.10m <- (as.numeric(uwnd10))
+  uwnd.10m.sd <- (attr(uwnd10, which = "standard deviation"))
+  #       points.weather <- cbind(uwnd.10m,uwnd.10m.sd)
   
-    
+  
   x <- cbind(sub01$device_info_serial,sub01$date_time, uwnd.10m,uwnd.10m.sd)
   
-#   x <- cbind(1,3,4)
-#   paste("data_uwnd10m_", d, ".Rdata", sep = "")
+  #   x <- cbind(1,3,4)
+  #   paste("data_uwnd10m_", d, ".Rdata", sep = "")
   x.df <- as.data.frame(x)
-#   ?save
+  #   ?save
   names(x.df) <- c("device_info_serial","date_time","uwnd.10m", "uwnd.10m.sd")
   save(x.df,
-       file = paste("data_uwnd10m_part_", i, ".Rdata", sep = ""))
+       file = paste("testdata_uwnd10m_", i, ".Rdata", sep = ""))
   
   #output data as list (this will be appended to the global list, lst.
   list(x)   
@@ -236,7 +140,7 @@ stopCluster(cl)
 
 
 #Make cluster of number of devices instances
-cl <- makeCluster(3)
+cl <- makeCluster(40)
 
 #start the parellel session of R; the 'slaves', which will run the analysis.
 registerDoParallel(cl)  
@@ -254,7 +158,7 @@ lst2 <- list()
 #get weather data for each flight of each trip
 #Use system.time to time how long this takes.
 # On 2013-09-30 took 24875 s (<7 h)
-system.time({lst <- foreach(i = c(6,53,100) ) %dopar%{
+system.time({lst <- foreach(i = 1:40 ) %dopar%{
   
   # Package to extract weather data from NOAA
   require(RNCEP)
@@ -266,10 +170,6 @@ system.time({lst <- foreach(i = c(6,53,100) ) %dopar%{
   # Make subset of GPS points for this device.
   #   sub01 <- subset(gps, gps$device_info_serial == d)
   sub01 <- gps[v[i]:vt[i],]
-  
-  
-  #remove gps object to release memory
-  rm(gps)
   
   #Wind Speed in N-S direction 'vwnd.10m' (ms^-1) '10 m'
   vwnd10 <- NCEP.interp(
@@ -294,14 +194,14 @@ system.time({lst <- foreach(i = c(6,53,100) ) %dopar%{
   x <- cbind(sub01$device_info_serial,sub01$date_time, vwnd.10m,vwnd.10m.sd)
   
   #   x <- cbind(1,3,4)
-#   paste("data_vwnd10m_", d, ".Rdata", sep = "")
+  #   paste("data_vwnd10m_", d, ".Rdata", sep = "")
   x.df <- as.data.frame(x)
   
   names(x.df) <- c("device_info_serial","date_time","vwnd.10m", "vwnd.10m.sd")
   
   #   ?save
   save(x.df,
-       file = paste("data_vwnd10m_part_", i, ".Rdata", sep = ""))
+       file = paste("testdata_vwnd10m_", i, ".Rdata", sep = ""))
   
   #output data as list (this will be appended to the global list, lst.
   list(x)   
@@ -318,10 +218,10 @@ stopCluster(cl)
 
 
 z <- 0
-  for (i in 1: length(lst)){
-    y <- matrix(unlist(lst[i]), ncol = 4, byrow = F)
-    z <- rbind(z,y)
-  }
+for (i in 1: length(lst)){
+  y <- matrix(unlist(lst[i]), ncol = 4, byrow = F)
+  z <- rbind(z,y)
+}
 
 dz <- dim(z)
 z2 <- z[2:dz[1],]
@@ -329,6 +229,7 @@ weather.data <- as.data.frame(z2)
 names(weather.data) <- c("device_info_serial","date_time","uwnd.10m","uwnd.10m.sd")
 row.names(weather.data)<-NULL
 weather.data  <- weather.data[order(weather.data$device_info_serial,weather.data$date_time),]
+
 
 
 
@@ -344,8 +245,6 @@ weather.data2 <- as.data.frame(z2)
 names(weather.data2) <- c("device_info_serial","date_time","vwnd.10m","vwnd.10m.sd")
 row.names(weather.data2)<-NULL
 weather.data2  <- weather.data2[order(weather.data2$device_info_serial,weather.data2$date_time),]
-
-sessionInfo()
 
 
 final.data <- cbind(weather.data,weather.data2$vwnd.10m,weather.data2$vwnd.10m.sd)
@@ -398,6 +297,5 @@ sqlSave(gps.db, final.data, tablename = "lund_points_weather",
 #   
 # }
 # 
-
 
 
