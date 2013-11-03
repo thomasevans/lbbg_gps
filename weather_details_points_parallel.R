@@ -345,6 +345,8 @@ names(weather.data2) <- c("device_info_serial","date_time","vwnd.10m","vwnd.10m.
 row.names(weather.data2)<-NULL
 weather.data2  <- weather.data2[order(weather.data2$device_info_serial,weather.data2$date_time),]
 
+sessionInfo()
+
 
 final.data <- cbind(weather.data,weather.data2$vwnd.10m,weather.data2$vwnd.10m.sd)
 
