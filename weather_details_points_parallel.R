@@ -34,9 +34,9 @@ load("gps_wind_drift_analysis.RData")
 
 
 # Correct date_time
-gps$date_time <- as.POSIXct(gps$date_time,
-                            tz="GMT",
-                            format="%Y-%m-%d %H:%M:%S")
+# gps$date_time <- as.POSIXct(gps$date_time,
+#                             tz="GMT",
+#                             format="%Y-%m-%d %H:%M:%S")
 
 
 #For testing take just 100 points
