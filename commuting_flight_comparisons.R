@@ -1,6 +1,9 @@
 #Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
 #You are welcome to use parts of this code, but please give credit when using it extensively.
 
+# Alternative working directory for when also running another script from same directory.
+# setwd("D:/Dropbox/R_projects/lbbg_gps/workspace_alternative")
+
 
 #Description#######
 #In this script we produce various figures and summary statistics to compare outward and inward commuting flights.
@@ -393,6 +396,9 @@ device_info_serial <- as.factor(device_info_serial)
 trip_id <- as.factor(flights.combined$trip_id)
 # install.packages("lme4")
 
+
+# Fitting a linear mixed-effects model to determine influence of 
+
 # library(lme4)
 library(nlme)
 
@@ -400,114 +406,78 @@ flight.type <- as.factor(flights.combined$flight.type)
 wind.type <- as.factor(flights.combined$wind.type)
 
 
-mod1 <- lme(flights.combined.rho ~ flight.type * wind.type, random = ~1|device_info_serial/trip_id)
-summary(mod1)
-anova(mod1)
+# Full factorial model
+mod01 <- lme(flights.combined.rho ~ flight.type * wind.type, random = ~1|device_info_serial)
+summary(mod01)
+anova(mod01)
 
-#Model simplification of main effects
-mod2 <- lme(flights.combined.rho ~ flight.type + wind.type, random = ~1|device_info_serial)
-summary(mod2)
-anova(mod2)
+# Temporal autocorrelation structure
+?ACF
+plot(ACF(mod01, maxLag = 100),alpha=0.01)
+mod01_t2 <- update(mod01,correlation = corARMA(q=2))
+mod01_t3 <- update(mod01,correlation = corARMA(q=3))
+mod01_t4 <- update(mod01,correlation = corARMA(q=4))
+mod01_t5 <- update(mod01,correlation = corARMA(q=5))
+mod01_t6 <- update(mod01,correlation = corARMA(q=6))
+mod01_t7 <- update(mod01,correlation = corARMA(q=7))
 
-mod3 <- lme(flights.combined.rho ~ flight.type , random = ~1|device_info_serial/trip_id)
-summary(mod3)
-anova(mod3)
-
-
-#Model simplification of random effects:
-mod4 <- lme(flights.combined.rho ~ flight.type , random = ~1|device_info_serial)
-# ?lme
-summary(mod4)
-anova(mod4)
-
-anova(mod3,mod4)
-#as this is significant it indicates that there is a significant effect of trip id
-
-mod5 <- lme(flights.combined.rho ~ flight.type , random = ~1|trip_id)
-summary(mod5)
-anova(mod5)
-
-anova(mod3,mod5)
-#as this is significant it indicates that there is a significant effect of bird id
+# Comparing autocorrelation levels
+anova(mod01_t2,mod01_t3,mod01_t4,mod01_t5,mod01_t6,mod01_t7)
+# select lag 6 for correlation structure, lowest AIC
 
 
-#model 3 is found to be the best with lowest AIC. This indicates that the random effects are important (bird id, device) and the single fixed effect (flight type, inward or outward)
-plot(mod3)
-plot(mod3,flights.combined.rho~fitted(.))
-qqnorm(mod3,~resid(.)|device_info_serial)
+# Model simplification
+mod02_t6   <- lme(flights.combined.rho ~ flight.type + wind.type, random = ~1|device_info_serial,correlation = corARMA(q=6))
+summary(mod02_t6)
+
+mod03_t6   <- lme(flights.combined.rho ~ flight.type , random = ~1|device_info_serial,correlation = corARMA(q=6))
+summary(mod03_t6)
+
+# Null model, no fixed effects, only random effects
+mod04_t6   <- lme(flights.combined.rho ~ 1 , random = ~1|device_info_serial,correlation = corARMA(q=6))
+summary(mod04_t6)
 
 
-anova(mod1,mod2,mod3)
+# AIC comparison REML models fitting
+anova(mod01_t6,mod02_t6,mod03_t6,mod04_t6)
+# Model 3 has lowest AIC value
 
-x <- c(0.3391739,0.5726806)
-x <- x^2
-100*x/sum(x)
+# Refitting models to compare via maximum liklihood, allowing comparison when fixed effects differ.
+mod01_t6_ML <- update(mod01_t6, method="ML")
+mod02_t6_ML <- update(mod02_t6, method="ML")
+mod03_t6_ML <- update(mod03_t6, method="ML")
+mod04_t6_ML <- update(mod04_t6, method="ML")
 
-#trip then is more important in explaining straightness (rho) than individual, explaining 74% of variance, and device (bird) 26%
+anova(mod01_t6_ML,mod02_t6_ML,mod03_t6_ML,mod04_t6_ML)
+anova(mod02_t6_ML,mod03_t6_ML)
+anova(mod03_t6_ML,mod04_t6_ML)
+
+# Final model fitted by REML
+summary(mod03_t6)
+anova(mod03_t6)
 
 
-plot(ACF(mod2, maxLag = 100),alpha=0.01)
-mod20 <- update(mod2,correlation = corARMA(q=6))
-mod21 <- update(mod2,correlation = corARMA(q=4))
-mod22 <- update(mod2,correlation = corARMA(q=2))
+summary(mod03_t6_ML)
+anova(mod03_t6_ML)
 
-mod23 <- lme(flights.combined.rho ~ wind.type, random = ~1|device_info_serial)
-mod24 <- update(mod23,correlation = corARMA(q=6))
-mod24x <- update(mod24, method="ML")
-
-anova(mod2,mod20)
-anova(mod20,mod10)
-
-#To compare models we must use 'maximum liklihood'
-mod20x <- update(mod20, method="ML")
-mod10x <- update(mod10, method="ML")
-mod4x <- update(mod4, method="ML")
-
-#Compare models
-anova(mod4x,mod10x)
-anova(mod10x,mod20x)  # Compare with and without wind effect
-anova(mod20x,mod24x)
-anova(mod24x,mod20x)
-summary(mod10x)
-
-anti.logit(1.9232764) - anti.logit(1.9232764-0.3188318)
-
-# mod23 <- lme(flights.combined.rho ~   random = ~1|device_info_serial)
-
-plot(ACF(mod4, maxLag = 100),alpha=0.01)
-# ?ACF
-mod6 <-  update(mod4,correlation = corARMA(q=2))
-mod7 <-  update(mod4,correlation = corARMA(q=3))
-mod8 <-  update(mod4,correlation = corARMA(q=4))
-mod9 <-  update(mod4,correlation = corARMA(q=5))
-mod10 <- update(mod4,correlation = corARMA(q=6))
-mod11 <- update(mod4,correlation = corARMA(q=7))
-# mod12 <- update(mod4,correlation = corARMA(q=8))
-mod13 <- update(mod4,correlation= corAR1())
+anti.logit(1.9237288) - anti.logit(1.9237288-0.3189052)
 
 
 
+#Checking final model assumptions
+plot(mod03_t6,resid(.,type="p")~fitted(.)|device_info_serial)
+qqnorm(mod03_t6,~resid(.)|device_info_serial)
+plot(mod03_t6)
 
-# ?corClasses
-anova(mod4,mod6,mod7,mod8,mod9,mod10, mod11,mod12,mod13)
-anova(mod4,mod10)
+plot( ACF(mod03_t6, maxLag = 50), alpha = 0.01)
+plot( ACF(mod03_t6, maxLag = 50, resType = "n"), alpha = 0.01)
 
-# anova(mod9,mod7)
 
-summary(mod10x)
-anova(mod10x)
-plot(mod10x,resid(.,type="p")~fitted(.)|device_info_serial)
-qqnorm(mod10x,~resid(.)|device_info_serial)
-plot(mod10x)
-
-plot( ACF(mod10x, maxLag = 50), alpha = 0.01)
-plot( ACF(mod10x, maxLag = 50, resType = "n"), alpha = 0.01)
 
 
 # Get means and SD for different categories
 aggregate(flights.combined.rho ~ flight.type + wind.type, data =flights.combined, FUN=mean)
 aggregate(flights.combined.rho ~ flight.type + wind.type, data =flights.combined, FUN=sd)
-
 
 
 aggregate(flights.combined.rho ~  flight.type, data =flights.combined, FUN=mean)
