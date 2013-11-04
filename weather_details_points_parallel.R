@@ -14,6 +14,7 @@ require(doParallel)
 #Establish a connection to the database
 gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
+setwd("D:/Dropbox/R_projects/lbbg_gps")
 
 #for all of data_base, except pre-deployment and null records
 #excluding individuals with start north of 59 (i.e. those birds
@@ -31,7 +32,7 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 load("gps_wind_drift_analysis.RData")
 
 # str(gps)
-
+gps <- gps[,-c(6,7,8,9)]
 
 # Correct date_time
 # gps$date_time <- as.POSIXct(gps$date_time,
@@ -60,7 +61,7 @@ devices <- sort(unique(gps$device_info_serial))
 
 
 #Make cluster of number of devices instances
-cl <- makeCluster(40)
+cl <- makeCluster(20)
 
 #start the parellel session of R; the 'slaves', which will run the analysis.
 registerDoParallel(cl)  
@@ -83,14 +84,16 @@ system.time({lst <- foreach(i = 1:40 ) %dopar%{
   # Package to extract weather data from NOAA
   require(RNCEP)
   
-  #   i <- 1
+  #   i <- 6
   # Get device ID
   #   d <- devices[i]
   
   # Make subset of GPS points for this device.
   #   sub01 <- subset(gps, gps$device_info_serial == d)
   sub01 <- gps[v[i]:vt[i],]
-  
+
+  #free-up some memory
+  rm("gps")
   
   #   ?NCEP.interp
   #   Wind Speed in E-W direction 'uwnd.10m' (ms^-1) '10 m'
@@ -104,7 +107,7 @@ system.time({lst <- foreach(i = 1:40 ) %dopar%{
     keep.unpacking.info = TRUE,
     interp = 'linear'
   )
-  
+
   
   
   #Add values to points.weather table
@@ -140,7 +143,7 @@ stopCluster(cl)
 
 
 #Make cluster of number of devices instances
-cl <- makeCluster(40)
+cl <- makeCluster(20)
 
 #start the parellel session of R; the 'slaves', which will run the analysis.
 registerDoParallel(cl)  
