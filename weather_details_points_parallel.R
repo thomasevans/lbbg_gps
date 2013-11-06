@@ -29,7 +29,7 @@ setwd("D:/Dropbox/R_projects/lbbg_gps")
 
 # save("gps", file = "gps_wind_drift_analysis.RData")
 # To speed things up - cached copy of GPS table above.
-load("gps_wind_drift_analysis.RData")
+ load("gps_wind_drift_analysis.RData")
 
 # str(gps)
 gps <- gps[,-c(6,7,8,9)]
@@ -84,14 +84,15 @@ system.time({lst <- foreach(i = 1:40 ) %dopar%{
   # Package to extract weather data from NOAA
   require(RNCEP)
   
-  #   i <- 6
+  #   i <- 40
   # Get device ID
   #   d <- devices[i]
   
   # Make subset of GPS points for this device.
   #   sub01 <- subset(gps, gps$device_info_serial == d)
   sub01 <- gps[v[i]:vt[i],]
-
+#   sub01[1,]
+  
   #free-up some memory
   rm("gps")
   
@@ -109,6 +110,23 @@ system.time({lst <- foreach(i = 1:40 ) %dopar%{
   )
 
   
+#   #Testing to locate error
+#   x <- 1
+#   test.x <- rep(NA, 23792)
+#   for(x in 1:23792){
+#     test.x[x] <- NCEP.interp(
+#     variable = "uwnd.10m",
+#     level = "gaussian",
+#     lat = sub01$latitude[x],
+#     lon = sub01$longitude[x],
+#     dt = sub01$date_time[x],
+#     reanalysis2 = FALSE,
+#     keep.unpacking.info = TRUE,
+#     interp = 'linear'
+#   )
+#   }
+#   x
+#    gps$date_time[951100:951133]
   
   #Add values to points.weather table
   uwnd.10m <- (as.numeric(uwnd10))
@@ -161,7 +179,7 @@ lst2 <- list()
 #get weather data for each flight of each trip
 #Use system.time to time how long this takes.
 # On 2013-09-30 took 24875 s (<7 h)
-system.time({lst <- foreach(i = 1:40 ) %dopar%{
+system.time({lst2 <- foreach(i = 1:40 ) %dopar%{
   
   # Package to extract weather data from NOAA
   require(RNCEP)
@@ -254,6 +272,8 @@ final.data <- cbind(weather.data,weather.data2$vwnd.10m,weather.data2$vwnd.10m.s
 
 names(final.data) <- c("device_info_serial", "date_time", "uwnd.10m", "uwnd.10m.sd", "vwnd.10m", "vwnd.10m.sd")
 
+# x <- as.POSIXct(final.data$date_time[1:10], tz = "UTC", origin = "1970-01-01")
+
 
 final.data$date_time <- as.POSIXct(final.data$date_time, tz = "UTC", origin = "1970-01-01")
 
@@ -273,6 +293,9 @@ sqlSave(gps.db, final.data, tablename = "lund_points_weather",
           c(date_time = "datetime"))
 
 
+# Test that all combinations of device_info_serial and datetime are unqiue - i.e. should be as we wish to use these in combination to give a primary key for the database.
+# x <- unique(as.data.frame(cbind(final.data$device_info_serial,final.data$date_time)))
+# x of same lenghth as original data.frame - no non-unique records
 
 
 # Rescue data from above, when list writing failed ####
