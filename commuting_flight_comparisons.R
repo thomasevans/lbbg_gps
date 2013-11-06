@@ -2,7 +2,7 @@
 #You are welcome to use parts of this code, but please give credit when using it extensively.
 
 # Alternative working directory for when also running another script from same directory.
-# setwd("D:/Dropbox/R_projects/lbbg_gps/workspace_alternative")
+setwd("D:/Dropbox/R_projects/lbbg_gps/workspace_alternative")
 
 
 #Description#######
@@ -488,52 +488,155 @@ aggregate(flights.combined.rho ~  flight.type, data =flights.combined, FUN=sd)
 
 
 
+
+
 # Altitude - wind condition ####
-sort(flights.out$alt_med[flights.out$dif.angle < 90])
-sort(flights.in$alt_med[flights.in$dif.angle < 90])
+# Just include outward and inward flights:
+# flights.combined
+
+# Inspect lowest values.
+sort(flights.combined$alt_med)[1:100]
+
+# Inspect highest values.
+rev(sort(flights.combined$alt_med))[1:100]
+
+# Maybe sensible to exclude values > 100 and < -10 - outlying values potentially leading from GPS errors
+# Make a filter to this effect
+f <- flights.combined$alt_med < 100  &   flights.combined$alt_med > -10
+
+# Transformation
+# Strong right-hand skew
+hist(flights.combined$alt_med[f])
+# log - too strong, now left hand skew
+hist(log(flights.combined$alt_med[f]))
+# square-root - better
+hist(sqrt(flights.combined$alt_med[f] + 10))
+# cubed-root - best apparently, also close to Boxcox recomendation
+hist((flights.combined$alt_med[f]+10)^(1/3))
 
 
-alt.out.tail <- sqrt(10 + flights.out$alt_med[flights.out$dif.angle < 90])
-alt.out.head <- sqrt(10 + flights.out$alt_med[flights.out$dif.angle > 90])
-alt.in.tail <- sqrt(10 + flights.in$alt_med[flights.in$dif.angle < 90])
-alt.in.head <- sqrt(10 + flights.in$alt_med[flights.in$dif.angle > 90])
+library(MASS)
+# intercept only model for testing here - ideally do on final model though
+mod <- lm((flights.combined$alt_med[f]+10) ~ 1)
+summary(mod)
+boxcox(mod, lambda = seq(.1, 0.45, len = 20))
 
-par(mfrow = c(2,2))
-hist(alt.out.tail,xlab = "Altitude (transformed)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", main = "Out - tail", breaks = "scott")
-hist(alt.out.head,xlab = "Altitude (transformed)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", main = "Out - head", breaks = "scott")
-hist(alt.in.tail,xlab = "Altitude (transformed)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",  main = "In - tail", breaks = "scott")
-hist(alt.in.head,xlab = "Altitude (transformed)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",main = "In - head", breaks = "scott")
+# Transformed vairable for further analysis
+alt_trans <- (flights.combined$alt_med[f]+10)^(1/3)
 
 
+names(flights.combined)
 
 
-mean(alt.out.tail, na.rm = TRUE)
-mean(alt.out.head, na.rm = TRUE)
-mean(alt.in.tail, na.rm = TRUE)
-mean(alt.in.head, na.rm = TRUE)
+
+# Histograms to show data - transformed
+par(mfrow = c(2,3))
+hist((flights.combined$alt_med[f & flights.combined$wind.type == "tail" & flights.combined$flight.type == "out"]+10)^(1/3), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = "scott", main = "Out - tail")
+hist((flights.combined$alt_med[f & flights.combined$wind.type == "side" & flights.combined$flight.type == "out"]+10)^(1/3), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = "scott", main = "Out - side")
+hist((flights.combined$alt_med[f & flights.combined$wind.type == "head" & flights.combined$flight.type == "out"]+10)^(1/3), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = "scott", main = "Out - head")
+
+hist((flights.combined$alt_med[f & flights.combined$wind.type == "tail" & flights.combined$flight.type == "in"]+10)^(1/3), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", breaks = "scott", main = "In - tail")
+hist((flights.combined$alt_med[f & flights.combined$wind.type == "side" & flights.combined$flight.type == "in"]+10)^(1/3), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", breaks = "scott", main = "In - side")
+hist((flights.combined$alt_med[f & flights.combined$wind.type == "head" & flights.combined$flight.type == "in"]+10)^(1/3), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", breaks = "scott", main = "In - head")
 
 
-alt <- sqrt(10 + flights.combined$alt_med)
+#Histograms of non-transformed data
 
-mod1 <- aov(alt ~ flights.combined$flight.type * flights.combined$wind.type)
-summary(mod1)
+par(mfrow = c(2,3))
+hist((flights.combined$alt_med[f & flights.combined$wind.type == "tail" & flights.combined$flight.type == "out"]), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = "scott", main = "Out - tail")
+hist((flights.combined$alt_med[f & flights.combined$wind.type == "side" & flights.combined$flight.type == "out"]), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = "scott", main = "Out - side")
+hist((flights.combined$alt_med[f & flights.combined$wind.type == "head" & flights.combined$flight.type == "out"]), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = "scott", main = "Out - head")
 
-mod2 <- aov(alt ~ flights.combined$flight.type + flights.combined$wind.type)
-summary(mod2)
-
-aggregate(alt ~ flight.type + wind.type, data = flights.combined, FUN = mean )
-aggregate(alt ~  wind.type, data = flights.combined, FUN = mean )
-aggregate(alt ~  wind.type, data = flights.combined, FUN = sd )
-
-
-# Get means and SD for different categories
-aggregate(alt_mean ~ flight.type + wind.type, data =flights.combined, FUN=mean)
-aggregate(alt_mean ~ flight.type + wind.type, data =flights.combined, FUN=sd)
-
-aggregate(alt_mean ~  wind.type, data =flights.combined, FUN=mean)
-aggregate(alt_mean ~  wind.type, data =flights.combined, FUN=sd)
+hist((flights.combined$alt_med[f & flights.combined$wind.type == "tail" & flights.combined$flight.type == "in"]), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", breaks = "scott", main = "In - tail")
+hist((flights.combined$alt_med[f & flights.combined$wind.type == "side" & flights.combined$flight.type == "in"]), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", breaks = "scott", main = "In - side")
+hist((flights.combined$alt_med[f & flights.combined$wind.type == "head" & flights.combined$flight.type == "in"]), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", breaks = "scott", main = "In - head")
 
 
+
+
+
+# library(lme4)
+library(nlme)
+
+flight.type <- as.factor(flights.combined$flight.type[f])
+wind.type <- as.factor(flights.combined$wind.type[f])
+device_info_serial <- device_info_serial[f]
+length(device_info_serial)
+length(wind.type)
+
+# Full factorial model
+mod01 <- lme(alt_trans ~ flight.type * wind.type, random = ~1|device_info_serial)
+summary(mod01)
+anova(mod01)
+
+# Temporal autocorrelation structure
+plot(ACF(mod01, maxLag = 50),alpha=0.01)
+mod01_t2 <- update(mod01,correlation = corARMA(q=2))
+mod01_t3 <- update(mod01,correlation = corARMA(q=3))
+mod01_t4 <- update(mod01,correlation = corARMA(q=4))
+mod01_t4 <- update(mod01,correlation = corARMA(q=4))
+
+# Comparing autocorrelation levels
+anova(mod01,mod01_t2,mod01_t3,mod01_t4)
+# select lag 2 for correlation structure, lowest AIC, lower than no autocorrelation function
+
+
+# Model simplification
+mod02_t2   <- lme(alt_trans ~ flight.type * wind.type, random = ~1|device_info_serial,correlation = corARMA(q=2))
+summary(mod02_t2)
+
+mod03_t2   <- lme(alt_trans ~ flight.type + wind.type, random = ~1|device_info_serial,correlation = corARMA(q=2))
+summary(mod03_t2)
+
+
+mod04_t2   <- lme(alt_trans ~  wind.type, random = ~1|device_info_serial,correlation = corARMA(q=2))
+summary(mod04_t2)
+
+mod05_t2   <- lme(alt_trans ~ flight.type , random = ~1|device_info_serial,correlation = corARMA(q=2))
+summary(mod05_t2)
+
+# Null model, no fixed effects, only random effects
+mod06_t2   <- lme(alt_trans ~ 1 , random = ~1|device_info_serial,correlation = corARMA(q=2))
+summary(mod06_t2)
+
+# Compare models
+anova(mod02_t2,mod03_t2,mod04_t2,mod05_t2,mod06_t2)
+
+# Lowest AIC (and BIC) is given by mod04_t2, which is wind type only (not flight type).
+
+
+
+# Refitting models to compare via maximum liklihood, allowing comparison when fixed effects differ.
+mod02_t2_ML <- update(mod02_t2, method="ML")
+mod03_t2_ML <- update(mod03_t2, method="ML")
+mod04_t2_ML <- update(mod04_t2, method="ML")
+mod05_t2_ML <- update(mod05_t2, method="ML")
+mod06_t2_ML <- update(mod06_t2, method="ML")
+
+# Flight type NS, p = 0.66
+summary(anova(mod04_t2_ML,mod03_t2_ML))
+
+# Wind type hight significant, p < 0.001 for null model vs model including wind type
+anova(mod04_t2_ML,mod06_t2_ML)
+
+#Final model fitted via REML
+summary(mod04_t2)
+
+
+#Checking final model assumptions
+plot(mod04_t2_ML,resid(.,type="p")~fitted(.)|device_info_serial)
+qqnorm(mod04_t2_ML,~resid(.)|device_info_serial)
+plot(mod04_t2_ML)
+
+plot( ACF(mod04_t2_ML, maxLag = 50), alpha = 0.01)
+plot( ACF(mod04_t2_ML, maxLag = 50, resType = "n"), alpha = 0.01)
+
+#Backtransform coefficients
+a <- (2.9159989 ^3) + 10
+b <- ((2.9159989 + 0.4634817)  ^3) + 10
+
+b - a
+mod04_t2_ML
 
 
 
