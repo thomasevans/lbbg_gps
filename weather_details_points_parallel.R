@@ -270,7 +270,7 @@ weather.data2  <- weather.data2[order(weather.data2$device_info_serial,weather.d
 
 final.data <- cbind(weather.data,weather.data2$vwnd.10m,weather.data2$vwnd.10m.sd)
 
-names(final.data) <- c("device_info_serial", "date_time", "uwnd.10m", "uwnd.10m.sd", "vwnd.10m", "vwnd.10m.sd")
+names(final.data) <- c("device_info_serial", "date_time", "uwnd_10m", "uwnd_10m_sd", "vwnd_10m", "vwnd_10m_sd")
 
 # x <- as.POSIXct(final.data$date_time[1:10], tz = "UTC", origin = "1970-01-01")
 
@@ -284,13 +284,75 @@ final.data   <- final.data[order(final.data$device_info_serial,final.data$date_t
 # ?order
 
 
+# str(final.data)
+
+# x <- as.numeric(as.character((final.data$vwnd.10m)))
+
+num <- function(x){
+  x <- as.character(x)
+  x <- as.numeric(x)
+  return(x)
+}
+
+# str(x)
+# x[1:100]
+# 
+# ?sample
+# sample(x, 100)
+
+final.data2 <- final.data
+final.data2$vwnd.10m.sd <- num(final.data2$vwnd.10m.sd)
+final.data2$vwnd.10m <- num(final.data2$vwnd.10m)
+final.data2$uwnd.10m <- num(final.data2$uwnd.10m)
+final.data2$uwnd.10m.sd <- num(final.data2$uwnd.10m.sd)
+final.data2$device_info_serial <- num(final.data2$device_info_serial)
+
+
+# write.csv(final.data2, file = "lund_points_weather4.csv", row.names = FALSE)
+
+# ?round
+
+
+#  str(final.data2)
+# 
+# vwnd.10m
+# uwnd.10m
+# uwnd.10m.sd 
+
+
+odbcClose(gps.db)
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+
+
 #Output weather data to database #####
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
-sqlSave(gps.db, final.data, tablename = "lund_points_weather",
+sqlSave(gps.db, final.data2, tablename = "lund_points_weather2",
         append = FALSE, rownames = FALSE, colnames = FALSE,
         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
-        test = FALSE, nastring = NULL, varTypes = 
-          c(date_time = "datetime"))
+        test = FALSE, nastring = NULL,
+        varTypes =  c(device_info_serial = "integer",
+                      date_time = "datetime",
+                      uwnd_10m = "double", uwnd_10m_sd = "double",
+                      vwnd_10m = "double", vwnd_10m_sd = "double"))
+
+# sqlSave(gps.db, final.data2, tablename = "lund_points_weather3",
+#         append = FALSE, rownames = FALSE, colnames = FALSE,
+#         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = FALSE,
+#         test = FALSE, nastring = NULL)
+
+# ?sqlSave
+# str(final.data2)
+# final.data2[569,]
+
+
+
+
+
+# sqlSave(gps.db, weather.data, tablename = "lund_flights_weather",
+#         append = FALSE, rownames = FALSE, colnames = FALSE,
+#         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
+#         test = FALSE, nastring = NULL, varTypes = 
+#           c(start_time = "datetime"))
 
 
 # Test that all combinations of device_info_serial and datetime are unqiue - i.e. should be as we wish to use these in combination to give a primary key for the database.

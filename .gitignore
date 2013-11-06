@@ -8,3 +8,5 @@
 .Rproj.user
 processed_data
 figure/*
+*.csv
+*.xlsx
