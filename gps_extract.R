@@ -3,7 +3,6 @@
 # lund_gps_parameters 
 
 
-
 #Extract GPS points
 gps.extract <- function(i, start.t, end.t){
   # i - device info serial

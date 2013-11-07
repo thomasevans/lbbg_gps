@@ -93,7 +93,7 @@ gps.extract <- function(i, start.t, end.t){
             g.speed_accuracy, c.bearing_next, c.bearing_prev, c.nest_gc_dist,
             c.nest_bear, c.inst_ground_speed, c.p2p_dist,  c.time_interval_s,
             c.turning_angle, c.flight_class,  c.flight_id, g.altitude
-            FROM gps_uva_tracking_speed_3d_limited AS g, lund_gps_paramaters AS c
+            FROM gps_uva_tracking_speed_3d_limited AS g, lund_gps_parameters AS c
             WHERE g.device_info_serial = c.device_info_serial
             AND g.date_time = c.date_time
             AND "
