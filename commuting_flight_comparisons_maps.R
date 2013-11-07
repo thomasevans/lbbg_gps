@@ -17,45 +17,38 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 
 #Get a copy of the flights DB table.
-flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
+flights <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
                     FROM lund_flights AS f
                     ORDER BY f.flight_id ASC;")
-
 
 # Hack to set time zone back to UTC rather than system locale.
 # See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
 
-tm <- as.POSIXlt(flights$start_time)
-# tm[1:10]
-attr(tm,"tzone") <- "UTC"
-# tm[1:10]
-flights$start_time <- tm
 
-tm <- as.POSIXlt(flights$end_time)
-# tm[1:10]
-attr(tm,"tzone") <- "UTC"
-# tm[1:10]
-flights$end_time <- tm
+flights$start_time <- as.POSIXct(flights$start_time,
+                 tz="GMT",
+                 format="%Y-%m-%d %H:%M:%S")
+
+flights$end_time <- as.POSIXct(flights$end_time,
+                                 tz="GMT",
+                                 format="%Y-%m-%d %H:%M:%S")
 
 
 
 #str(flights)  #check structure
 
 #Get a copy of the flights_weather DB table.
-flights.weather <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
+flights.weather <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
                             FROM lund_flights_weather AS f
                             ORDER BY f.flight_id ASC;")
 
-# Hack to set time zone back to UTC rather than system locale.
-# See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
-tm <- as.POSIXlt(flights.weather$start_time)
-#Check how this appears (i.e. time zone)
-# tm[1:10]
-attr(tm,"tzone") <- "UTC"
-#Check how appears after change of time-zone - i.e. is the absolute time
-#value unchanged?
-# tm[1:10]
-flights.weather$start_time <- tm
+# str(flights.weather)
+flights.weather$start_time <- as.POSIXct(flights.weather$start_time,
+                               tz="GMT",
+                               format="%Y-%m-%d %H:%M:%S")
+
+
+
 
 
 #Query the gull db to extract bird_id, nest_id, and nest locations
@@ -63,27 +56,18 @@ trips <- sqlQuery(gps.db, query="SELECT DISTINCT t.*
                   FROM lund_trips AS t
                   ORDER BY t.trip_id ASC;")
 
-#str(trips)
-
-tm <- as.POSIXlt(trips$start_time)
-# tm[1:10]
-attr(tm,"tzone") <- "UTC"
-# tm[1:10]
-trips$start_time <- tm
-
-tm <- as.POSIXlt(trips$end_time)
-# tm[1:10]
-attr(tm,"tzone") <- "UTC"
-# tm[1:10]
-trips$end_time <- tm
 
 
 #Edited this to reference 'lund_flight_paramaters' rather than 'lund_flight_characteristics' as table name changed.
-flights.characteristics <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
+flights.characteristics <- sqlQuery(gps.db,as.is = TRUE, query="SELECT DISTINCT f.*
                                     FROM lund_flight_paramaters AS f
                                     ORDER BY f.flight_id ASC;")
+flights.characteristics$start_time <- as.POSIXct(flights.characteristics$start_time,
+                                         tz="GMT",
+                                         format="%Y-%m-%d %H:%M:%S")
 
-
+# str(flights.characteristics )
+# flights.characteristics$start_time[1]
 
 #Trip type and duration#######
 trip_type <- rep(0, length(trips$trip_id))
@@ -223,19 +207,128 @@ flights.combined   <- flights.combined[order(flights.combined$trip_id),]
 
 
 # Get GPS points for flights ####
-str(flights.combined)
+# str(flights.combined)
 
 # setwd("D:/Dropbox/R_projects/lbbg_gps")
 
 # Get gps_extract function
 source("gps_extract.R")
 
-points <- NA
-for(i in 1:lenght(flights.combined$device_info_serial)){
+points <- NULL
+str(flights.combined)
+# Get points for all flights
+for(i in 1:length(flights.combined$device_info_serial)){
+#   for(i in 1:10){
+  
 x <- NA
-x <- gps.extract(flights.combined$device_info_serial, flights.combined$start_time, flights.combined$end_time)
 
+x <- gps.extract(flights.combined$device_info_serial[i],
+                 flights.combined$start_time[i],
+                 flights.combined$end_time[i])
+
+x <- cbind(x,i,flights.combined$flight.type[i],flights.combined$wind.type[i])
+points <- rbind(points,x)
 }
+
+# str(points)
+# summary(points$flight_type == "out")
+# data frames of just outward or inward flights
+
+x <- names(points)
+length(x)
+x <- c(x[1:21],"flight.type","wind.type")
+names(points) <- x
+
+
+points.out <- points[points$flight.type == "out",]
+points.in <- points[points$flight.type == "in",]
+
+
+# Mapping data #####
+
+maps.flights <- function(points.data=NULL, all.flights = FALSE, flight.num = 50){
+  library(maps)
+  
+  fl.n <- unique(points.data$flight_id)  
+  
+  
+  if(all.flights){
+    f.s <- fl.n  
+    flight.num <- length(fl.n)
+  }else  f.s <- sample(fl.n,flight.num)
+  
+#   points.data <- points.in
+  
+    # Set map limits
+  c.xlim <- range(points.data$longitude[points.data$flight_id %in% f.s])
+  dif    <- c.xlim[2] - c.xlim[1]
+  dif    <- dif *.15
+  c.xlim <- c((c.xlim[1] - dif), (c.xlim[2] + dif))
+  
+  c.ylim <- range(points.data$latitude[points.data$flight_id %in% f.s])
+  dif    <- c.ylim[2] - c.ylim[1]
+  dif    <- dif *.15
+  c.ylim <- c((c.ylim[1] - dif), (c.ylim[2] + dif))
+  
+  # Plot base map
+  load("SWE_adm0.RData")
+  
+  par(mfrow=c(1,1))
+  par( mar = c(5, 4, 4, 2))
+#   par(bg = 'white')
+  
+    plot(gadm, xlim = c.xlim,
+       ylim = c.ylim, col="white", bg = "grey")
+#   rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col = 
+#          "black")
+#  
+  
+    # colours for lines  
+#     library(RColorBrewer)
+    # Generating more colours than are in the palette - includes intermediate values.
+#     col.line <- colorRampPalette(brewer.pal(11,"Spectral"))(length(fl.n))
+#     # Change alpha value, to make transparent - allow to see overplotting
+#     col.line <- adjustcolor(col.line, 0.6)
+#     # Shuffle colours
+#     col.line <- col.line[sample.int(length(col.line))]
+    
+#   ?rainbow
+  # Get colours from rainbow scale
+  col.line <- rainbow(length(fl.n), alpha = .6)
+  # 
+  col.line <- col.line[sample.int(length(col.line))]
+  
+
+  # Plot lines for each flight
+     for(i in 1:flight.num){
+      
+      x <- f.s[i]
+      gps.sub <- subset(points.data, flight_id == x,
+                     select=c(longitude, latitude))
+      n <- length(gps.sub$longitude)
+      segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+               gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+               col = col.line[i], lwd = 2)
+  }
+  
+  # Scale bar and axis
+  x <- c.xlim[1] + (c.xlim[2] - c.xlim[1])/20
+  y <- c.ylim[1] + (c.ylim[2] - c.ylim[1])/10
+  map.scale(x,y,ratio = FALSE)
+#   ?map.scale
+  box()
+  axis(side=(1),las=1)
+  axis(side=(2),las=1)
+}
+  
+
+
+maps.flights(points.in, flight.num = 20)
+
+
+
+#   names(trips.sample)
+
 
 
 
