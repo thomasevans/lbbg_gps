@@ -475,6 +475,44 @@ plot( ACF(mod03_t6, maxLag = 50, resType = "n"), alpha = 0.01)
 
 
 
+
+cloud <- flights.combined$tcdceatm
+
+mod04_cl_t2   <- lme(flights.combined.rho ~ flight.type*cloud, random = ~1|device_info_serial, correlation = corARMA(q=6))
+mod04_cl_t2_ML <- update(mod04_cl_t2, method="ML")
+
+summary(mod04_cl_t2)
+anova(mod03_t6_ML,mod04_cl_t2_ML)
+anova(mod03_t6,mod04_cl_t2)
+
+mod04_cl_t2
+plot(mod04_cl_t2)
+plot( ACF(mod04_cl_t2, maxLag = 50, resType = "n"), alpha = 0.01)
+
+plot(mod04_cl_t2,resid(.,type="p")~fitted(.)|device_info_serial)
+qqnorm(mod04_cl_t2,~resid(.)|device_info_serial)
+
+rsquared.glmm(list(mod04_t2_ML,mod04_cl_t2))
+
+library(MuMIn)
+r.squaredGLMM(mod04_cl_t2)
+r.squaredGLMM(mod03_t6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Get means and SD for different categories
 aggregate(flights.combined.rho ~ flight.type + wind.type, data =flights.combined, FUN=mean)
 aggregate(flights.combined.rho ~ flight.type + wind.type, data =flights.combined, FUN=sd)
@@ -489,7 +527,8 @@ aggregate(flights.combined.rho ~  flight.type, data =flights.combined, FUN=sd)
 
 
 
-
+# str(flights.combined)
+# hist(flights.combined$tcdceatm)
 # Altitude - wind condition ####
 # Just include outward and inward flights:
 # flights.combined
@@ -640,7 +679,188 @@ mod04_t2_ML
 
 
 
+
+
+cloud <- flights.combined$tcdceatm[f]
+mod04_cl_t2   <- lme(alt_trans ~  wind.type*cloud, random = ~1|device_info_serial,correlation = corARMA(q=2))
+mod04_cl_t2_ML <- update(mod04_cl_t2, method="ML")
+
+summary(mod04_cl_t2)
+anova(mod04_t2_ML,mod04_cl_t2_ML)
+anova(mod04_t2,mod04_cl_t2)
+
+mod04_cl_t2
+plot(mod04_cl_t2)
+plot( ACF(mod04_cl_t2, maxLag = 50, resType = "n"), alpha = 0.01)
+
+plot(mod04_cl_t2,resid(.,type="p")~fitted(.)|device_info_serial)
+qqnorm(mod04_cl_t2,~resid(.)|device_info_serial)
+
+rsquared.glmm(list(mod04_t2_ML,mod04_cl_t2))
+
+library(MuMIn)
+r.squaredGLMM(mod04_cl_t2)
+r.squaredGLMM(mod04_t2)
+
+
 # Straightness - r - wind condition ####
+
+
+# LMMs of straightness - r - windcondition ####
+
+flights.combined.r <- sapply(flights.combined$straigtness, FUN = logit)
+hist(flights.combined.r)
+
+par(mfrow=c(1,1))
+r_straight <- sapply(flights.combined$straigtness, FUN = logit)
+r_rho <-  sapply(flights.combined$rho, FUN = logit)
+plot(flights.combined$straigtness~flights.combined$rho, ylim = c(0,1))
+abline(lm(flights.combined$straigtness~flights.combined$rho))
+plot(r_straight~r_rho)
+abline(lm(r_straight~r_rho))
+
+device_info_serial <- as.factor(flights.combined$device_info_serial)
+device_info_serial[device_info_serial == 687] <- 596
+device_info_serial <- as.factor(device_info_serial)
+trip_id <- as.factor(flights.combined$trip_id)
+# install.packages("lme4")
+
+
+# Fitting a linear mixed-effects model to determine influence of 
+
+# library(lme4)
+library(nlme)
+
+flight.type <- as.factor(flights.combined$flight.type)
+wind.type <- as.factor(flights.combined$wind.type)
+
+f <- !is.na(flights.combined.r)
+length(flights.combined.r[f])
+length(flight.type[f])
+length(wind.type[f])
+length(device_info_serial[f])
+summary(is.na(flights.combined.r[f]))
+
+summary(f)
+
+flights.combined.r <- flights.combined.r[f]
+flight.type <- flight.type[f]
+wind.type <- wind.type[f]
+device_id <- as.factor(as.character((device_info_serial[f])))
+cloud <- flights.combined$tcdceatm[f]
+
+mod01 <- lme(flights.combined.r ~ flight.type * wind.type*cloud, random = ~1|device_id)
+
+summary(mod01)
+anova(mod01)
+
+
+# Temporal autocorrelation structure
+?ACF
+# Looks sig up to lag 5, and potentially up to lag 9
+plot(ACF(mod01, maxLag = 100),alpha=0.01)
+mod01_t2 <- update(mod01,correlation = corARMA(q=2))
+mod01_t3 <- update(mod01,correlation = corARMA(q=3))
+mod01_t4 <- update(mod01,correlation = corARMA(q=4))
+mod01_t5 <- update(mod01,correlation = corARMA(q=5))
+mod01_t6 <- update(mod01,correlation = corARMA(q=6))
+mod01_t7 <- update(mod01,correlation = corARMA(q=7))
+
+
+# Comparing autocorrelation levels
+anova(mod01_t2,mod01_t3,mod01_t4,mod01_t5,mod01_t6,mod01_t7)
+# select lag 6 for correlation structure, lowest AIC
+
+
+
+
+# Model simplification
+mod01_t2   <- lme(flights.combined.r ~ flight.type * wind.type*cloud, random = ~1|device_id,correlation = corARMA(q=6))
+
+mod02_t2   <- lme(flights.combined.r ~ flight.type * wind.type+cloud, random = ~1|device_id,correlation = corARMA(q=6))
+
+mod03_t2   <- lme(flights.combined.r ~ flight.type + wind.type*cloud, random = ~1|device_id,correlation = corARMA(q=6))
+
+mod04_t2   <- lme(flights.combined.r ~ flight.type + wind.type + cloud, random = ~1|device_id,correlation = corARMA(q=6))
+
+mod05_t2   <- lme(flights.combined.r ~ flight.type + wind.type, random = ~1|device_id,correlation = corARMA(q=6))
+
+mod06_t2   <- lme(flights.combined.r ~ flight.type +  cloud, random = ~1|device_id,correlation = corARMA(q=6))
+
+mod07_t2   <- lme(flights.combined.r ~  wind.type + cloud, random = ~1|device_id,correlation = corARMA(q=6))
+
+mod08_t2   <- lme(flights.combined.r ~ flight.type , random = ~1|device_id,correlation = corARMA(q=6))
+
+mod09_t2   <- lme(flights.combined.r ~ wind.type , random = ~1|device_id,correlation = corARMA(q=6))
+
+mod10_t2   <- lme(flights.combined.r ~  cloud, random = ~1|device_id,correlation = corARMA(q=6))
+
+mod11_t2   <- lme(flights.combined.r ~  1, random = ~1|device_id,correlation = corARMA(q=6))
+
+mod12_t2   <- lme(flights.combined.r ~  flight.type * wind.type, random = ~1|device_id,correlation = corARMA(q=6))
+
+anova(mod01_t2,mod02_t2,mod03_t2,mod04_t2,mod05_t2,mod06_t2,mod07_t2,mod08_t2,mod09_t2,mod10_t2,mod11_t2)
+mod05_t2_ML <- update(mod05_t2, method= "ML")
+mod08_t2_ML <- update(mod08_t2, method= "ML")
+mod12_t2_ML <- update(mod12_t2, method= "ML")
+
+mod09_t2_ML <- update(mod09_t2, method= "ML")
+mod08_t2_ML <- update(mod08_t2, method= "ML")
+mod11_t2_ML <- update(mod11_t2, method= "ML")
+
+mod04_t2_ML <- update(mod04_t2, method = "ML")
+
+#Remove flight type
+anova(mod05_t2_ML,mod09_t2_ML)
+
+#Remove wind type
+anova(mod05_t2_ML,mod08_t2_ML)
+
+#Including cloud too
+anova(mod05_t2_ML,mod04_t2_ML)
+
+anova(mod05_t2_ML,mod08_t2_ML)
+anova(mod05_t2_ML,mod12_t2_ML)
+
+library(MuMIn)
+r.squaredGLMM(mod05_t2_ML)
+r.squaredGLMM(mod08_t2_ML)
+r.squaredGLMM(mod12_t2_ML)
+
+r.squaredGLMM(mod05_t2)
+
+
+anova(mod05_t2_ML)
+anova(mod08_t2_ML)
+
+summary(mod05_t2)
+
+
+plot(mod05_t2)
+plot( ACF(mod05_t2, maxLag = 50, resType = "n"), alpha = 0.01)
+
+plot(mod05_t2,resid(.,type="p")~fitted(.)|device_id)
+qqnorm(mod05_t2,~resid(.)|device_id)
+
+
+mod_int <- 2.6226552
+flt_out <- -0.5174390
+x <- mod_int + flt_out
+
+anti.logit(mod_int) - anti.logit(x)
+anti.logit(x)
+
+side <- -0.383
+tail <- 0.1996534
+anti.logit(mod_int) - anti.logit(mod_int + side)
+anti.logit(mod_int) - anti.logit(mod_int + tail)
+
+
+
+
+####
+
+
 par(mfrow = c(2,2))
 hist(flights.out$straigtness[flights.out$dif.angle < 90 & flights.out$straigtness < 1],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", xlim = c(0,1), breaks = "scott", main = "Out - tail")
 hist(flights.out$straigtness[flights.out$dif.angle > 90 & flights.out$straigtness < 1],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = "scott", xlim = c(0,1), main = "Out - head")
