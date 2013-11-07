@@ -10,3 +10,4 @@ processed_data
 figure/*
 *.csv
 *.xlsx
+*.svg
