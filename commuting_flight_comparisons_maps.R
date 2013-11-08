@@ -243,11 +243,20 @@ names(points) <- x
 points.out <- points[points$flight.type == "out",]
 points.in <- points[points$flight.type == "in",]
 
-
+# length(unique(points.in$flight_id) )
 # Mapping data #####
 
-maps.flights <- function(points.data=NULL, all.flights = FALSE, flight.num = 50){
+maps.flights <- function(points.data=NULL, seed = 2, plot.title = "", all.flights = FALSE, flight.num = 50, alpha = 0.5){
+#   ?title
+  #Function to map flights
+  #  Provide dataframe with flights points
+  # If you want all flights plot, enter 'TRUE', default 'FALSE'
+  # Choose number of flights to plot, 50 is default (ignored if all.flights = TRUE)
+  # Alpha - for transparency of lines - when saving to some image types transparency is not supported, then enter 1 for alpha (i.e. not transparent).
   library(maps)
+  
+  set.seed(seed)
+  
   
   fl.n <- unique(points.data$flight_id)  
   
@@ -281,9 +290,11 @@ maps.flights <- function(points.data=NULL, all.flights = FALSE, flight.num = 50)
        ylim = c.ylim, col="white", bg = "grey")
 #   rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col = 
 #          "black")
-#  
+    title(plot.title)
+#     seed <- 3
+    mtext(paste("seed: ",seed))
   
-    # colours for lines  
+  # colours for lines  
 #     library(RColorBrewer)
     # Generating more colours than are in the palette - includes intermediate values.
 #     col.line <- colorRampPalette(brewer.pal(11,"Spectral"))(length(fl.n))
@@ -294,7 +305,12 @@ maps.flights <- function(points.data=NULL, all.flights = FALSE, flight.num = 50)
     
 #   ?rainbow
   # Get colours from rainbow scale
-  col.line <- rainbow(length(fl.n), alpha = .6)
+  
+
+  
+  
+#   ?rainbow
+  col.line <- rainbow(length(fl.n), alpha = alpha)
   # 
   col.line <- col.line[sample.int(length(col.line))]
   
@@ -321,10 +337,38 @@ maps.flights <- function(points.data=NULL, all.flights = FALSE, flight.num = 50)
   axis(side=(2),las=1)
 }
   
+# ??save.wmf
+# ?win.metafile
+# win.metafile("inward_flights_01.wmf")
+# install.packages("devEMF")
+# library(devEMF)
+
+# (filename = "inward_flights_01.emf", type= "emf")
 
 
-maps.flights(points.in, flight.num = 20)
 
+pdf("inward_flights.pdf")
+# svg("inward_flights_02.svg")
+maps.flights(points.in, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Inward flights")
+maps.flights(points.in, seed = 1, flight.num = 20, plot.title = "Inward flights")
+maps.flights(points.in, seed = 2, flight.num = 20, plot.title = "Inward flights")
+maps.flights(points.in, seed = 3, flight.num = 20, plot.title = "Inward flights")
+maps.flights(points.in, seed = 4, flight.num = 20, plot.title = "Inward flights")
+maps.flights(points.in, seed = 5, flight.num = 20, plot.title = "Inward flights")
+dev.off()
+
+
+pdf("outward_flights.pdf")
+# svg("inward_flights_02.svg")
+maps.flights(points.out, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.out, seed = 1, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.out, seed = 2, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.out, seed = 3, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.out, seed = 4, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.out, seed = 5, flight.num = 20, plot.title = "Outward flights")
+dev.off()
+
+# ?set.seed
 
 
 #   names(trips.sample)
