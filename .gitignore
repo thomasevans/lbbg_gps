@@ -11,3 +11,6 @@ figure/*
 *.csv
 *.xlsx
 *.svg
+*.pdf
+*.tiff
+*.eps
