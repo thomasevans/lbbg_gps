@@ -1,3 +1,7 @@
+# Developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+# You are welcome to use parts of this code, but please give credit when using it extensively.
+# Code available at https://github.com/thomasevans/lbbg_gps
+
 # Script containing single function which take device_info_serial, and a start and end date time then extracts all GPS points in that range, returning a dataframe with this data. Takes data from both tables:
 # gps_uva_tracking_speed_3d_limited
 # lund_gps_parameters 
