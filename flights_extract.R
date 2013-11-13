@@ -17,7 +17,7 @@ flights.extract <- function(i, start.t, end.t){
   
   #Parts of query
   q1a <- "SELECT DISTINCT lf.*, lfc.*, lfw.*
-  FROM lund_flights AS lf, lund_flights_characteristics AS lfc,
+  FROM lund_flights AS lf, lund_flight_paramaters AS lfc,
   lund_flights_weather AS lfw
   WHERE lf.flight_id = lfc.flight_id AND  lf.flight_id = lfw.flight_id
   AND "
