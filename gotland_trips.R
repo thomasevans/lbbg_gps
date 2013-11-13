@@ -100,3 +100,150 @@ day.prop <- round((prop.day*100),1)
 plot(day.prop)
 
 
+
+y.n <- as.numeric(as.character(years))
+high.res <- trips.g[y.n == 2013,]
+str(high.res)
+
+high.res <- subset(high.res,interval_min < 100)
+
+
+#Plot these:
+source("gps_extract.R")
+
+
+map.trip(2582, high.res)
+
+id <- 2381
+trips <- high.res
+
+
+
+# Would be good to later have this as a stand alone function which can be 'sourced' by other scripts. 
+#Dependent on two other functions which are sourced within function:
+# source("gps_extract.R")
+# source("flights_extract.R")
+# For a 'final' version it would be nice to only have to provide trip id, then within the function the neccessary data for that trip can all be downloaded (database).
+
+map.trip <- function(id, trips){
+  #Function to make a map for foraging trip
+  
+  require(maps)
+  require(RODBC)
+  source("gps_extract.R")
+  source("flights_extract.R")
+  #Establish a connection to the database
+  gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+  
+  
+  #First subset the data that we require  
+  i      <-  trips$device_info_serial[trips$trip_id == id]
+  start.t  <-  trips$start_time[trips$trip_id == id]
+  end.t    <-  trips$end_time[trips$trip_id == id]
+  
+  gps.sub <- gps.extract(i, start.t, end.t)
+  flights.sub <- flights.extract(i, start.t, end.t)
+  
+  
+  # Set map limits
+  c.xlim <- range(gps.sub$longitude)
+  dif    <- c.xlim[2] - c.xlim[1]
+  dif    <- dif *.15
+  c.xlim <- c((c.xlim[1] - dif), (c.xlim[2] + dif))
+  
+  c.ylim <- range(gps.sub$latitude)
+  dif    <- c.ylim[2] - c.ylim[1]
+  dif    <- dif *.15
+  c.ylim <- c((c.ylim[1] - dif), (c.ylim[2] + dif))
+  
+  # Plot base map
+  load("SWE_adm0.RData")
+  
+  par( mar = c(5, 4, 4, 2))
+  plot(gadm, xlim = c.xlim,
+       ylim = c.ylim, col="grey", bg = "white")
+  # ?par
+  
+  # names(flights.sub)
+  # Add points
+  
+  #Flight points
+  #
+  i <- 1
+  for( i in seq(along = flights.sub$trip_flight_type)){
+    flight.type <- flights.sub$trip_flight_type[i]
+    if(flight.type == "outward"){
+      points(gps.sub$longitude[gps.sub$flight_id ==
+                                 flights.sub$flight_id[i]],
+             gps.sub$latitude[gps.sub$flight_id ==
+                                flights.sub$flight_id[i]],
+             col = "blue", pch = 19)} else 
+               if(flight.type == "inward"){
+                 points(gps.sub$longitude[gps.sub$flight_id ==
+                                            flights.sub$flight_id[i]],
+                        gps.sub$latitude[gps.sub$flight_id ==
+                                           flights.sub$flight_id[i]],
+                        col = "red", pch = 19)}  else 
+                        {
+                          points(gps.sub$longitude[gps.sub$flight_id ==
+                                                     flights.sub$flight_id[i]],
+                                 gps.sub$latitude[gps.sub$flight_id ==
+                                                    flights.sub$flight_id[i]],
+                                 col = "dark grey", pch = 19)}
+  }
+  
+  # Other points
+  points(gps.sub$longitude[gps.sub$flight_id == 0],
+         gps.sub$latitude[gps.sub$flight_id == 0],
+         col = "black")
+  
+  
+  # Add lines
+  
+  #First grey for all
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = "grey")
+  
+  for( i in seq ( along = (unique(gps.sub$flight_id)))){
+    
+    y <- unique(gps.sub$flight_id)[i]
+    if(y != 0){
+      x <- subset(gps.sub, flight_id == y,
+                  select=c(longitude, latitude))
+      z <- length(x$longitude)
+      n <- length(gps.sub$longitude)
+      segments(x$longitude[-1], x$latitude[-1],
+               x$longitude[1:z-1], x$latitude[1:z-1],
+               col = "black")
+    }
+  }
+  
+  # Scale bar and axis
+  map.scale(ratio = FALSE)
+  box()
+  axis(side=(1),las=1)
+  axis(side=(2),las=1)
+  #   ?text
+  mtext(paste("Device: ", trips$device_info_serial[id],
+              "    Trip: ", trips$trip_id[id])
+        , side = 3, line = 2, cex = 1)
+  mtext(paste("Departure time: ", min(gps.sub$date_time), " UTC")
+        , side = 3, line = 1, cex = 1)
+  
+  dur <- as.difftime(trips$duration_s[id], units= "secs")
+  dur <- as.numeric(dur, units="hours")
+  mtext(paste("Trip duration: ",
+              format(round(dur, 2), nsmall = 2) , " hours")
+        , side = 3, line = 0, cex = 1)
+  #   ?grconvertX
+  #   legend("topleft", pch=c(19, 19, 19, 1),
+  #          c("IN", "OUT", "OTHER", "NON-FLIGHT"),
+  #          col = c("red", "blue", "dark grey", "black"),
+  #          )
+  #   ?legend
+  #   ?legend
+  
+}
+
