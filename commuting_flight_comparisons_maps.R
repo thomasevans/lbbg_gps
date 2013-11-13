@@ -375,17 +375,17 @@ dev.off()
 
 
 
-
-
-# Colours #####
-library(RColorBrewer)
-display.brewer.all()
-
-# General colours to be used for figure
-?brewer.pal
-
-# Generating more colours than are in the palette - includes intermediate values.
-col.line <- colorRampPalette(brewer.pal(12,"Paired"))(100)
-# Change alpha value, to make transparent - allow to see overplotting
-test <- adjustcolor(col.line, 0.4)
-plot(c(1:1000),col= test)
+# 
+# 
+# # Colours #####
+# library(RColorBrewer)
+# display.brewer.all()
+# 
+# # General colours to be used for figure
+# ?brewer.pal
+# 
+# # Generating more colours than are in the palette - includes intermediate values.
+# col.line <- colorRampPalette(brewer.pal(12,"Paired"))(100)
+# # Change alpha value, to make transparent - allow to see overplotting
+# test <- adjustcolor(col.line, 0.4)
+# plot(c(1:1000),col= test)
