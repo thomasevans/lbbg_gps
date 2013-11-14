@@ -8,7 +8,7 @@
 
 
 
-maps.flights <- function(points.data=NULL, seed = 2, plot.title = "", all.flights = FALSE, flight.num = 50, alpha = 0.5){
+maps.flights <- function(points.data=NULL, seed = 2, plot.title = "", all.flights = FALSE, flight.num = 50, alpha = 0.5, flight.id = FALSE){
   #   ?title
   #Function to map flights
   #  Provide dataframe with flights points
@@ -21,12 +21,28 @@ maps.flights <- function(points.data=NULL, seed = 2, plot.title = "", all.flight
   
   
   fl.n <- unique(points.data$flight_id)  
+
+#   ?is.logical
+  # Test if a list of flight.id is provided
+  if(is.logical(flight.id)){
+    f <- FALSE
+  } else f <- TRUE
   
+#   flight.id <- c(1,34,"d")
   
   if(all.flights){
     f.s <- fl.n  
     flight.num <- length(fl.n)
-  }else  f.s <- sample(fl.n,flight.num)
+  }else
+    {if(!f){
+      f.s <- sample(fl.n,flight.num)
+    } else {
+      f.s <- flight.id
+      flight.num <- length(fl.n)
+    }
+    }
+
+
   
   #   points.data <- points.in
   
