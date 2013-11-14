@@ -45,12 +45,41 @@ flights.com <- flights.com[i,]
 # Index vector for flights.com
 flights.com.ind <- 1:length(flights.com$flight_id)
 
-i <- 5
+# i <- 5
 # for all flights    i in length flights.com
 data.all <- NULL    # initialisation
 # for(i in 1:length(flights.com.ind)){
 
-for(i in 1:10){
+
+
+
+#Run function 'weather.info' in parallel########
+require(foreach)
+require(doParallel)
+
+#use x cores, general solution for any windows machine.
+cl <- makeCluster(parallel::detectCores())     
+
+# cl <- makeCluster(16)
+
+#start the parellel session of R; the 'slaves', which will run the analysis.
+registerDoParallel(cl)   
+
+
+#this maybe neccessary so that the clustered instances or R have the
+#required vairables/ functions in their scope, i.e. those functions
+#and vairables which are referred to within the 'foreach' function.
+clusterExport(cl, c("flights.com"))   
+
+#NB see: http://stackoverflow.com/questions/9404881/writing-to-global-variables-in-using-dosnow-and-doing-parallelization-in-r
+#There a solution is offered for exporting vairables from foreach to the global environment.
+
+#make a list object to recieve the data
+lst <- list()
+
+
+system.time({lst <- foreach(i = seq(along = flights.com$trip_flight_type)) %dopar%{
+# for(i in 1:10){
 
 # Get GPS points for these flights
 source("gps_extract.R")
@@ -77,7 +106,7 @@ n <- length(points$device_info_serial)
 
   if(n < 5){
     data.flight <- cbind(flights.com$trip_id[i],points$device_info_serial[1],flights.com$start_time[i],flights.com$end_time[i])
-    data.all <- rbind(data.all,data.flight)
+#     data.all <- rbind(data.all,data.flight)
   } else {
     
     # Calculate speed relative to displacement from island
@@ -132,12 +161,24 @@ n <- length(points$device_info_serial)
     
     
     data.flight <- cbind(id,points$device_info_serial[1],time.start,time.end)
-    data.all <- rbind(data.all,data.flight)
+#     data.all <- rbind(data.all,data.flight)
   }
+
+list(data.flight)  
 
 }
 
-i
+             
+#close cluster
+stopCluster(cl)
+             
+flight.info <-  data.frame(matrix(unlist(lst), nrow = length(flights.com$trip_flight_type), byrow = T))
+             
+             
+             
+#              
+#              
+# i
 
 # x[it]
 # x
