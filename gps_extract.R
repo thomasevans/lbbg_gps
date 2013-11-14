@@ -12,7 +12,7 @@ gps.extract <- function(i, start.t, end.t){
   
   require(RODBC)
   
-  gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+  gps.db2 <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
   
   
   # i - device info serial
@@ -38,7 +38,7 @@ gps.extract <- function(i, start.t, end.t){
                "# AND g.date_time <= #", end.t, "# ", sep = "")
   
   
-  gps.sub <- sqlQuery(gps.db, query= gsub("\n", " ", paste(q1a, q1c, q1b, sep=""))
+  gps.sub <- sqlQuery(gps.db2, query= gsub("\n", " ", paste(q1a, q1c, q1b, sep=""))
                       ,as.is=TRUE)
   
   return(gps.sub)
