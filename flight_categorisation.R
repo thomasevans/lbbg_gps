@@ -81,6 +81,82 @@ maps.flights(points, all.flights = TRUE)
 
 
 #'  3. Make categorisation alogrithm
+
+# Categorisation testing ####
+ft <- fs[c(27, 10, 36, 41)]
+c(27, 10, 36, 41)
+maps.flights(points, all.flights = FALSE, flight.id = ft)
+maps.flights(points, all.flights = FALSE, flight.id = fs[10])
+
+x <- c(1,2,3,NULL,NULL)
+x <- NULL
+mean(x)
+str(points)
+
+# 10
+
+# Subset flight data
+f.points <- subset(points,flight_id == fs[27])
+n <- length(f.points$flight_id)
+id <- fs[27]
+str(flights.com)
+
+# Get direction - outward or inward
+dir <- 1
+if(flights.com$trip_flight_type[flights.com$flight_id == id] == "inward") dir <- -1
+
+# Calculate speed relative to displacement from island
+d.dist <- f.points$nest_gc_dist[2:n] - f.points$nest_gc_dist[1:(n-1)]
+d.dist <- d.dist *1000   # Get to metres
+d.speed <- d.dist/ f.points$time_interval_s[2:n]
+d.speed.cor <- d.speed*dir
+d.speed.cor <- c(0,d.speed.cor) #add a value for first point
+
+# Change in speed relative to island relative to last 3 points
+# Reverse point list if inward flight (work from island out)
+if(dir == -1) {
+  ds <- rev(d.speed.cor)} else {
+    ds <- d.speed.cor
+  }
+
+#Change in speed from previous points
+d.dif <- function(i, ds = ds){
+  ds[i]/mean(ds[(i-1):(i-3)])
+}
+
+#apply function
+x <- sapply(c(4:length(ds)),d.dif,ds=ds) 
+x <- c(1,1,1,x)   #include first 3 points
+
+s <- TRUE
+p.stop <- NULL
+for(i in 1:length(x)){
+  if(x[i] < 0.2 & s){
+    s <- FALSE
+    p.stop <- i
+  }
+}
+
+# plot(rev(f.points$nest_gc_dist))
+# points(rev(f.points$nest_gc_dist)[1:p.stop], col = "red")
+
+p.ind <- rep(FALSE,length(f.points$nest_gc_dist))
+p.ind[1:p.stop] <- TRUE
+p.ind <- rev(p.ind)
+plot(f.points$latitude, f.points$longitude)
+points(f.points$latitude[p.ind], f.points$longitude[p.ind], col = "red")
+
+
+plot(x, ylim = c(-2,2))
+plot(rev(f.points$nest_gc_dist))
+
+plot(d.speed.cor)
+time_interval_s
+nest_gc_dist
+
+
+
+
 #'  
 #'  4. Test alorithm on a few individual flights
 #'  
