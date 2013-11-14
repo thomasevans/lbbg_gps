@@ -39,7 +39,7 @@ flights.all$trip_flight_type <- as.factor(flights.all$trip_flight_type)
 flights.com <- subset(flights.all, trip_flight_type == "inward"  | trip_flight_type == "outward")
 
 #testing script, take sample
-i <- sample(length(flights.com$trip_flight_type),100)
+i <- sample(length(flights.com$trip_flight_type),10)
 flights.com <- flights.com[i,]
 
 # Index vector for flights.com
@@ -47,13 +47,13 @@ flights.com.ind <- 1:length(flights.com$flight_id)
 
 # i <- 5
 # for all flights    i in length flights.com
-data.all <- NULL    # initialisation
+# data.all <- NULL    # initialisation
 # for(i in 1:length(flights.com.ind)){
 
 
 
 
-#Run function 'weather.info' in parallel########
+#Run in parallel########
 require(foreach)
 require(doParallel)
 
@@ -77,13 +77,17 @@ clusterExport(cl, c("flights.com"))
 #make a list object to recieve the data
 lst <- list()
 
-
+# i <- 4
 system.time({lst <- foreach(i = seq(along = flights.com$trip_flight_type)) %dopar%{
 # for(i in 1:10){
 
 # Get GPS points for these flights
 source("gps_extract.R")
+# library(RODBC)
 
+# gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+
+# Get flight id
 id <- flights.com$flight_id[i]
 
 
@@ -155,27 +159,40 @@ n <- length(points$device_info_serial)
         if(is.null(p.stop)){
           time.start <- points$date_time[1]
         } else {
-            time.start <- points$date_time[n - p.stop]
+            time.start <- points$date_time[(n+1) - p.stop]
           } 
     }
     
     
     data.flight <- cbind(id,points$device_info_serial[1],time.start,time.end)
 #     data.all <- rbind(data.all,data.flight)
+    
+#     data.flight <- cbind(flights.com$trip_id[i],points$device_info_serial[1],flights.com$start_time[i],flights.com$end_time[i])
   }
 
 list(data.flight)  
 
 }
+}) #end of system.time
 
              
 #close cluster
 stopCluster(cl)
              
 flight.info <-  data.frame(matrix(unlist(lst), nrow = length(flights.com$trip_flight_type), byrow = T))
-             
-             
-             
+names(flight.info) <- c("trip_id","device_info_serial","start_time","end_time")             
+        
+flight.info$start_time <- as.POSIXct(flight.info$start_time,
+                                     tz="GMT",
+                                     format="%Y-%m-%d %H:%M:%S",
+                                     origin = "1970-01-01 00:00:00")
+
+flight.info$end_time <- as.POSIXct(flight.info$end_time,
+                                     tz="GMT",
+                                     format="%Y-%m-%d %H:%M:%S",
+                                     origin = "1970-01-01 00:00:00")
+
+# ?as.POSIXct
 #              
 #              
 # i
