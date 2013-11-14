@@ -83,9 +83,9 @@ system.time({lst <- foreach(i = seq(along = flights.com$trip_flight_type)) %dopa
 
 # Get GPS points for these flights
 source("gps_extract.R")
-# library(RODBC)
+library(RODBC)
 
-# gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 # Get flight id
 id <- flights.com$flight_id[i]
@@ -107,9 +107,9 @@ dir <- 1
 if(flights.com$trip_flight_type[i] == "inward") dir <- -1
 
 n <- length(points$device_info_serial)
-
+# str(flights.com)
   if(n < 5){
-    data.flight <- cbind(flights.com$trip_id[i],points$device_info_serial[1],flights.com$start_time[i],flights.com$end_time[i])
+    data.flight <- cbind(flights.com$flight_id[i],points$device_info_serial[1],flights.com$start_time[i],flights.com$end_time[i])
 #     data.all <- rbind(data.all,data.flight)
   } else {
     
@@ -180,7 +180,7 @@ list(data.flight)
 stopCluster(cl)
              
 flight.info <-  data.frame(matrix(unlist(lst), nrow = length(flights.com$trip_flight_type), byrow = T))
-names(flight.info) <- c("trip_id","device_info_serial","start_time","end_time")             
+names(flight.info) <- c("flight_id","device_info_serial","start_time","end_time")             
         
 flight.info$start_time <- as.POSIXct(flight.info$start_time,
                                      tz="GMT",
@@ -192,6 +192,31 @@ flight.info$end_time <- as.POSIXct(flight.info$end_time,
                                      format="%Y-%m-%d %H:%M:%S",
                                      origin = "1970-01-01 00:00:00")
 
+# flight.info.back <- flight.info
+
+# str(flight.info)
+
+# Re-order before writing to database
+flight.info  <- flight.info[order(flight.info$device_info_serial,flight.info$flight_id),]
+# Remove row numbers
+row.names(flight.info) <- NULL
 
 
 # Then output to database
+
+odbcClose(gps.db)
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+
+
+#Output data to database #####
+#will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
+sqlSave(gps.db, flight.info, tablename = "lund_flights_commuting",
+        append = FALSE, rownames = FALSE, colnames = FALSE,
+        verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
+        test = FALSE, nastring = NULL,
+        varTypes =  c(device_info_serial = "integer",
+                      flight_id = "integer",
+                      start_time = "datetime",
+                      end_time   =  "datetime"))
+
+
