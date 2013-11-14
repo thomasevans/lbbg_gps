@@ -39,8 +39,8 @@ flights.all$trip_flight_type <- as.factor(flights.all$trip_flight_type)
 flights.com <- subset(flights.all, trip_flight_type == "inward"  | trip_flight_type == "outward")
 
 #testing script, take sample
-i <- sample(length(flights.com$trip_flight_type),10)
-flights.com <- flights.com[i,]
+# i <- sample(length(flights.com$trip_flight_type),100)
+# flights.com <- flights.com[i,]
 
 # Index vector for flights.com
 flights.com.ind <- 1:length(flights.com$flight_id)
@@ -192,38 +192,6 @@ flight.info$end_time <- as.POSIXct(flight.info$end_time,
                                      format="%Y-%m-%d %H:%M:%S",
                                      origin = "1970-01-01 00:00:00")
 
-# ?as.POSIXct
-#              
-#              
-# i
-
-# x[it]
-# x
-# 
-# p.ind <- rep(FALSE,length(f.points$nest_gc_dist))
-# p.ind[1:p.stop] <- TRUE
-# p.ind <- rev(p.ind)
-# plot(f.points$latitude, f.points$longitude)
-# points(f.points$latitude[p.ind], f.points$longitude[p.ind], col = "red")
-# 
-# 
-# plot(x, ylim = c(-2,2))
-# plot(rev(f.points$nest_gc_dist))
-# 
-# plot(d.speed.cor)
-# time_interval_s
-# nest_gc_dist
 
 
-
-
-#'  
-#'  4. Test alorithm on a few individual flights
-#'  
-#'  5. Test algorithm on full sample (50 of each flight type)
-#'  
-#'  6. When satisfied with algorithm apply to all 'commuting' flights, flights classified as outward or inward.
-#'  
-#'  7. Re-analyse all these flights to get summary statistics
-#'  
-#'  8. Re-run previous statistical analyses on newly analysed data.
+# Then output to database
