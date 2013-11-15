@@ -5,10 +5,11 @@
 # This script contains a function originally from 'commuting_flight_comparisons_maps.R'
 # The function maps flights based on an input of point data
 
+# points.data.old <- points.old.in
+#   points.data.new <- points.new.in
 
 
-
-maps.flights <- function(points.data=NULL, seed = 2, plot.title = "", all.flights = FALSE, flight.num = 50, alpha = 0.5, flight.id = FALSE){
+maps.flights <- function(points.data.old = NULL, points.data.new = NULL, seed = 2, plot.title = "", all.flights = FALSE, flight.num = 50, alpha = 0.5, flight.id = FALSE){
   #   ?title
   #Function to map flights
   #  Provide dataframe with flights points
@@ -20,7 +21,7 @@ maps.flights <- function(points.data=NULL, seed = 2, plot.title = "", all.flight
   set.seed(seed)
   
   
-  fl.n <- unique(points.data$flight_id)  
+  fl.n <- unique(points.data.old$flight_id)  
 
 #   ?is.logical
   # Test if a list of flight.id is provided
@@ -44,15 +45,15 @@ maps.flights <- function(points.data=NULL, seed = 2, plot.title = "", all.flight
 
 
   
-  #   points.data <- points.in
+  #   points.data.old <- points.in
   
   # Set map limits
-  c.xlim <- range(points.data$longitude[points.data$flight_id %in% f.s])
+  c.xlim <- range(points.data.old$longitude[points.data.old$flight_id %in% f.s])
   dif    <- c.xlim[2] - c.xlim[1]
   dif    <- dif *.15
   c.xlim <- c((c.xlim[1] - dif), (c.xlim[2] + dif))
   
-  c.ylim <- range(points.data$latitude[points.data$flight_id %in% f.s])
+  c.ylim <- range(points.data.old$latitude[points.data.old$flight_id %in% f.s])
   dif    <- c.ylim[2] - c.ylim[1]
   dif    <- dif *.15
   c.ylim <- c((c.ylim[1] - dif), (c.ylim[2] + dif))
@@ -88,21 +89,35 @@ maps.flights <- function(points.data=NULL, seed = 2, plot.title = "", all.flight
   
   
   #   ?rainbow
-  col.line <- rainbow(length(fl.n), alpha = alpha)
+#   col.line <- rainbow(length(fl.n), alpha = alpha)
   # 
-  col.line <- col.line[sample.int(length(col.line))]
+#   col.line <- col.line[sample.int(length(col.line))]
+    lty.line <- c(1:length(f.s))
   
   
-  # Plot lines for each flight
+  # Plot lines for each flight (old first)
   for(i in 1:flight.num){
     
     x <- f.s[i]
-    gps.sub <- subset(points.data, flight_id == x,
+    gps.sub <- subset(points.data.old, flight_id == x,
                       select=c(longitude, latitude))
     n <- length(gps.sub$longitude)
     segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
              gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
-             col = col.line[i], lwd = 2)
+             col = "red", lty = lty.line[i], lwd = 2)
+  }
+  
+  
+  # Plot lines for each flight (new second)
+  for(i in 1:flight.num){
+    
+    x <- f.s[i]
+    gps.sub <- subset(points.data.new, flight_id == x,
+                      select=c(longitude, latitude))
+    n <- length(gps.sub$longitude)
+    segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+             gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+             col = "black", lty = lty.line[i], lwd = 2)
   }
   
   # Scale bar and axis
