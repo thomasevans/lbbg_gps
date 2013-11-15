@@ -25,6 +25,12 @@ flights <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
 # See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
 
 
+#Get a copy of the flights DB table.
+flights.new <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
+                    FROM lund_flights_commuting AS f
+                    ORDER BY f.flight_id ASC;")
+
+
 flights$start_time <- as.POSIXct(flights$start_time,
                  tz="GMT",
                  format="%Y-%m-%d %H:%M:%S")
@@ -32,6 +38,15 @@ flights$start_time <- as.POSIXct(flights$start_time,
 flights$end_time <- as.POSIXct(flights$end_time,
                                  tz="GMT",
                                  format="%Y-%m-%d %H:%M:%S")
+
+# str(flights.new)
+flights.new$start_time <- as.POSIXct(flights.new$start_time,
+                                 tz="GMT",
+                                 format="%Y-%m-%d %H:%M:%S")
+# flights.new$start_time[1:10]
+flights.new$end_time <- as.POSIXct(flights.new$end_time,
+                               tz="GMT",
+                               format="%Y-%m-%d %H:%M:%S")
 
 
 
@@ -214,9 +229,9 @@ flights.combined   <- flights.combined[order(flights.combined$trip_id),]
 # Get gps_extract function
 source("gps_extract.R")
 
-points <- NULL
+points.old <- NULL
 str(flights.combined)
-# Get points for all flights
+# Get points.old for all flights
 for(i in 1:length(flights.combined$device_info_serial)){
 #   for(i in 1:10){
   
@@ -227,145 +242,96 @@ x <- gps.extract(flights.combined$device_info_serial[i],
                  flights.combined$end_time[i])
 
 x <- cbind(x,i,flights.combined$flight.type[i],flights.combined$wind.type[i])
-points <- rbind(points,x)
+points.old <- rbind(points.old,x)
 }
 
-# str(points)
-# summary(points$flight_type == "out")
+# str(points.old)
+# summary(points.old$flight_type == "out")
 # data frames of just outward or inward flights
 
-x <- names(points)
+x <- names(points.old)
 length(x)
 x <- c(x[1:21],"flight.type","wind.type")
-names(points) <- x
+names(points.old) <- x
 
 
-points.out <- points[points$flight.type == "out",]
-points.in <- points[points$flight.type == "in",]
+points.old.out <- points.old[points.old$flight.type == "out",]
+points.old.in <- points.old[points.old$flight.type == "in",]
+
+
+
+
+points.new <- NULL
+# str(flights.combined)
+# i <- 5
+# Get points.new for all flights
+for(i in 1:length(flights.combined$device_info_serial)){
+  #   for(i in 1:10){
+  
+  x <- NA
+  
+#   flights.new
+  
+  flight_id <- flights.combined$flight_id[i]
+  f <- flights.new$flight_id == flight_id
+  x <- gps.extract(flights.new$device_info_serial[f],
+                   flights.new$start_time[f],
+                   flights.new$end_time[f])
+#   str(flights)
+  x <- cbind(x,i,flights$trip_flight_type[flights$flight_id == flight_id],flights.combined$wind.type[flights.combined$flight_id == flight_id])
+  points.new <- rbind(points.new,x)
+}
+
+# str(points.new)
+# summary(points.new$flight_type == "out")
+# data frames of just outward or inward flights
+
+x <- names(points.new)
+length(x)
+x <- c(x[1:21],"flight.type","wind.type")
+names(points.new) <- x
+
+# str(points.new)
+points.new.out <- points.new[points.new$flight.type == "outward",]
+points.new.in <- points.new[points.new$flight.type == "inward",]
+
+
+
+
+
+
 
 # length(unique(points.in$flight_id) )
 # Mapping data #####
 
-maps.flights <- function(points.data=NULL, seed = 2, plot.title = "", all.flights = FALSE, flight.num = 50, alpha = 0.5){
-#   ?title
-  #Function to map flights
-  #  Provide dataframe with flights points
-  # If you want all flights plot, enter 'TRUE', default 'FALSE'
-  # Choose number of flights to plot, 50 is default (ignored if all.flights = TRUE)
-  # Alpha - for transparency of lines - when saving to some image types transparency is not supported, then enter 1 for alpha (i.e. not transparent).
-  library(maps)
-  
-  set.seed(seed)
-  
-  
-  fl.n <- unique(points.data$flight_id)  
-  
-  
-  if(all.flights){
-    f.s <- fl.n  
-    flight.num <- length(fl.n)
-  }else  f.s <- sample(fl.n,flight.num)
-  
-#   points.data <- points.in
-  
-    # Set map limits
-  c.xlim <- range(points.data$longitude[points.data$flight_id %in% f.s])
-  dif    <- c.xlim[2] - c.xlim[1]
-  dif    <- dif *.15
-  c.xlim <- c((c.xlim[1] - dif), (c.xlim[2] + dif))
-  
-  c.ylim <- range(points.data$latitude[points.data$flight_id %in% f.s])
-  dif    <- c.ylim[2] - c.ylim[1]
-  dif    <- dif *.15
-  c.ylim <- c((c.ylim[1] - dif), (c.ylim[2] + dif))
-  
-  # Plot base map
-  load("SWE_adm0.RData")
-  
-  par(mfrow=c(1,1))
-  par( mar = c(5, 4, 4, 2))
-#   par(bg = 'white')
-  
-    plot(gadm, xlim = c.xlim,
-       ylim = c.ylim, col="white", bg = "grey")
-#   rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col = 
-#          "black")
-    title(plot.title)
-#     seed <- 3
-    mtext(paste("seed: ",seed))
-  
-  # colours for lines  
-#     library(RColorBrewer)
-    # Generating more colours than are in the palette - includes intermediate values.
-#     col.line <- colorRampPalette(brewer.pal(11,"Spectral"))(length(fl.n))
-#     # Change alpha value, to make transparent - allow to see overplotting
-#     col.line <- adjustcolor(col.line, 0.6)
-#     # Shuffle colours
-#     col.line <- col.line[sample.int(length(col.line))]
-    
-#   ?rainbow
-  # Get colours from rainbow scale
-  
-
-  
-  
-#   ?rainbow
-  col.line <- rainbow(length(fl.n), alpha = alpha)
-  # 
-  col.line <- col.line[sample.int(length(col.line))]
-  
-
-  # Plot lines for each flight
-     for(i in 1:flight.num){
-      
-      x <- f.s[i]
-      gps.sub <- subset(points.data, flight_id == x,
-                     select=c(longitude, latitude))
-      n <- length(gps.sub$longitude)
-      segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
-               gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
-               col = col.line[i], lwd = 2)
-  }
-  
-  # Scale bar and axis
-  x <- c.xlim[1] + (c.xlim[2] - c.xlim[1])/20
-  y <- c.ylim[1] + (c.ylim[2] - c.ylim[1])/10
-  map.scale(x,y,ratio = FALSE)
-#   ?map.scale
-  box()
-  axis(side=(1),las=1)
-  axis(side=(2),las=1)
-}
-  
-# ??save.wmf
-# ?win.metafile
-# win.metafile("inward_flights_01.wmf")
-# install.packages("devEMF")
-# library(devEMF)
-
-# (filename = "inward_flights_01.emf", type= "emf")
+source("maps_flights_old_new.R")
 
 
 
-pdf("inward_flights.pdf")
+
+maps.flights(points.old.in, points.new.in, seed = 1, flight.num = 20, plot.title = "Inward flights")
+
+
+
+pdf("inward_flights_new.pdf")
 # svg("inward_flights_02.svg")
-maps.flights(points.in, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Inward flights")
-maps.flights(points.in, seed = 1, flight.num = 20, plot.title = "Inward flights")
-maps.flights(points.in, seed = 2, flight.num = 20, plot.title = "Inward flights")
-maps.flights(points.in, seed = 3, flight.num = 20, plot.title = "Inward flights")
-maps.flights(points.in, seed = 4, flight.num = 20, plot.title = "Inward flights")
-maps.flights(points.in, seed = 5, flight.num = 20, plot.title = "Inward flights")
+maps.flights(points.old.in, points.new.in, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Inward flights")
+maps.flights(points.old.in, points.new.in, seed = 1, flight.num = 20, plot.title = "Inward flights")
+maps.flights(points.old.in, points.new.in, seed = 2, flight.num = 20, plot.title = "Inward flights")
+maps.flights(points.old.in, points.new.in, seed = 3, flight.num = 20, plot.title = "Inward flights")
+maps.flights(points.old.in, points.new.in, seed = 4, flight.num = 20, plot.title = "Inward flights")
+maps.flights(points.old.in, points.new.in, seed = 5, flight.num = 20, plot.title = "Inward flights")
 dev.off()
 
 
-pdf("outward_flights.pdf")
+pdf("outward_flights_new.pdf")
 # svg("inward_flights_02.svg")
-maps.flights(points.out, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Outward flights")
-maps.flights(points.out, seed = 1, flight.num = 20, plot.title = "Outward flights")
-maps.flights(points.out, seed = 2, flight.num = 20, plot.title = "Outward flights")
-maps.flights(points.out, seed = 3, flight.num = 20, plot.title = "Outward flights")
-maps.flights(points.out, seed = 4, flight.num = 20, plot.title = "Outward flights")
-maps.flights(points.out, seed = 5, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.old.in, points.new.in, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.old.in, points.new.in, seed = 1, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.old.in, points.new.in, seed = 2, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.old.in, points.new.in, seed = 3, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.old.in, points.new.in, seed = 4, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.old.in, points.new.in, seed = 5, flight.num = 20, plot.title = "Outward flights")
 dev.off()
 
 # ?set.seed
