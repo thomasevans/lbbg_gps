@@ -9,33 +9,65 @@
 
 
 
-# start of function: flight.info######################
 # Function 'flight.info' produces a list of lists
 # of information on flights.
 #
-# t - flight_id, the flight number
+# id - flight_id, the flight number
 # gps - the gps dataframe
 # 
 # Testing
 # 
-# t <- 59
+# id <- 59
 # names(gps)
 # gps$positiondop[1:100]
 # gps$speed_accuracy[1:100]
 # gps$bearing_next[1:100]
 # 
-# t = 5
+# id = 5
 
 #   install.packages("circular")
 
 
-flight.info <- function(t, gps=gps){
+flight.info <- function(id, type = c("com","default")){
+# id - flight_id
+# type - whether you want to analyse flight as 'commuting' flight or basic flight classification
   
-  library(fossil)   #required for distance calculations
-  library(circular) #required for some circular calculations
-  #make a subset of 'gps' containing just data for flight, t.
+  require(fossil)   #required for distance calculations
+  require(circular) #required for some circular calculations
+  source("gps_extract.R")   # Get function to extract GPS data
+  require(RODBC)
   
-  sub01 <- subset(gps, flight_id == t)
+  gps.db3 <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+  
+  
+  
+  q1 <- "SELECT DISTINCT f.*
+  FROM lund_flights_commuting AS f
+  WHERE f.flight_id = "
+
+  q2c <- " ORDER BY f.flight_id ASC;"
+  
+  q2d <- " ORDER BY f.flight_id ASC;"
+  
+  if( type == "com"){
+  flight_par <- sqlQuery(gps.db3,
+                         query = gsub("\n", " ", paste(q1, id, q2c, sep=""))
+                      ,as.is=TRUE)
+  } else {
+    flight_par <- sqlQuery(gps.db3,
+                           query = gsub("\n", " ", paste(q1, id, q2d, sep=""))
+                           ,as.is=TRUE)
+    }
+  
+#   str(flights.com)
+  
+  sub01 <- gps.extract(flight_par$device_info_serial,
+                       flight_par$start_time,
+                       flight_par$end_time)
+    
+  
+  
+#   sub01 <- subset(gps, flight_id == id)
   
   # The number of gps points for this flight.
   n <- length(sub01$date_time)
@@ -170,7 +202,7 @@ flight.info <- function(t, gps=gps){
                                  na.rm = TRUE)
   
   #make a vector containing all this data
-  data.out <- c(t, n, start_time, end_time, duration,
+  data.out <- c(id, n, start_time, end_time, duration,
                 dist_max, dist_total, interval_mean,
                 interval_min, device_info_serial,
                 start_long, start_lat, end_long,
