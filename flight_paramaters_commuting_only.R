@@ -62,11 +62,11 @@ clusterExport(cl, c("flight_id"))
 lst <- list()
 
 # flight.info(flights.com$flight_id[5], type = "com")
-
+# i <- 5
 #get paramaters for each flight
 #Use system.time to time how long this takes.
-# system.time({lst <- foreach(i = seq(along = flight_id )) %dopar%{
- system.time({lst <- foreach(i = c(1,5,7)) %dopar%{
+system.time({lst <- foreach(i = seq(along = flight_id )) %dopar%{
+#  system.time({lst <- foreach(i = c(1,5,7)) %dopar%{
 
   source("flight_info.R")
   #calculate the trip numbers for the device i. i.e. the function 
