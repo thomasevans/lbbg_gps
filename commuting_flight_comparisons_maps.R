@@ -116,22 +116,22 @@ trip_gotland <- as.factor(trip_gotland)
 # summary(trip_gotland)
 #filters####
 # hist(trip_distmax[outward])
-
-par(mfrow = c(1,1))
-hist(trip_distmax[trip_distmax < 1000])
-names(flights)
-
-par(mfrow = c(1,2))
+# 
+# par(mfrow = c(1,1))
+# hist(trip_distmax[trip_distmax < 1000])
+# names(flights)
+# 
+# par(mfrow = c(1,2))
 
 outward <- (flights$trip_flight_type == "outward") & trip_gotland == 0 & (flights$interval_mean < 800) & (trip_distmax > 4) & (trip_distmax < 400) & flights$points > 4 & flights$dist_a_b > 2000
-hist(flights$dist_a_b[outward]/1000, breaks = 20, main = "out", xlab = "Distance (km)", xlim = c(0,120))
+# hist(flights$dist_a_b[outward]/1000, breaks = 20, main = "out", xlab = "Distance (km)", xlim = c(0,120))
 
 inward  <- (flights$trip_flight_type == "inward")  & (trip_gotland == 0) & (flights$interval_mean < 800) & (trip_distmax > 4) & (trip_distmax < 400) & flights$points > 4  & flights$dist_a_b > 2000
-hist(flights$dist_a_b[inward]/1000, breaks = 40, main = "in", xlab = "Distance (km)", xlim = c(0,120))
+# hist(flights$dist_a_b[inward]/1000, breaks = 40, main = "in", xlab = "Distance (km)", xlim = c(0,120))
 
 
-summary(inward)
-summary(outward)
+# summary(inward)
+# summary(outward)
 
 # hist(flights$interval_mean[outward])
 # length(flights$interval_mean[outward])
@@ -186,10 +186,9 @@ all.equal(flights.in$trip_id[y] , flights.out$trip_id[x])
 flights.in <- flights.in[y,]
 flights.out <- flights.out[x,]
 
-length(flights.in$flight_id)
-# ?t.test
+# length(flights.in$flight_id)
 
-length(unique(flights.in$device_info_serial))
+# length(unique(flights.in$device_info_serial))
 
 
 
@@ -230,7 +229,7 @@ flights.combined   <- flights.combined[order(flights.combined$trip_id),]
 source("gps_extract.R")
 
 points.old <- NULL
-str(flights.combined)
+# str(flights.combined)
 # Get points.old for all flights
 for(i in 1:length(flights.combined$device_info_serial)){
 #   for(i in 1:10){
@@ -250,7 +249,7 @@ points.old <- rbind(points.old,x)
 # data frames of just outward or inward flights
 
 x <- names(points.old)
-length(x)
+# length(x)
 x <- c(x[1:21],"flight.type","wind.type")
 names(points.old) <- x
 
@@ -287,7 +286,7 @@ for(i in 1:length(flights.combined$device_info_serial)){
 # data frames of just outward or inward flights
 
 x <- names(points.new)
-length(x)
+# length(x)
 x <- c(x[1:21],"flight.type","wind.type")
 names(points.new) <- x
 
@@ -309,7 +308,7 @@ source("maps_flights_old_new.R")
 
 
 
-maps.flights(points.old.in, points.new.in, seed = 1, flight.num = 20, plot.title = "Inward flights")
+# maps.flights(points.old.in, points.new.in, seed = 1, flight.num = 20, plot.title = "Inward flights")
 
 
 
