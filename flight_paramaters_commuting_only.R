@@ -24,16 +24,6 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 # sqlTables(gps.db)
 
 
-# Query the gull db to extract bird_id, nest_id, and nest locations
-nest_loc <- sqlQuery(gps.db, query=
-  "SELECT DISTINCT n.ring_number, n.nest_id,
-  n.latitude, n.longitude, t.device_info_serial
-  FROM gps_uva_nest_limited AS n,
-    gps_uva_track_session_limited AS t
-  WHERE n.ring_number = t.ring_number
-  ORDER BY n.ring_number ASC;")
-
-
 # Get commuting flights table
 flights.com <- sqlQuery(gps.db, query=
                        "SELECT DISTINCT f.*
@@ -42,14 +32,7 @@ flights.com <- sqlQuery(gps.db, query=
 
 
 
-# Nest postion ------
-# function to produce two vectors of latitude and longitude positions
-lookup_nest <- function(device_info, nest_loc = nest_loc){
-  x <- nest_loc$device_info_serial == device_info
-  lat <- nest_loc$latitude[x]
-  long <- nest_loc$longitude[x]
-  return(c(lat,long))
-}
+
 
 
 # Get a vector of flight numbers -----
@@ -148,121 +131,13 @@ flights$start_time <- as.POSIXct(
 
 # save(flights, file = "flights_part1.Rdata")
 
-#Label flight type and number for each trip######
-
-# For each trip, look at flights, label with number
-# flight per that trip, and whether first or final,
-# or inbetween. 
-# Querry database to get trip information:
-trips <- sqlQuery(gps.db, query="SELECT DISTINCT l.*
-  FROM lund_trips AS l
-  ORDER BY l.trip_id ASC ;"
-                ,as.is=TRUE)
-
-#a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
-trips$start_time <- as.POSIXct(
-  trips$start_time, tz = "GMT", format = "%Y-%m-%d %H:%M:%S")
-
-trips$end_time <- as.POSIXct(
-  trips$end_time, tz = "GMT", format = "%Y-%m-%d %H:%M:%S")
-
-
-
-# Make vector to label trip_id for each flight
-flights$trip_id <- flights$trip_flight_n <- 
-  rep(NA,length(flights$device_info_serial))
-
-# Flight type vector
-flights$trip_flight_type <- 0
-# 
-# # For testing
-# i <- 1665
-# i <- 4
-# sub01$start_time
-
-# Exclude flights which might have problems with them - those at the end of a bird record
-excl <- rep(TRUE, length(flights$device_info_serial))
- trip.excl <- NA
-devices <- unique(flights$device_info_serial)
-for(x in seq(along = devices)){
-#   x <- 2
-  excl[max(flights$flight_id[
-    flights$device_info_serial == devices[x]])] <- FALSE
-
-  trip.excl[x] <- max(trips$trip_id[
-    trips$device_info_serial == devices[x]], na.rm = TRUE)
-}
-  
-
-
-# For all trips, do the following
-system.time(for(i in seq(along = trips$trip_id)){
-  
-    id <- trips$trip_id[i]
-  
-  if( any( trip.excl == id)) {test <- 1} else{
-      
-      #Get device id
-      device <- trips$device_info_serial[i]
-    
-      
-      trip.filter <- ((flights$start_time < trips$end_time[i])
-                      & (flights$end_time > trips$start_time[i])
-                      & (flights$device_info_serial == device )
-                      & excl)
-      
-      #Make subset of flights for each trip
-      sub01 <- subset(flights, trip.filter)
-                     
-      # Make an index for flights subset above
-      x <- seq(along = sub01$flight_id)
-      
-      # Give them the trip_id from which they come
-      # Note however, given our filtering algorithm, 
-      # it is possible for a flight to occur in more
-      # than one trip. The later trip will take
-      # precedence, overwriting details of earlier
-      # trip. This should be quite unusual though.
-      flights$trip_id[trip.filter]  <- id
-      
-      # Lable flight number within trip
-      flights$trip_flight_n[trip.filter]  <- x
-      
-      
-    #   Then label flights within each trip, by 'outward'
-    #   for flight #1, 'inward' for final flight and 'normal'
-    #   for all others.
-      
-      # First label all flights 'normal', then will relabel first 
-      # and final trip.
-      flights$trip_flight_type[trip.filter] <- "normal"
-      
-      # Label flight 1 as outward - note if we are missing the 
-      # start of the trip then this might not actually be the
-      # first flight - but the first recorded flight.
-      flights$trip_flight_type[trip.filter &                
-                            flights$trip_flight_n == 1] <-
-                            "outward"
-      
-    
-      # Label final flight.
-      flights$trip_flight_type[trip.filter &
-                            flights$trip_flight_n == max(x)] <-
-                            "inward"
-      
-      }
-})
-#about 340 s
-
-
-
 
 #output data to database##################
 
-#export trip information to the database
+#export flight information to the database
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
 sqlSave(
-  gps.db, flights, tablename = "lund_flights2",
+  gps.db, flights, tablename = "lund_flights_commuting_par",
   append = FALSE, rownames = FALSE,
   colnames = FALSE, verbose = FALSE,
   safer = TRUE, addPK = FALSE,
