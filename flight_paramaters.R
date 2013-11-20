@@ -109,13 +109,14 @@ flight_id <- flight_id[2:f]
 # 
 # t = 5
 
+#   install.packages("circular")
+
 
 flight.info <- function(t, gps=gps){
   
   library(fossil)   #required for distance calculations
   library(circular) #required for some circular calculations
   #make a subset of 'gps' containing just data for flight, t.
-#   install.packages("circular")
   
   sub01 <- subset(gps, flight_id == t)
   
@@ -186,6 +187,7 @@ flight.info <- function(t, gps=gps){
   dist_a_b    <-   1000 * deg.dist(
       start_long, start_lat, end_long, end_lat)     
 #   ?deg.dist
+ 
   # Straightness of flight.
   straigtness <-   dist_a_b/dist_total
   
@@ -237,23 +239,9 @@ flight.info <- function(t, gps=gps){
   
 #   vignette("Circular")
   
-#   library("circular")
-#   x <- c(100,90,120)
-#   x <- circular(x,units = "degrees")
-#   rho.circular(x)
-  
-#   library(circular)
   # Change to circular object, and exclude final point - bearing then is to following (i.e. not in flight) point.
   bear.circ <- circular(sub01$bearing_next[-length(sub01$bearing_next)],units="degrees")
   
-#   x <- c(100,100,100,100)
-#   x <- c(90,180,90,180)
-#   x2 <- circular(x, units = "degrees")
-#   x2
-#   rho.circular(x2)
-#   angular.deviation(x2)
-#   angular.variance(x2)
-#   ?angular.variance
   # Value of rho
   rho        <- rho.circular(bear.circ,
                              na.rm = TRUE)
@@ -397,7 +385,7 @@ flights$trip_id <- flights$trip_flight_n <-
 
 # Flight type vector
 flights$trip_flight_type <- 0
-
+# 
 # # For testing
 # i <- 1665
 # i <- 4
