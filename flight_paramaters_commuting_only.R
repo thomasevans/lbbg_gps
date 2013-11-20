@@ -50,6 +50,9 @@ cl <- makeCluster(parallel::detectCores())
 #start the parellel session of R; the 'slaves', which will run the analysis.
 registerDoParallel(cl)   
 
+
+
+
 #this maybe neccessary so that the clustered instances or R have the
 #required vairables/ functions in their scope, i.e. those functions
 #and vairables which are referred to within the 'foreach' function.
@@ -66,16 +69,16 @@ lst <- list()
 #get paramaters for each flight
 #Use system.time to time how long this takes.
 system.time({lst <- foreach(i = seq(along = flight_id )) %dopar%{
-#  system.time({lst <- foreach(i = c(1,5,7)) %dopar%{
+#  system.time({lst <- foreach(i = c(1:10)) %dopar%{
 
   source("flight_info.R")
   #calculate the trip numbers for the device i. i.e. the function 
   #which we wish to run for each device.     
-#   x <- flight.info(flight_id[i],gps)
-#   i <- 3
+
   x <- flight.info(flight_id[i], type = "com")
+#   flight.info(flight_id[5000], type = "com")
   x <- t(x)
-  
+
   #output data as list (this will be appended to the global list, lst.
   list(x)   
 } #end of foreach functions

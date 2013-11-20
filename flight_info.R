@@ -240,7 +240,7 @@ flight.info <- function(id, type = c("com","default")){
   }
   
                   ,
-                  error = function(cond){"Error"}
+                  error = function(cond){rep("NA",31)}
   )
   return(out)
   # End function
