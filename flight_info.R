@@ -24,7 +24,7 @@
 # gps$bearing_next[1:100]
 # 
 # id = 5
-
+# type = "com"
 #   install.packages("circular")
 
 
@@ -40,7 +40,19 @@ flight.info <- function(id, type = c("com","default")){
   gps.db3 <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
   
   
+  # Nest query  
+  nq1 <- "SELECT DISTINCT n.ring_number, n.nest_id,
+  n.latitude, n.longitude, t.device_info_serial
+  FROM gps_uva_nest_limited AS n,
+    gps_uva_track_session_limited AS t
+  WHERE n.ring_number = t.ring_number
+  AND t.device_info_serial = "
   
+  nq2 <- " ORDER BY n.ring_number ASC;"
+  
+    
+
+  # flights info
   q1 <- "SELECT DISTINCT f.*
   FROM lund_flights_commuting AS f
   WHERE f.flight_id = "
@@ -65,7 +77,10 @@ flight.info <- function(id, type = c("com","default")){
                        flight_par$start_time,
                        flight_par$end_time)
     
-  
+  # Query the gull db to extract bird_id, nest_id, and nest locations
+  nest_loc <- sqlQuery(gps.db3, query= 
+                         gsub("\n", " ", paste(nq1, sub01$device_info_serial[1], nq2, sep=""))
+                       ,as.is=TRUE)
   
 #   sub01 <- subset(gps, flight_id == id)
   
@@ -112,7 +127,7 @@ flight.info <- function(id, type = c("com","default")){
   start_lat   <-   sub01$latitude[1]
   end_long    <-   sub01$longitude[n]
   end_lat    <-    sub01$latitude[n]
-  nest <- lookup_nest(device_info_serial)
+  nest <- c(nest_loc[1,3], nest_loc[1,4])
   
   # Distance from nest at start of flight.
   dist_nest_start    <-   1000 * 
@@ -122,6 +137,7 @@ flight.info <- function(id, type = c("com","default")){
   dist_nest_end      <-   1000 * 
     deg.dist(nest[2], nest[1], end_long, end_lat)
   
+#   ?deg.dist
   
   # Displacement relative to colony/ nest,
   # i.e. difference between final and first distance
