@@ -326,12 +326,12 @@ dev.off()
 
 pdf("outward_flights_new.pdf")
 # svg("inward_flights_02.svg")
-maps.flights(points.old.in, points.new.in, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Outward flights")
-maps.flights(points.old.in, points.new.in, seed = 1, flight.num = 20, plot.title = "Outward flights")
-maps.flights(points.old.in, points.new.in, seed = 2, flight.num = 20, plot.title = "Outward flights")
-maps.flights(points.old.in, points.new.in, seed = 3, flight.num = 20, plot.title = "Outward flights")
-maps.flights(points.old.in, points.new.in, seed = 4, flight.num = 20, plot.title = "Outward flights")
-maps.flights(points.old.in, points.new.in, seed = 5, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.old.out, points.new.out, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.old.out, points.new.out, seed = 1, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.old.out, points.new.out, seed = 2, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.old.out, points.new.out, seed = 3, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.old.out, points.new.out, seed = 4, flight.num = 20, plot.title = "Outward flights")
+maps.flights(points.old.out, points.new.out, seed = 5, flight.num = 20, plot.title = "Outward flights")
 dev.off()
 
 # ?set.seed
