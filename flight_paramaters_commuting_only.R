@@ -54,6 +54,9 @@ f <- length(flight_id)
 
 
 
+
+
+
 #this maybe neccessary so that the clustered instances or R have the
 #required vairables/ functions in their scope, i.e. those functions
 #and vairables which are referred to within the 'foreach' function.
@@ -78,6 +81,7 @@ lst <- lapply(flight_id,flight.info, type = "com")
 # i <- 1
 #get paramaters for each flight
 #Use system.time to time how long this takes.
+<<<<<<< HEAD
 # system.time({lst <- foreach(i = seq(along = flight_id )) %dopar%{
 # #  system.time({lst <- foreach(i = c(1:10)) %dopar%{
 # 
@@ -114,6 +118,26 @@ lst <- lapply(flight_id,flight.info, type = "com")
 # 
 # #close cluster
 # stopCluster(cl)
+=======
+system.time({lst <- foreach(i = seq(along = flight_id )) %dopar%{
+#  system.time({lst <- foreach(i = c(1:10)) %dopar%{
+
+  source("flight_info.R")
+  #calculate the trip numbers for the device i. i.e. the function 
+  #which we wish to run for each device.     
+
+  x <- flight.info(flight_id[i], type = "com")
+#   flight.info(flight_id[5000], type = "com")
+  x <- t(x)
+
+  #output data as list (this will be appended to the global list, lst.
+  list(x)   
+} #end of foreach functions
+}) #end of things being timed by system.time
+
+#close cluster
+stopCluster(cl)
+>>>>>>> f98353f21f760af9064c3f5c800dbb825d85a851
 #Time taken one time 4006.31 s (67 mins), 3105s another time
 #Time taken on 20130929 (now including data from 2011, 2012, 2013): 7425 seconds (124 minutes).
  
@@ -211,6 +235,6 @@ message("After exporting table to DB, edit table in Access to define data-types 
 # x <- as.vector(as.matrix(flights))
 # summary(x == "Error")
 
-idx <- c(1:length(flight_id))
-idx.n <- idx[is.na(flights2$flight_id)]
-flights2.n <- flights2[idx.n,]
+# idx <- c(1:length(flight_id))
+# idx.n <- idx[is.na(flights2$flight_id)]
+# flights2.n <- flights2[idx.n,]
