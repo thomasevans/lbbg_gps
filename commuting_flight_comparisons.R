@@ -2,7 +2,7 @@
 #You are welcome to use parts of this code, but please give credit when using it extensively.
 
 # Alternative working directory for when also running another script from same directory.
-setwd("D:/Dropbox/R_projects/lbbg_gps/workspace_alternative")
+# setwd("D:/Dropbox/R_projects/lbbg_gps/workspace_alternative")
 
 
 #Description#######
