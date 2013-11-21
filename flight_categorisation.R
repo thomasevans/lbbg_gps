@@ -2,7 +2,7 @@
 # You are welcome to use parts of this code, but please give credit when using it extensively.
 # Code available at https://github.com/thomasevans/lbbg_gps
 
-# This script produces a table of commuting flights with start and finish times, this will be based on a function to recognis when the flight ceases to be in 'commuting' phase.
+# This script produces a table of commuting flights with start and finish times, this will be based on a function to recognise when the flight ceases to be in 'commuting' phase.
 
 # Get data - database  ####
 
