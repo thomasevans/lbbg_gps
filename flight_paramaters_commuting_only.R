@@ -36,19 +36,20 @@ flights.com <- sqlQuery(gps.db, query=
 
 
 # Get a vector of flight numbers -----
-flight_id <- sort(unique(flights.com$flight_id))
+# str(flights.com$flight_id)
+flight_id <- sort(flights.com$flight_id)
 f <- length(flight_id)
 
 
 #Run function 'flight.info' in parallel########
-require(foreach)
-require(doParallel)
+# require(foreach)
+# require(doParallel)
 
 #use x cores, general solution for any windows machine.
-cl <- makeCluster(parallel::detectCores())     
+# cl <- makeCluster(parallel::detectCores())     
 
 #start the parellel session of R; the 'slaves', which will run the analysis.
-registerDoParallel(cl)   
+# registerDoParallel(cl)   
 
 
 
@@ -56,36 +57,63 @@ registerDoParallel(cl)
 #this maybe neccessary so that the clustered instances or R have the
 #required vairables/ functions in their scope, i.e. those functions
 #and vairables which are referred to within the 'foreach' function.
-clusterExport(cl, c("flight_id"))   
+# clusterExport(cl, c("flight_id"))   
 
 #NB see: http://stackoverflow.com/questions/9404881/writing-to-global-variables-in-using-dosnow-and-doing-parallelization-in-r
 #There a solution is offered for exporting vairables from foreach to the global environment.
 
 #make a list object to recieve the data
-lst <- list()
+# lst <- list()
+
+# x <- flight_id[1:10]
+  source("flight_info.R")
+
+lst <- lapply(flight_id,flight.info, type = "com")
+
+# flight.info(flight_id[i], type = "com")
+# warnings()
+
 
 # flight.info(flights.com$flight_id[5], type = "com")
-# i <- 5
+# i <- 1
 #get paramaters for each flight
 #Use system.time to time how long this takes.
-system.time({lst <- foreach(i = seq(along = flight_id )) %dopar%{
-#  system.time({lst <- foreach(i = c(1:10)) %dopar%{
-
-  source("flight_info.R")
-  #calculate the trip numbers for the device i. i.e. the function 
-  #which we wish to run for each device.     
-
-  x <- flight.info(flight_id[i], type = "com")
-#   flight.info(flight_id[5000], type = "com")
-  x <- t(x)
-
-  #output data as list (this will be appended to the global list, lst.
-  list(x)   
-} #end of foreach functions
-}) #end of things being timed by system.time
-
-#close cluster
-stopCluster(cl)
+# system.time({lst <- foreach(i = seq(along = flight_id )) %dopar%{
+# #  system.time({lst <- foreach(i = c(1:10)) %dopar%{
+# 
+#   source("flight_info.R")
+#   #calculate the trip numbers for the device i. i.e. the function 
+#   #which we wish to run for each device.     
+# 
+# #   i <- 5000
+# #   x <- flight.info(12435, type = "com")
+# #   as.numeric(as.character(x[1]))
+#   
+#   x <- flight.info(flight_id[i], type = "com")
+#   
+#   
+#   
+#   
+# #   ?any
+#   
+#   # Try some more times if it fails
+#   if(any(is.na(x[1:10]))){
+#     for (n in 1:5){
+#       x <- flight.info(flight_id[i], type = "com")
+#       if(x[1] != NA) break}
+#   }
+#   
+# #   ?while
+# #   flight.info(flight_id[5000], type = "com")
+#   x <- t(x)
+# 
+#   #output data as list (this will be appended to the global list, lst.
+#   list(x)   
+# } #end of foreach functions
+# }) #end of things being timed by system.time
+# 
+# #close cluster
+# stopCluster(cl)
 #Time taken one time 4006.31 s (67 mins), 3105s another time
 #Time taken on 20130929 (now including data from 2011, 2012, 2013): 7425 seconds (124 minutes).
  
@@ -115,8 +143,23 @@ names.flights <- c("flight_id",
 flights <- data.frame(matrix(unlist(lst), nrow = length(flight_id), byrow = T))
 # data.frame(matrix(unlist(lst), nrow = 3, byrow = T))
 
+row.names(flights) <- NULL
 
 names(flights) <- names.flights
+
+# test <- flights[order(as.numeric(flights$flight_id)),]
+# summary(sort(as.numeric(flights$flight_id)) == sort(flight_id))
+# 
+# sort(as.numeric(flights$flight_id))[1:100]
+# str(as.numeric(flights$flight_id))
+# sort(sort(flight_id))[1:100]
+# str(flight_id)
+# # row.names(test) <- NULL
+# summary(is.na(flights))
+# summary(is.na(test$flight_id))
+# flight_id[1:100]
+# summary(as.numeric(flights.com$flight_id) == flight_id)
+# str(flights)
 
 #origin of UNIX date_time, required for coversion back to datetime objects for start_time and end_time
 startdate <- "1970-01-01"
@@ -135,12 +178,26 @@ flights$start_time <- as.POSIXct(
 # save(flights, file = "flights_part1.Rdata")
 
 
+fx <- function(x){
+  x <- as.character(x)
+  as.numeric(x)
+}
+
+flights2 <- cbind(sapply(flights[,c(1,2)], fx), flights[,c(3,4)],sapply(flights[,5:31], fx))
+
+# str(flights3)
+
+flights3 <- flights2[!is.na(flights2$flight_id),]
+
+
+
+
 #output data to database##################
 
 #export flight information to the database
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
 sqlSave(
-  gps.db, flights, tablename = "lund_flights_commuting_par",
+  gps.db, flights3, tablename = "lund_flights_commuting_par",
   append = FALSE, rownames = FALSE,
   colnames = FALSE, verbose = FALSE,
   safer = TRUE, addPK = FALSE,
@@ -150,3 +207,10 @@ sqlSave(
   
 message("After exporting table to DB, edit table in Access to define data-types and primary keys")
 
+
+# x <- as.vector(as.matrix(flights))
+# summary(x == "Error")
+
+idx <- c(1:length(flight_id))
+idx.n <- idx[is.na(flights2$flight_id)]
+flights2.n <- flights2[idx.n,]
