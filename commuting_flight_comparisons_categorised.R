@@ -802,7 +802,7 @@ r.squaredGLMM(mod_final)
 
 
 
-# Straightness - r - wind condition ####
+# Straightness - r - wind condition -----
 
 
 # LMMs of straightness - r - windcondition ####
@@ -813,22 +813,202 @@ hist(flights.combined.r)
 par(mfrow=c(1,1))
 r_straight <- sapply(flights.combined$straigtness, FUN = logit)
 r_rho <-  sapply(flights.combined$rho, FUN = logit)
-plot(flights.combined$straigtness~flights.combined$rho, ylim = c(0,1))
+
+plot(flights.combined$straigtness~flights.combined$rho)
 abline(lm(flights.combined$straigtness~flights.combined$rho))
+
+plot(flights.combined$straigtness~flights.combined$rho,
+     xlim = c(0.7,1.0), ylim = c(0.8,1.0))
+abline(lm(flights.combined$straigtness~flights.combined$rho))
+
 plot(r_straight~r_rho)
 abline(lm(r_straight~r_rho))
+# ?lm
+
+
+# Statistical model
 
 device_info_serial <- as.factor(flights.combined$device_info_serial)
 device_info_serial[device_info_serial == 687] <- 596
 device_info_serial <- as.factor(device_info_serial)
-trip_id <- as.factor(flights.combined$trip_id)
-# install.packages("lme4")
+flight.type <- as.factor(flights.combined$flight.type)
+wind.type <- as.factor(flights.combined$wind.type)
+cloud <- flights.combined$tcdceatm
+trip <- as.factor(flights.combined$trip_id)
+device_id <- as.factor(as.character((device_info_serial)))
 
-
-# Fitting a linear mixed-effects model to determine influence of 
-
-# library(lme4)
 library(nlme)
+
+mod <- list()
+# Full factorial model
+mod[[1]] <- lme(r_straight ~ flight.type * wind.type* cloud, random = ~1|device_id/trip)
+
+# Removing nested random effect of foraging trip id
+mod[[2]] <- lme(r_straight ~ flight.type * wind.type* cloud, random = ~1|device_id)
+
+# AIC reduced by removing trip_id, we continue without trip id
+AIC(mod[[1]],mod[[2]])
+
+
+# Temporal autocorrelation structure
+# ?ACF
+plot(ACF(mod[[2]], maxLag = 100), alpha = 0.05, new = TRUE)
+# Refit model with different correlation lags
+mod_cor <- list()
+for(i in 1:7){
+  mod_cor[[i]] <- update(mod[[2]],correlation = corARMA(q = i), method="ML")
+}
+
+mod_ML <- list()
+# Refit base model by ML
+mod_ML[[1]] <- update(mod[[2]], method="ML")
+
+
+x <- NULL
+# Compare AIC of models
+for(i in 1:7){
+  x[i] <- (AIC(mod_cor[[i]]))
+}
+min(x)
+x
+AIC(mod_ML[[1]])
+
+model.full <- mod_cor[[4]]
+
+mod_ML <- list()
+# lag 4 has lowest AIC
+mod_ML[[1]] <- mod_cor[[4]]
+# Model simplification
+mod_ML[[2]] <- lme(r_straight ~ flight.type * wind.type + cloud, random = ~1|device_info_serial, method="ML")
+
+mod_ML[[3]] <- lme(r_straight ~ flight.type * wind.type + wind.type * cloud, random = ~1|device_info_serial, method="ML")
+
+mod_ML[[4]] <- lme(r_straight ~ flight.type + wind.type * cloud, random = ~1|device_info_serial, method="ML")
+
+mod_ML[[5]] <- lme(r_straight ~ flight.type * cloud +  wind.type * cloud, random = ~1|device_info_serial, method="ML")
+
+mod_ML[[6]] <- lme(r_straight ~ flight.type * cloud +  wind.type , random = ~1|device_info_serial, method="ML")
+
+
+mod_ML[[7]] <- lme(r_straight ~ flight.type + wind.type + cloud, random = ~1|device_info_serial, method="ML")
+
+mod_ML[[8]] <- lme(r_straight ~ flight.type * wind.type , random = ~1|device_info_serial, method="ML")
+
+mod_ML[[9]] <- lme(r_straight ~ flight.type + wind.type , random = ~1|device_info_serial, method="ML")
+
+mod_ML[[10]] <- lme(r_straight ~ flight.type *  cloud, random = ~1|device_info_serial, method="ML")
+
+mod_ML[[11]] <- lme(r_straight ~ flight.type +  cloud, random = ~1|device_info_serial, method="ML")
+
+mod_ML[[12]] <- lme(r_straight ~  wind.type * cloud, random = ~1|device_info_serial, method="ML")
+
+mod_ML[[13]] <- lme(r_straight ~  wind.type + cloud, random = ~1|device_info_serial, method="ML")
+
+mod_ML[[14]] <- lme(r_straight ~  wind.type , random = ~1|device_info_serial, method="ML")
+
+mod_ML[[15]] <- lme(r_straight ~  cloud , random = ~1|device_info_serial, method="ML")
+
+mod_ML[[16]] <- lme(r_straight ~  flight.type , random = ~1|device_info_serial, method="ML")
+
+mod_ML[[17]] <- lme(r_straight ~  1 , random = ~1|device_info_serial, method="ML")
+
+mod_ML_AIC <- NULL
+for(i in 1:17){
+  mod_ML_AIC[i] <- (AIC(mod_ML[[i]]))
+}
+t(mod_ML_AIC)
+min(mod_ML_AIC)
+
+
+summary(mod_ML[[9]])
+anova(mod_ML[[9]])
+
+
+
+# Refit final model by REML
+mod_final <- update(mod_ML[[9]], method="REML")
+summary(mod_final)
+anova(mod_final)
+
+#Checking final model assumptions
+plot(mod_final,resid(.,type="p")~fitted(.)|device_info_serial)
+qqnorm(mod_final,~resid(.)|device_info_serial)
+plot(mod_final)
+
+# See how autocorrelation structure looks - ok
+plot( ACF(mod_final, maxLag = 50), alpha = 0.01)
+plot( ACF(mod_final, maxLag = 50, resType = "n"), alpha = 0.01)
+
+
+# Get p values for model terms
+# cloud
+anova(mod_ML[[9]], mod_ML[[7]])
+
+# Wind
+anova(mod_ML[[9]], mod_ML[[16]])
+
+# Flight.type
+anova(mod_ML[[9]], mod_ML[[14]])
+
+# All main effects (comparing to null model)  ########
+anova(mod_ML[[9]], mod_ML[[17]])
+
+
+summary(mod_final)
+inc <- 3.426352
+# Reduction in straightness for outward vs. inward flights
+-(anti.logit(inc) - anti.logit(inc-0.700548))
+#[1] -0.02998581
+
+# side vs head wind
+-(anti.logit(inc) - anti.logit(inc+0.389111))
+# [1] 0.009929213
+
+# tail vs head wind
+-(anti.logit(inc) - anti.logit(inc+0.251291))
+# [1] 0.00682292
+
+
+
+-0.004016
+
+# grand mean
+anti.logit(inc)
+
+# Get R squared values
+library(MuMIn)
+r.squaredGLMM(mod_final)
+
+# S. Nakagawa, H. Schielzeth. “A General and Simple Method for Obtaining R2 from Generalized Linear Mixed-Effects Models.” Methods in Ecology and Evolution 4 (2013): 133–142. doi:Doi 10.1111/J.2041-210x.2012.00261.X.
+
+##
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Temporal autocorrelation structure
+?ACF
+# Looks sig up to lag 5, and potentially up to lag 9
+plot(ACF(mod01, maxLag = 100),alpha=0.01)
+mod01_t2 <- update(mod01,correlation = corARMA(q=2))
+mod01_t3 <- update(mod01,correlation = corARMA(q=3))
+mod01_t4 <- update(mod01,correlation = corARMA(q=4))
+
+
+
+
 
 flight.type <- as.factor(flights.combined$flight.type)
 wind.type <- as.factor(flights.combined$wind.type)
