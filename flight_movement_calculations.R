@@ -26,8 +26,14 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 #sqlTables(gps.db)
 
 #Get a copy of the flights DB table.
+# flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
+#   FROM lund_flights AS f
+#   ORDER BY f.flight_id ASC ;"
+#                     ,as.is=TRUE)
+
+#commuting version
 flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
-  FROM lund_flights AS f
+  FROM lund_flights_commuting_par AS f
   ORDER BY f.flight_id ASC ;"
                     ,as.is=TRUE)
 
@@ -42,10 +48,27 @@ flights$end_time  <- as.POSIXct(flights$end_time,
                                 format="%Y-%m-%d %H:%M:%S")
 
 
-#Get a copy of the flights_weather DB table.
-flights.weather <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
+q1 <- "SELECT DISTINCT f.*
 FROM lund_flights_weather AS f
-ORDER BY f.flight_id ASC;",as.is=TRUE)
+WHERE f.flight_id IN ("
+
+fun <- function(x){
+  x <- as.numeric(as.character(x))
+  paste(" ", x, ",", sep = "")
+}
+# ?paste
+q2 <- paste(sapply(flights$flight_id,fun), collapse = "")                            
+q3 <- ")
+ORDER BY f.flight_id ASC;"
+
+#Get a copy of the flights_weather DB table.
+flights.weather <- sqlQuery(gps.db, query =
+                              gsub("\n", " ",
+                                   paste(q1, q2, q3, sep="")),
+                            as.is = TRUE)
+
+
+
 
 flights.weather$start_time  <- as.POSIXct(flights.weather$start_time,
                                 tz="GMT",
@@ -105,7 +128,14 @@ wind.shear <- function(uwind10, vwind10, ht.med){
 
 # Remove negative or <0.1 m altitudes with 0.1 value
 # First define function
-rep.neg.alt <- function(x){if(is.na(x)){return(NA)} else {if(x < 0.1){return(0.1)} else { return(x)}}}
+rep.neg.alt <- function(x){
+  if(is.na(x)){
+    return(NA)} else {
+      if(x < 0.1){
+        return(0.1)} else {
+          return(x)}
+    }
+}
 
 
 # rep.neg.alt(NA)
@@ -204,7 +234,7 @@ flights.characteristics <- cbind(flights.characteristics, wind.origin)
 
 #Output weather data to database #####
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
-sqlSave(gps.db, flights.characteristics, tablename = "lund_flight_paramaters",
+sqlSave(gps.db, flights.characteristics, tablename = "lund_flight_com_weather_par",
         append = FALSE, rownames = FALSE, colnames = FALSE,
         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
         test = FALSE, nastring = NULL, varTypes = 
