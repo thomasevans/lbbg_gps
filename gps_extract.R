@@ -10,15 +10,17 @@
 #Extract GPS points
 gps.extract <- function(i, start.t, end.t){
   
+  # i - device info serial
+  # start.t - first point date-time
+  # end.t - final point date_time
+  #Function to extract required GPS data
+  
   require(RODBC)
   
   gps.db2 <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
   
   
-  # i - device info serial
-  # start.t - first point date-time
-  # end.t - final point date_time
-  #Function to extract required GPS data
+
   q1a <- "SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude,
   g.latitude, g.x_speed, g.y_speed, g.z_speed, g.positiondop,
   g.speed_accuracy, c.bearing_next, c.bearing_prev, c.nest_gc_dist,
