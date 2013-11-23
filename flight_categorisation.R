@@ -45,12 +45,6 @@ flights.com <- subset(flights.all, trip_flight_type == "inward"  | trip_flight_t
 # Index vector for flights.com
 flights.com.ind <- 1:length(flights.com$flight_id)
 
-# i <- 5
-# for all flights    i in length flights.com
-# data.all <- NULL    # initialisation
-# for(i in 1:length(flights.com.ind)){
-
-
 
 
 #Run in parallel########
@@ -77,102 +71,170 @@ clusterExport(cl, c("flights.com"))
 #make a list object to recieve the data
 lst <- list()
 
-# i <- 4
-system.time({lst <- foreach(i = seq(along = flights.com$trip_flight_type)) %dopar%{
-# for(i in 1:10){
-
-# Get GPS points for these flights
-source("gps_extract.R")
-library(RODBC)
-
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
-
-# Get flight id
-id <- flights.com$flight_id[i]
-
-
-# Get GPS points for flight
-points <- gps.extract(flights.com$device_info_serial[i],flights.com$start_time[i],flights.com$end_time[i])
-
-# Correct data_time format
-points$date_time <- as.POSIXct(points$date_time,
-                                   tz="GMT",
-                                   format="%Y-%m-%d %H:%M:%S")
-
-
-# Categorisation ####
-
-# Get direction - outward or inward
-dir <- 1
-if(flights.com$trip_flight_type[i] == "inward") dir <- -1
-
-n <- length(points$device_info_serial)
-# str(flights.com)
-  if(n < 5){
-    data.flight <- cbind(flights.com$flight_id[i],points$device_info_serial[1],flights.com$start_time[i],flights.com$end_time[i])
-#     data.all <- rbind(data.all,data.flight)
-  } else {
-    
-    # Calculate speed relative to displacement from island
-    d.dist <- points$nest_gc_dist[2:n] - points$nest_gc_dist[1:(n-1)]
-    d.dist <- d.dist *1000   # Get to metres
-    d.speed <- d.dist/ points$time_interval_s[2:n]
-    d.speed.cor <- d.speed*dir
-    d.speed.cor <- c(0,d.speed.cor) #add a value for first point
-    
-    # Change in speed relative to island relative to last 3 points
-    # Reverse point list if inward flight (work from island out)
-    if(dir == -1) {
-      ds <- rev(d.speed.cor)} else {
-        ds <- d.speed.cor
+# i <- 9
+  system.time({lst <- foreach(i = seq(along = flights.com$trip_flight_type)) %dopar%{
+#    for(i in 1:10){
+  
+  # Get GPS points for these flights
+  source("gps_extract.R")
+  require(RODBC)
+  require(fossil)
+  
+  gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+  
+  # Get flight id
+  id <- flights.com$flight_id[i]
+  
+  
+  # Get GPS points for flight
+  points <- gps.extract(
+    flights.com$device_info_serial[i],
+    flights.com$start_time[i],
+    flights.com$end_time[i])
+  
+  # Correct data_time format
+  points$date_time <- as.POSIXct(points$date_time,
+                                     tz="GMT",
+                                     format="%Y-%m-%d %H:%M:%S")
+  
+  
+  # Calculate distance from island centre
+  # ?deg.dist
+  karlso.cen.long   <-  17.972088
+  karlso.cen.lat    <-  57.284804
+  
+  island.dist <- deg.dist(karlso.cen.long, karlso.cen.lat,
+                          points$longitude, points$latitude)
+  
+  
+  
+  # Categorisation ####
+  
+  # Get direction - outward or inward
+  dir <- 1
+  if(flights.com$trip_flight_type[i] == "inward") dir <- -1
+  
+  n <- length(points$device_info_serial)
+  # str(flights.com)
+    if(n < 7){
+      data.flight <- cbind(
+        flights.com$flight_id[i],
+        points$device_info_serial[1],
+        flights.com$start_time[i],
+        flights.com$end_time[i])
+  #     data.all <- rbind(data.all,data.flight)
+    } else {
+      
+      # Calculate speed relative to displacement from island
+      d.dist <- points$nest_gc_dist[2:n] - points$nest_gc_dist[1:(n-1)]
+      d.dist <- d.dist *1000   # Get to metres
+      d.speed <- d.dist/ points$time_interval_s[2:n]
+      d.speed.cor <- d.speed*dir
+      d.speed.cor <- c(0,d.speed.cor) #add a value for first point
+      
+      # Change in speed relative to island relative to last 3 points
+      # Reverse point list if inward flight (work from island out)
+      if(dir == -1) {
+        ds <- rev(d.speed.cor)} else {
+          ds <- d.speed.cor
+        }
+      
+      
+      # Find final point within island buffer
+      # Reverse point list if inward flight (work from island out)
+      if(dir == -1) {
+        is.dis <- rev(island.dist)} else {
+          is.dis <- island.dist
+        }
+      
+      
+      for(ix in 1:length(is.dis)){
+        if(is.dis[ix] > 1.5) break
       }
-    
-    #Change in speed from previous points
-    d.dif <- function(i, ds = ds){
-      ds[i]/mean(ds[(i-1):(i-3)])
+      
+      if(ix > 1) ix <- ix - 1
+      
+      ds <- ds[ix:length(ds)]
+      
+      # If we have less than 7 values left, we must stop
+      if(length(ds) < 7){ #print("ok")}
+        data.flight <- cbind(flights.com$flight_id[i],
+                             points$device_info_serial[1])
+                             if(dir == 1){
+                               data.flight2 <- cbind(
+                                 points$date_time[ix],
+                                 flights.com$end_time[i])
+                             } else {
+                                data.flight2 <- cbind(
+                               flights.com$start_time[i],
+                               points$date_time[n-ix])                             
+                             }
+        data.flight <- cbind(data.flight, data.flight2)
+        } else{
+        
+        #Change in speed from previous points
+        d.dif <- function(i, ds = ds){
+          mean(ds[(i-1):(i-3)])/mean(ds[(i+1):(i+3)])
+        }
+        
+        #apply function
+        x <- sapply(c(4:(length(ds)-4)),d.dif,ds=ds)
+        if (x[1] < 0.5) {z <- 0.5}else{ z <- x[1]}
+        x <- c(rep(z,3),x,rep(x[length(x)],3))   #include first 3 points and final points
+        
+        s <- TRUE
+        p.stop <- NULL
+        for(it in 1:length(x)){
+          if(x[it] < 0.5 & s){
+            s <- FALSE
+            p.stop <- it
+          }
+        }
+        # i
+        
+        
+        if(dir == 1) {
+            # If outward
+            time.start <- points$date_time[ix]
+            if(is.null(p.stop)){
+              time.end <- points$date_time[n]
+            } else time.end <- points$date_time[p.stop]
+        }else{    
+            # If inward (need to reverse order again)
+            time.end <- points$date_time[n - ix + 1]
+            if(is.null(p.stop)){
+              time.start <- points$date_time[1]
+            } else {
+                time.start <- points$date_time[(n+1) - p.stop]
+              } 
+        }
+        
+        
+        data.flight <- cbind(
+          id, points$device_info_serial[1],
+          time.start,time.end)
+    #     data.all <- rbind(data.all,data.flight)
+#         as.POSIXct(data.flight[3],
+#                    tz="GMT",
+#                    format="%Y-%m-%d %H:%M:%S",
+#                    origin = "1970-01-01 00:00:00")
+#         
+#         as.POSIXct(data.flight[4],
+#                    tz="GMT",
+#                    format="%Y-%m-%d %H:%M:%S",
+#                    origin = "1970-01-01 00:00:00")
+#         
+#         flights.com[i,3]
+#         flights.com[i,4]
+        
+    #     data.flight <- cbind(flights.com$trip_id[i],points$device_info_serial[1],flights.com$start_time[i],flights.com$end_time[i])
     }
-    
-    #apply function
-    x <- sapply(c(4:length(ds)),d.dif,ds=ds) 
-    x <- c(1,1,1,x)   #include first 3 points
-    
-    s <- TRUE
-    p.stop <- NULL
-    for(it in 1:length(x)){
-      if(x[it] < 0.2 & s){
-        s <- FALSE
-        p.stop <- it
-      }
     }
-    # i
-    
-    
-    if(dir == 1) {
-        # If outward
-        time.start <- points$date_time[1]
-        if(is.null(p.stop)){
-          time.end <- points$date_time[n]
-        } else time.end <- points$date_time[p.stop]
-    }else{    
-        # If inward (need to reverse order again)
-        time.end <- points$date_time[n]
-        if(is.null(p.stop)){
-          time.start <- points$date_time[1]
-        } else {
-            time.start <- points$date_time[(n+1) - p.stop]
-          } 
-    }
-    
-    
-    data.flight <- cbind(id,points$device_info_serial[1],time.start,time.end)
-#     data.all <- rbind(data.all,data.flight)
-    
-#     data.flight <- cbind(flights.com$trip_id[i],points$device_info_serial[1],flights.com$start_time[i],flights.com$end_time[i])
+  
+#   lst[[i]] <- list(data.flight)  
+  list(data.flight)  
+#   warnings()
   }
-
-list(data.flight)  
-
-}
 }) #end of system.time
 
              
@@ -210,7 +272,7 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #Output data to database #####
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
-sqlSave(gps.db, flight.info, tablename = "lund_flights_commuting",
+sqlSave(gps.db, flight.info, tablename = "lund_flights_commuting_4",
         append = FALSE, rownames = FALSE, colnames = FALSE,
         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
         test = FALSE, nastring = NULL,
