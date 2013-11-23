@@ -18,8 +18,13 @@ gps.extract <- function(i, start.t, end.t){
   require(RODBC)
   
   gps.db2 <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
-  
-  
+#   class(gps.db2)
+   if(!inherits(gps.db2,"RODBC")){
+     for(i in 1:4){
+       gps.db2 <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+       if(inherits(gps.db2,"RODBC")) break
+     }
+   }
 
   q1a <- "SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude,
   g.latitude, g.x_speed, g.y_speed, g.z_speed, g.positiondop,
