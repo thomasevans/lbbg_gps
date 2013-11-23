@@ -27,7 +27,7 @@ flights <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
 
 #Get a copy of the flights DB table.
 flights.new <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
-                    FROM lund_flights_commuting_3 AS f
+                    FROM lund_flights_commuting_5 AS f
                     ORDER BY f.flight_id ASC;")
 
 
@@ -49,7 +49,7 @@ flights.new$end_time <- as.POSIXct(flights.new$end_time,
                                format="%Y-%m-%d %H:%M:%S")
 
 
-
+# str(flights.new)
 #str(flights)  #check structure
 
 #Get a copy of the flights_weather DB table.
@@ -61,6 +61,7 @@ flights.weather <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
 flights.weather$start_time <- as.POSIXct(flights.weather$start_time,
                                tz="GMT",
                                format="%Y-%m-%d %H:%M:%S")
+
 
 
 
@@ -228,24 +229,40 @@ flights.combined   <- flights.combined[order(flights.combined$trip_id),]
 
 # setwd("D:/Dropbox/R_projects/lbbg_gps")
 
-# Get gps_extract function
-source("gps_extract.R")
+
+
+# Parallel foreach loop to get GPS data for each trip
+library(doParallel)
+library(foreach)
+
+cl <- makeCluster(8)
+registerDoParallel(cl)
+
+clusterExport(cl, c("flights.combined"))  
 
 points.old <- NULL
 # str(flights.combined)
 # Get points.old for all flights
-for(i in 1:length(flights.combined$device_info_serial)){
+points.old <- foreach (i = 1:length(flights.combined$device_info_serial), .combine = rbind) %dopar% {
+# for(i in 1:length(flights.combined$device_info_serial)){
 #   for(i in 1:10){
   
-x <- NA
-
-x <- gps.extract(flights.combined$device_info_serial[i],
+  # Get gps_extract function
+  source("gps_extract.R")
+  x <- NA
+  x <- gps.extract(flights.combined$device_info_serial[i],
                  flights.combined$start_time[i],
                  flights.combined$end_time[i])
-
-x <- cbind(x,i,flights.combined$flight.type[i],flights.combined$wind.type[i])
-points.old <- rbind(points.old,x)
+  
+  x <- cbind(x,i,flights.combined$flight.type[i],flights.combined$wind.type[i])
+  return(x)
+  #   points.old <- rbind(points.old,x)
 }
+
+
+stopCluster(cl)
+
+str(points.old)
 
 # str(points.old)
 # summary(points.old$flight_type == "out")
@@ -261,30 +278,52 @@ points.old.out <- points.old[points.old$flight.type == "out",]
 points.old.in <- points.old[points.old$flight.type == "in",]
 
 
+# points.old$flight.type[1:5]
 
-
-points.new <- NULL
+# points.new <- NULL
 # str(flights.combined)
 # i <- 5
 # Get points.new for all flights
-for(i in 1:length(flights.combined$device_info_serial)){
+# for(i in 1:length(flights.combined$device_info_serial)){
   #   for(i in 1:10){
   
+
+cl <- makeCluster(8)
+registerDoParallel(cl)
+
+clusterExport(cl, c("flights.combined","flights.new"))  
+
+points.new <- NULL
+# str(flights.combined)
+# Get points.old for all flights
+points.new <- foreach (i = 1:length(flights.combined$device_info_serial), .combine = rbind) %dopar% {
+
+#   i <- 484
   x <- NA
+  
+  # Get gps_extract function
+  source("gps_extract.R")
   
 #   flights.new
   
   flight_id <- flights.combined$flight_id[i]
   f <- flights.new$flight_id == flight_id
+#   summary(f)
+  if(flights.new$start_time[f] < flights.new$end_time[f]){
   x <- gps.extract(flights.new$device_info_serial[f],
                    flights.new$start_time[f],
                    flights.new$end_time[f])
 #   str(flights)
   x <- cbind(x,i,flights$trip_flight_type[flights$flight_id == flight_id],flights.combined$wind.type[flights.combined$flight_id == flight_id])
-  points.new <- rbind(points.new,x)
+#   points.new <- rbind(points.new,x)
+  return(x)}
 }
 
-# str(points.new)
+
+stopCluster(cl)
+
+
+str(points.new)
 # summary(points.new$flight_type == "out")
 # data frames of just outward or inward flights
 
@@ -315,7 +354,7 @@ source("maps_flights_old_new.R")
 
 
 
-pdf("inward_flights_new3.pdf")
+pdf("inward_flights_new5.pdf")
 # svg("inward_flights_02.svg")
 maps.flights(points.old.in, points.new.in, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Inward flights")
 maps.flights(points.old.in, points.new.in, seed = 1, flight.num = 20, plot.title = "Inward flights")
@@ -326,7 +365,7 @@ maps.flights(points.old.in, points.new.in, seed = 5, flight.num = 20, plot.title
 dev.off()
 
 
-pdf("outward_flights_new3.pdf")
+pdf("outward_flights_new5.pdf")
 # svg("inward_flights_02.svg")
 maps.flights(points.old.out, points.new.out, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Outward flights")
 maps.flights(points.old.out, points.new.out, seed = 1, flight.num = 20, plot.title = "Outward flights")
