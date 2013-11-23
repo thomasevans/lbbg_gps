@@ -43,6 +43,8 @@ gps.extract <- function(i, start.t, end.t){
   gps.sub <- sqlQuery(gps.db2, query= gsub("\n", " ", paste(q1a, q1c, q1b, sep=""))
                       ,as.is=TRUE)
   
+  odbcClose(gps.db2)
+  
   return(gps.sub)
 }
 # 
