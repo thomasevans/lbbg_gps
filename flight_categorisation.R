@@ -124,6 +124,7 @@ lst <- list()
         flights.com$end_time[i])
   #     data.all <- rbind(data.all,data.flight)
     } else {
+#       print("hi")}
       
       # Calculate speed relative to displacement from island
       d.dist <- points$nest_gc_dist[2:n] - points$nest_gc_dist[1:(n-1)]
@@ -173,8 +174,8 @@ lst <- list()
         } else{
         
         #Change in speed from previous points
-        d.dif <- function(i, ds = ds){
-          mean(ds[(i-1):(i-3)])/mean(ds[(i+1):(i+3)])
+        d.dif <- function(ia, ds = ds){
+          mean(ds[(ia+1):(ia+3)]) / mean(ds[(ia-1):(ia-3)])
         }
         
         #apply function
@@ -194,14 +195,17 @@ lst <- list()
         
         
         if(dir == 1) {
+#             print(paste(i,"Out flight    "))
             # If outward
             time.start <- points$date_time[ix]
             if(is.null(p.stop)){
               time.end <- points$date_time[n]
             } else time.end <- points$date_time[p.stop]
         }else{    
-            # If inward (need to reverse order again)
+#           print(paste(i,"In flight    "))
+          # If inward (need to reverse order again)
             time.end <- points$date_time[n - ix + 1]
+#             points$date_time[n]
             if(is.null(p.stop)){
               time.start <- points$date_time[1]
             } else {
@@ -209,10 +213,10 @@ lst <- list()
               } 
         }
         
-        
-        data.flight <- cbind(
-          id, points$device_info_serial[1],
-          time.start,time.end)
+          data.flight <- cbind(
+            id, points$device_info_serial[1],
+            time.start, time.end)
+          
     #     data.all <- rbind(data.all,data.flight)
 #         as.POSIXct(data.flight[3],
 #                    tz="GMT",
@@ -223,7 +227,7 @@ lst <- list()
 #                    tz="GMT",
 #                    format="%Y-%m-%d %H:%M:%S",
 #                    origin = "1970-01-01 00:00:00")
-#         
+# #         
 #         flights.com[i,3]
 #         flights.com[i,4]
         
@@ -240,7 +244,10 @@ lst <- list()
              
 #close cluster
 stopCluster(cl)
-             
+      
+
+# flight.info <-  data.frame(matrix(unlist(lst), nrow = 10, byrow = T))
+
 flight.info <-  data.frame(matrix(unlist(lst), nrow = length(flights.com$trip_flight_type), byrow = T))
 names(flight.info) <- c("flight_id","device_info_serial","start_time","end_time")             
         
@@ -253,7 +260,7 @@ flight.info$end_time <- as.POSIXct(flight.info$end_time,
                                      tz="GMT",
                                      format="%Y-%m-%d %H:%M:%S",
                                      origin = "1970-01-01 00:00:00")
-
+# flights.com[1:10,]
 # flight.info.back <- flight.info
 
 # str(flight.info)
@@ -281,4 +288,11 @@ sqlSave(gps.db, flight.info, tablename = "lund_flights_commuting_4",
                       start_time = "datetime",
                       end_time   =  "datetime"))
 
-
+beep <- function(n = 9){
+  x <- c(1,1,3,1,1,3,1,1,3,1,1)
+  for(i in seq(n)){
+    system("rundll32 user32.dll,MessageBeep -1")
+    Sys.sleep(x[i])
+  }
+}
+beep()
