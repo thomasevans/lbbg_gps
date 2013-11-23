@@ -71,7 +71,7 @@ clusterExport(cl, c("flights.com"))
 #make a list object to recieve the data
 lst <- list()
 
-# i <- 9
+# i <- 1
   system.time({lst <- foreach(i = seq(along = flights.com$trip_flight_type)) %dopar%{
 #    for(i in 1:10){
   
@@ -177,18 +177,19 @@ lst <- list()
         d.dif <- function(ia, ds = ds){
           mean(ds[(ia+1):(ia+3)]) / mean(ds[(ia-1):(ia-3)])
         }
-        
+#         z <- 6
         #apply function
-        x <- sapply(c(4:(length(ds)-4)),d.dif,ds=ds)
+        x <- sapply(c(4:(length(ds)-4)), d.dif, ds = ds)
         if (x[1] < 0.5) {z <- 0.5}else{ z <- x[1]}
         x <- c(rep(z,3),x,rep(x[length(x)],3))   #include first 3 points and final points
         
-        s <- TRUE
+#         s <- TRUE
         p.stop <- NULL
         for(it in 1:length(x)){
-          if(x[it] < 0.5 & s){
-            s <- FALSE
+          if(x[it] < 0.5 ){
+#             s <- FALSE
             p.stop <- it
+            break
           }
         }
         # i
@@ -209,7 +210,7 @@ lst <- list()
             if(is.null(p.stop)){
               time.start <- points$date_time[1]
             } else {
-                time.start <- points$date_time[(n+1) - p.stop]
+                time.start <- points$date_time[n - p.stop]
               } 
         }
         
@@ -217,7 +218,7 @@ lst <- list()
             id, points$device_info_serial[1],
             time.start, time.end)
           
-    #     data.all <- rbind(data.all,data.flight)
+     #     data.all <- rbind(data.all,data.flight)
 #         as.POSIXct(data.flight[3],
 #                    tz="GMT",
 #                    format="%Y-%m-%d %H:%M:%S",
@@ -279,7 +280,7 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #Output data to database #####
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
-sqlSave(gps.db, flight.info, tablename = "lund_flights_commuting_4",
+sqlSave(gps.db, flight.info, tablename = "lund_flights_commuting_5",
         append = FALSE, rownames = FALSE, colnames = FALSE,
         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
         test = FALSE, nastring = NULL,
