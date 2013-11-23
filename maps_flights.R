@@ -8,7 +8,7 @@
 
 
 
-maps.flights <- function(points.data=NULL, seed = 2, plot.title = "", all.flights = FALSE, flight.num = 50, alpha = 0.5, flight.id = FALSE){
+maps.flights <- function(points.data = NULL, seed = 2, plot.title = "", all.flights = FALSE, flight.num = 50, alpha = 0.5, flight.id = FALSE){
   #   ?title
   #Function to map flights
   #  Provide dataframe with flights points
