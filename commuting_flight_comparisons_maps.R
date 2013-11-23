@@ -27,7 +27,7 @@ flights <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
 
 #Get a copy of the flights DB table.
 flights.new <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
-                    FROM lund_flights_commuting AS f
+                    FROM lund_flights_commuting_3 AS f
                     ORDER BY f.flight_id ASC;")
 
 
@@ -74,12 +74,15 @@ trips <- sqlQuery(gps.db, query="SELECT DISTINCT t.*
 
 
 #Edited this to reference 'lund_flight_paramaters' rather than 'lund_flight_characteristics' as table name changed.
-flights.characteristics <- sqlQuery(gps.db,as.is = TRUE, query="SELECT DISTINCT f.*
+flights.characteristics <- sqlQuery(gps.db,as.is = TRUE, query=
+                                    "SELECT DISTINCT f.*
                                     FROM lund_flight_paramaters AS f
                                     ORDER BY f.flight_id ASC;")
-flights.characteristics$start_time <- as.POSIXct(flights.characteristics$start_time,
-                                         tz="GMT",
-                                         format="%Y-%m-%d %H:%M:%S")
+
+flights.characteristics$start_time <- 
+  as.POSIXct(flights.characteristics$start_time,
+             tz="GMT",
+             format="%Y-%m-%d %H:%M:%S")
 
 # str(flights.characteristics )
 # flights.characteristics$start_time[1]
@@ -312,7 +315,7 @@ source("maps_flights_old_new.R")
 
 
 
-pdf("inward_flights_new.pdf")
+pdf("inward_flights_new3.pdf")
 # svg("inward_flights_02.svg")
 maps.flights(points.old.in, points.new.in, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Inward flights")
 maps.flights(points.old.in, points.new.in, seed = 1, flight.num = 20, plot.title = "Inward flights")
@@ -323,7 +326,7 @@ maps.flights(points.old.in, points.new.in, seed = 5, flight.num = 20, plot.title
 dev.off()
 
 
-pdf("outward_flights_new.pdf")
+pdf("outward_flights_new3.pdf")
 # svg("inward_flights_02.svg")
 maps.flights(points.old.out, points.new.out, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Outward flights")
 maps.flights(points.old.out, points.new.out, seed = 1, flight.num = 20, plot.title = "Outward flights")
@@ -354,3 +357,14 @@ dev.off()
 # # Change alpha value, to make transparent - allow to see overplotting
 # test <- adjustcolor(col.line, 0.4)
 # plot(c(1:1000),col= test)
+
+# alarm()
+
+beep <- function(n = 9){
+  x <- c(1,1,3,1,1,3,1,1,3,1,1)
+  for(i in seq(n)){
+    system("rundll32 user32.dll,MessageBeep -1")
+    Sys.sleep(x[i])
+  }
+}
+beep()
