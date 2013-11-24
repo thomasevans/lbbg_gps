@@ -27,7 +27,7 @@ flights <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
 
 #Get a copy of the flights DB table.
 flights.new <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
-                    FROM lund_flights_commuting_5 AS f
+                    FROM lund_flights_commuting_13 AS f
                     ORDER BY f.flight_id ASC;")
 
 
@@ -231,38 +231,43 @@ flights.combined   <- flights.combined[order(flights.combined$trip_id),]
 
 
 
-# Parallel foreach loop to get GPS data for each trip
-library(doParallel)
-library(foreach)
+# # Parallel foreach loop to get GPS data for each trip
+# library(doParallel)
+# library(foreach)
+# 
+# cl <- makeCluster(8)
+# registerDoParallel(cl)
+# 
+# clusterExport(cl, c("flights.combined"))  
+# 
+# points.old <- NULL
+# # str(flights.combined)
+# # Get points.old for all flights
+# points.old <- foreach (i = 1:length(flights.combined$device_info_serial), .combine = rbind) %dopar% {
+# # for(i in 1:length(flights.combined$device_info_serial)){
+# #   for(i in 1:10){
+#   
+#   # Get gps_extract function
+#   source("gps_extract.R")
+#   x <- NA
+#   x <- gps.extract(flights.combined$device_info_serial[i],
+#                  flights.combined$start_time[i],
+#                  flights.combined$end_time[i])
+#   
+#   x <- cbind(x,i,flights.combined$flight.type[i],flights.combined$wind.type[i])
+#   return(x)
+#   #   points.old <- rbind(points.old,x)
+# }
+# 
+# 
+# stopCluster(cl)
+# 
+# str(points.old)
+# 
 
-cl <- makeCluster(8)
-registerDoParallel(cl)
+# save(points.old, file = "points.old.RData")
 
-clusterExport(cl, c("flights.combined"))  
-
-points.old <- NULL
-# str(flights.combined)
-# Get points.old for all flights
-points.old <- foreach (i = 1:length(flights.combined$device_info_serial), .combine = rbind) %dopar% {
-# for(i in 1:length(flights.combined$device_info_serial)){
-#   for(i in 1:10){
-  
-  # Get gps_extract function
-  source("gps_extract.R")
-  x <- NA
-  x <- gps.extract(flights.combined$device_info_serial[i],
-                 flights.combined$start_time[i],
-                 flights.combined$end_time[i])
-  
-  x <- cbind(x,i,flights.combined$flight.type[i],flights.combined$wind.type[i])
-  return(x)
-  #   points.old <- rbind(points.old,x)
-}
-
-
-stopCluster(cl)
-
-str(points.old)
+load("points.old.RData")
 
 # str(points.old)
 # summary(points.old$flight_type == "out")
@@ -298,7 +303,7 @@ points.new <- NULL
 # Get points.old for all flights
 points.new <- foreach (i = 1:length(flights.combined$device_info_serial), .combine = rbind) %dopar% {
 
-#   i <- 484
+#   i <- 981
   x <- NA
   
   # Get gps_extract function
@@ -313,6 +318,9 @@ points.new <- foreach (i = 1:length(flights.combined$device_info_serial), .combi
   x <- gps.extract(flights.new$device_info_serial[f],
                    flights.new$start_time[f],
                    flights.new$end_time[f])
+  
+  
+  
 #   str(flights)
   x <- cbind(x,i,flights$trip_flight_type[flights$flight_id == flight_id],flights.combined$wind.type[flights.combined$flight_id == flight_id])
 #   points.new <- rbind(points.new,x)
@@ -354,7 +362,7 @@ source("maps_flights_old_new.R")
 
 
 
-pdf("inward_flights_new5.pdf")
+pdf("inward_flights_thresh_05_2.pdf")
 # svg("inward_flights_02.svg")
 maps.flights(points.old.in, points.new.in, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Inward flights")
 maps.flights(points.old.in, points.new.in, seed = 1, flight.num = 20, plot.title = "Inward flights")
@@ -365,7 +373,7 @@ maps.flights(points.old.in, points.new.in, seed = 5, flight.num = 20, plot.title
 dev.off()
 
 
-pdf("outward_flights_new5.pdf")
+pdf("outward_flights_thresh_05_2.pdf")
 # svg("inward_flights_02.svg")
 maps.flights(points.old.out, points.new.out, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Outward flights")
 maps.flights(points.old.out, points.new.out, seed = 1, flight.num = 20, plot.title = "Outward flights")
