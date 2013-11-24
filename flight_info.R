@@ -42,6 +42,15 @@ flight.info <- function(id, type = c("com","default")){
   gps.db3 <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
   
   
+#   gps.db2 <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+  #   class(gps.db2)
+  if(!inherits(gps.db3,"RODBC")){
+    for(i in 1:4){
+      gps.db3 <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+      if(inherits(gps.db3,"RODBC")) break
+    }
+  }
+  
   # Nest query  
   nq1 <- "SELECT DISTINCT n.ring_number, n.nest_id,
   n.latitude, n.longitude, t.device_info_serial
