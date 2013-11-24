@@ -27,7 +27,7 @@ flights <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
 
 #Get a copy of the flights DB table.
 flights.new <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
-                    FROM lund_flights_commuting_13 AS f
+                    FROM lund_flights_commuting_18 AS f
                     ORDER BY f.flight_id ASC;")
 
 
@@ -362,7 +362,7 @@ source("maps_flights_old_new.R")
 
 
 
-pdf("inward_flights_thresh_05_2.pdf")
+pdf("inward_flights_thresh_02_3_2n.pdf")
 # svg("inward_flights_02.svg")
 maps.flights(points.old.in, points.new.in, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Inward flights")
 maps.flights(points.old.in, points.new.in, seed = 1, flight.num = 20, plot.title = "Inward flights")
@@ -373,7 +373,7 @@ maps.flights(points.old.in, points.new.in, seed = 5, flight.num = 20, plot.title
 dev.off()
 
 
-pdf("outward_flights_thresh_05_2.pdf")
+pdf("outward_flights_thresh_02_3_2n.pdf")
 # svg("inward_flights_02.svg")
 maps.flights(points.old.out, points.new.out, seed = 35, all.flights = TRUE, flight.num = 20, plot.title = "Outward flights")
 maps.flights(points.old.out, points.new.out, seed = 1, flight.num = 20, plot.title = "Outward flights")
