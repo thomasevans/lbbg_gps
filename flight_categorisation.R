@@ -175,14 +175,14 @@ lst <- list()
         
         #Change in speed from previous points
         d.dif <- function(ia, ds = ds){
-          mean(ds[(ia + 1):(ia + 2)]) / mean(ds[(ia - 1):(ia - 3)])
+          mean(ds[(ia ):(ia + 2)]) / mean(ds[(ia - 1):(ia - 3)])
         }
 #         z <- 6
         
-        thresh <- 0.5
+        thresh <- 0.3
         
         #apply function
-        x <- sapply(c(2:(length(ds)-3)), d.dif, ds = ds)
+        x <- sapply(c(3:(length(ds)-2)), d.dif, ds = ds)
         if (x[1] < thresh) {z <- thresh}else{ z <- x[1]}
         x <- c(rep(z,1),x,rep(x[length(x)],2))   #include first 3 points and final points
         
@@ -292,7 +292,7 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #Output data to database #####
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
-sqlSave(gps.db, flight.info, tablename = "lund_flights_commuting_15",
+sqlSave(gps.db, flight.info, tablename = "lund_flights_commuting_19",
         append = FALSE, rownames = FALSE, colnames = FALSE,
         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
         test = FALSE, nastring = NULL,
