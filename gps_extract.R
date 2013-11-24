@@ -9,7 +9,7 @@
 
 #Extract GPS points
 gps.extract <- function(i, start.t, end.t){
-  
+
   # i - device info serial
   # start.t - first point date-time
   # end.t - final point date_time
@@ -45,11 +45,21 @@ gps.extract <- function(i, start.t, end.t){
                "# AND g.date_time <= #", end.t, "# ", sep = "")
   
   
-  gps.sub <- sqlQuery(gps.db2, query= gsub("\n", " ", paste(q1a, q1c, q1b, sep=""))
+  out <- tryCatch(
+{
+  gps.sub <- sqlQuery(gps.db2,
+                      query = gsub("\n", " ", paste(q1a, q1c, q1b, sep=""))
                       ,as.is=TRUE)
+  return(gps.sub)
+},
+  error = function(cond){  gps.sub <- sqlQuery(gps.db2,
+                                               query = gsub("\n", " ", paste(q1a, q1c, q1b, sep=""))
+                                               ,as.is=TRUE)
+                           return(gps.sub)}
+)
   
   odbcClose(gps.db2)
   
-  return(gps.sub)
+  return(out)
 }
 # 
