@@ -158,7 +158,7 @@ lst <- list()
       ds <- ds[ix:length(ds)]
       
       # If we have less than 7 values left, we must stop
-      if(length(ds) < 7){ #print("ok")}
+      if(length(ds) < 6){ #print("ok")}
         data.flight <- cbind(flights.com$flight_id[i],
                              points$device_info_serial[1])
                              if(dir == 1){
@@ -175,18 +175,21 @@ lst <- list()
         
         #Change in speed from previous points
         d.dif <- function(ia, ds = ds){
-          mean(ds[(ia+1):(ia+3)]) / mean(ds[(ia-1):(ia-3)])
+          mean(ds[(ia + 1):(ia + 2)]) / mean(ds[(ia - 1):(ia - 3)])
         }
 #         z <- 6
+        
+        thresh <- 0.5
+        
         #apply function
-        x <- sapply(c(4:(length(ds)-4)), d.dif, ds = ds)
-        if (x[1] < 0.5) {z <- 0.5}else{ z <- x[1]}
-        x <- c(rep(z,3),x,rep(x[length(x)],3))   #include first 3 points and final points
+        x <- sapply(c(2:(length(ds)-3)), d.dif, ds = ds)
+        if (x[1] < thresh) {z <- thresh}else{ z <- x[1]}
+        x <- c(rep(z,1),x,rep(x[length(x)],2))   #include first 3 points and final points
         
 #         s <- TRUE
         p.stop <- NULL
         for(it in 1:length(x)){
-          if(x[it] < 0.5 ){
+          if(x[it] < thresh ){
 #             s <- FALSE
             p.stop <- it
             break
@@ -210,7 +213,7 @@ lst <- list()
             if(is.null(p.stop)){
               time.start <- points$date_time[1]
             } else {
-                time.start <- points$date_time[n - p.stop]
+                time.start <- points$date_time[n - p.stop + 1]
               } 
         }
         
@@ -235,6 +238,15 @@ lst <- list()
     #     data.flight <- cbind(flights.com$trip_id[i],points$device_info_serial[1],flights.com$start_time[i],flights.com$end_time[i])
     }
     }
+  
+  # If for some reason the end time is earlier than the start time, use original classification values
+  if(data.flight[3] > data.flight[4]){
+    data.flight <- cbind(
+      flights.com$flight_id[i],
+      points$device_info_serial[1],
+      flights.com$start_time[i],
+      flights.com$end_time[i])
+  }
   
 #   lst[[i]] <- list(data.flight)  
   list(data.flight)  
@@ -280,7 +292,7 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #Output data to database #####
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
-sqlSave(gps.db, flight.info, tablename = "lund_flights_commuting_5",
+sqlSave(gps.db, flight.info, tablename = "lund_flights_commuting_15",
         append = FALSE, rownames = FALSE, colnames = FALSE,
         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
         test = FALSE, nastring = NULL,
