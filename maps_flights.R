@@ -63,7 +63,7 @@ maps.flights <- function(points.data = NULL, seed = 2, plot.title = "", all.flig
   par(mfrow=c(1,1))
   par( mar = c(5, 4, 4, 2))
   #   par(bg = 'white')
-  
+#   plot(gadm, xlim = c(17,17.5), ylim = c(57,58))
   plot(gadm, xlim = c.xlim,
        ylim = c.ylim, col="white", bg = "grey")
   #   rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col = 
