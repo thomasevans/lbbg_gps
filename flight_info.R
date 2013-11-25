@@ -33,6 +33,10 @@ flight.info <- function(id, type = c("com","default")){
 # type - whether you want to analyse flight as 'commuting' flight or basic flight classification
 #   ?require
   
+#   id <- 3005
+#   type <- "com"
+  id <- as.numeric(as.character(id))
+  
   require(fossil)   #required for distance calculations
   require(circular) #required for some circular calculations
   source("gps_extract.R")   # Get function to extract GPS data
@@ -74,7 +78,7 @@ flight.info <- function(id, type = c("com","default")){
   
   # For info on 'tryCatch' error handling function, see: http://stackoverflow.com/questions/12193779/how-to-write-trycatch-in-r
   out <- tryCatch({
-  
+#   type = "com"
   if( type == "com"){
   flight_par <- sqlQuery(gps.db3,
                          query = gsub("\n", " ", paste(q1, id, q2c, sep=""))
@@ -245,11 +249,14 @@ flight.info <- function(id, type = c("com","default")){
   
   
   # Output a vector for the bird of flight id
-  return(data.out)
-  }
+#   x <- function(data.out){
+#     return(data.out)
+#   }
+#   x(data.out)
   
-                  ,
-                  error = function(cond){rep("NA",31)}
+  data.out
+  },
+                  error = function(cond){rep(NA, 31)}
   )
   return(out)
   # End function
