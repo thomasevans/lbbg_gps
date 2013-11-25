@@ -32,7 +32,7 @@ str(trips)
 trips  <-  subset(trips,interval_min < 800)
 trips  <-  subset(trips,dist_max > 2)   # Only include trips where maximum distance is at least 2 km
 
-trips.g  <-  subset(trips,gotland ==1)   # Only include trips where maximum distance is at least 2 km
+trips.g  <-  subset(trips,gotland == 1)   # Only include trips visiting Gotland
 
 
 summary(trips.g$duration_s < 12*60*60)
