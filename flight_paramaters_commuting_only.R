@@ -30,7 +30,8 @@ flights.com <- sqlQuery(gps.db, query=
   FROM lund_flights_commuting AS f
   ORDER BY f.flight_id ASC;")
 
-
+# Close connection
+odbcClose(gps.db)
 
 
 
@@ -163,7 +164,7 @@ message("After exporting table to DB, edit table in Access to define data-types 
 
 odbcCloseAll()
 
-
-fails_1 <- fails
-  save(fails_1, file = "fails1.RData")
+# 
+# fails_1 <- fails
+#   save(fails_1, file = "fails1.RData")
 
