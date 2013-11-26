@@ -10,6 +10,7 @@
 #Extract GPS points
 gps.extract <- function(i, start.t, end.t){
 
+  gc()
   # i - device info serial
   # start.t - first point date-time
   # end.t - final point date_time
@@ -59,7 +60,7 @@ gps.extract <- function(i, start.t, end.t){
 )
   
   odbcClose(gps.db2)
-  
+
   return(out)
 }
 # 

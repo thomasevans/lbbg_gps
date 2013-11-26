@@ -32,9 +32,11 @@ flight.info <- function(id, type = c("com","default")){
 # id - flight_id
 # type - whether you want to analyse flight as 'commuting' flight or basic flight classification
 #   ?require
-  
+#   id <- 3038
 #   id <- 1
 #   type <- "com"
+  
+  gc()
   id <- as.numeric(as.character(id))
   
   require(fossil)   #required for distance calculations
@@ -95,6 +97,7 @@ flight.info <- function(id, type = c("com","default")){
                        flight_par$start_time,
                        flight_par$end_time)
     
+#   setBreakpoint()
   # Query the gull db to extract bird_id, nest_id, and nest locations
   nest_loc <- sqlQuery(gps.db3, query= 
                          gsub("\n", " ", paste(nq1, sub01$device_info_serial[1], nq2, sep=""))
@@ -256,11 +259,12 @@ flight.info <- function(id, type = c("com","default")){
 #   }
 #   x(data.out)
   
-  data.out
+    return(data.out)
   },
                   error = function(cond){rep(NA, 31)}
   )
 #   odbcClose(gps.db3)  # close any database connections
+#   gc()
   return(out)
   # End function
 }
