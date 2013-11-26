@@ -23,7 +23,7 @@
 # gps$speed_accuracy[1:100]
 # gps$bearing_next[1:100]
 # 
-# id = 5
+# id = 1
 # type = "com"
 #   install.packages("circular")
 
@@ -99,6 +99,8 @@ flight.info <- function(id, type = c("com","default")){
   nest_loc <- sqlQuery(gps.db3, query= 
                          gsub("\n", " ", paste(nq1, sub01$device_info_serial[1], nq2, sep=""))
                        ,as.is=TRUE)
+  
+  odbcClose(gps.db3)
   
 #   sub01 <- subset(gps, flight_id == id)
   
