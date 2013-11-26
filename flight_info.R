@@ -258,7 +258,7 @@ flight.info <- function(id, type = c("com","default")){
   },
                   error = function(cond){rep(NA, 31)}
   )
-  odbcCloseAll()  # close any database connections
+#   odbcClose(gps.db3)  # close any database connections
   return(out)
   # End function
 }
