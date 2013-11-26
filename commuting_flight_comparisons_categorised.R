@@ -315,6 +315,12 @@ par(mfrow = c(1,2))
 hist(flights$rho[outward],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,450), xlim = c(0,1), main = "Outward")
 hist(flights$rho[inward] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,450), xlim = c(0,1), main = "Inward")
 dev.off()
+str(flights)
+
+par(mfrow = c(1,2))
+b.bar <- seq(0,1,0.05)
+hist(flights$straigtness[outward],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,550), xlim = c(0,1), main = "Outward", breaks = b.bar)
+hist(flights$straigtness[inward] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,550), xlim = c(0,1), main = "Inward", breaks = b.bar)
 
 
 sd(flights$rho[inward])
@@ -341,8 +347,21 @@ flights$alt_med[1:20]
 flights$alt_mean[1:20]
 
 par(mfrow = c(1,2))
-hist(flights$alt_mean[outward & (flights$alt_med > -50) & flights$alt_med < 500 ],xlab = "Altitude (m)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",  main = "Outward", xlim = c(-20,150), ylim = c(0,150),breaks=80)
-hist(flights$alt_mean[inward& (flights$alt_med > -50) & flights$alt_med < 500 ] ,xlab = "Altitude (m)", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",  main = "Inward", xlim = c(-20,150), ylim = c(0,150),breaks="Scott")
+b.break <- seq(-1000,1000,10)
+hist(flights$alt_mean[outward & (flights$alt_med > -50) & flights$alt_med < 500],
+     xlab = "Altitude (m)",las = 1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",
+     main = "Outward", xlim = c(-20,150), ylim = c(0,150), breaks =  b.break)
+hist(flights$alt_mean[inward &  (flights$alt_med > -50) & flights$alt_med < 500],
+     xlab = "Altitude (m)", las = 1, cex.axis = 1.0, cex.lab = 1.1, col = "red",
+     main = "Inward", xlim = c(-20,150), ylim = c(0,150), breaks =  b.break)
+
+# min(flights$alt_med, na.rm = TRUE)
+
+par(mfrow = c(1,2))
+b.break <- seq(-100,1000,10)
+hist(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ],xlab = "Altitude (m)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",  main = "Outward", xlim = c(-20,150), ylim = c(0,150),breaks = b.break)
+hist(flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ] ,xlab = "Altitude (m)", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",  main = "Inward", xlim = c(-20,150), ylim = c(0,150),breaks =  b.break)
+
 
 
 mean(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ])
@@ -448,6 +467,8 @@ mod_cor <- list()
 for(i in 1:7){
   mod_cor[[i]] <- update(mod[[2]],correlation = corARMA(q = i), method="ML")
 }
+
+mod_ML <- list()
 # Refit base model by ML
 mod_ML[[1]] <- update(mod[[2]], method="ML")
 
