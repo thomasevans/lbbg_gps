@@ -73,11 +73,7 @@ lst <- list()
 #     for(i in c(1:10)){
       
 system.time({
-#   lst <- lapply(flight_id[1:10], flight.info, type = "com")
-#              })
-# warnings()
-
-lst <- foreach(i = c(1:10)) %dopar%{
+  lst <- foreach(i = c(1:10)) %dopar%{
 
   #   source("flight_info.R")
   #calculate the trip numbers for the device i. i.e. the function 
@@ -103,7 +99,7 @@ lst <- foreach(i = c(1:10)) %dopar%{
   x <- t(x)
 
   #output data as list (this will be appended to the global list, lst.
-  list(x)   
+  return(x)   
 #   lst[[i]] <- x
 } #end of foreach functions
 }) #end of things being timed by system.time
