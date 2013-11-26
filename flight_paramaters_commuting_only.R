@@ -75,6 +75,7 @@ lst <- list()
 system.time({
   lst <- foreach(i = c(1:10)) %dopar%{
 
+    gc()
   #   source("flight_info.R")
   #calculate the trip numbers for the device i. i.e. the function 
   #which we wish to run for each device.   
@@ -83,6 +84,10 @@ system.time({
   # i <-  2
   x <- flight.info(flight_id[i], type = "com")
   
+#     system.time({test <- lapply(flight_id[1:10], flight.info, type = "com")})
+#     ?showConnections
+#   warnings()
+#   ?gc
   # If it fails try again ten times, wait 2 s between each try then give up
    if(is.na(x[3])){
     count <- 0
@@ -90,14 +95,14 @@ system.time({
       source("flight_info.R")  # load function again
       # Not sure whey there's an error, but probably some how related to database access,     
       # waiting some time may help with this
-      Sys.sleep(2)
+      Sys.sleep(1)
       x <- flight.info(as.character(flight_id[i]), type = "com")
       count <- count + 1
     }  
   }
       
   x <- t(x)
-
+#   odbcClose(gps.db)
   #output data as list (this will be appended to the global list, lst.
   return(x)   
 #   lst[[i]] <- x
