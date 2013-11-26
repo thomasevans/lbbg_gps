@@ -27,7 +27,7 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 # Get commuting flights table
 flights.com <- sqlQuery(gps.db, query=
                        "SELECT DISTINCT f.*
-  FROM lund_flights_commuting_final AS f
+  FROM lund_flights_commuting AS f
   ORDER BY f.flight_id ASC;")
 
 
@@ -161,7 +161,7 @@ sqlSave(
   
 message("After exporting table to DB, edit table in Access to define data-types and primary keys")
 
-
+odbcCloseAll()
 
 
 fails_1 <- fails
