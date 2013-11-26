@@ -224,7 +224,7 @@ names(wind.info) <- c("wind.speed", "wind.dir")
 # Add calculated wind info to flight.characteristics 
 flights.characteristics <- cbind(flights.characteristics, wind.info)
 
-wind.origin <- ((flights.characteristics$wind.dir+180) %% 360)
+wind.origin <- ((flights.characteristics$wind.dir + 180) %% 360)
 
 
 # Add wind origin direction to table.
@@ -238,4 +238,7 @@ sqlSave(gps.db, flights.characteristics, tablename = "lund_flight_com_weather_pa
         append = FALSE, rownames = FALSE, colnames = FALSE,
         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
         test = FALSE, nastring = NULL, varTypes = 
-          c(start_time = "datetime"))
+          c(start_time = "datetime")
+        )
+
+odbcCloseAll()  # close any database connections
