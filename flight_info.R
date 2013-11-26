@@ -33,7 +33,7 @@ flight.info <- function(id, type = c("com","default")){
 # type - whether you want to analyse flight as 'commuting' flight or basic flight classification
 #   ?require
   
-#   id <- 3005
+#   id <- 1
 #   type <- "com"
   id <- as.numeric(as.character(id))
   
