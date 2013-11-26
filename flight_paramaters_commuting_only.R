@@ -41,79 +41,46 @@ odbcClose(gps.db)
 flight_id <- sort(flights.com$flight_id)
 f <- length(flight_id)
 
+# source("flight_info.R")
 
-#Run function 'flight.info' in parallel########
-require(foreach)
-require(doParallel)
+gc()
 
-#use x cores, general solution for any windows machine.
-# cl <- makeCluster(parallel::detectCores())     
-cl <- makeCluster(8)
-#start the parellel session of R; the 'slaves', which will run the analysis.
-registerDoParallel(cl)   
 
-source("flight_info.R")
-# warnings()
-#this maybe neccessary so that the clustered instances or R have the
-#required vairables/ functions in their scope, i.e. those functions
-#and vairables which are referred to within the 'foreach' function.
-clusterExport(cl, c("flight_id", "flight.info"))   
-# ?clusterExport
-# lst <- replicate(10, rep(NA, 31), simplify = FALSE)
-# str(lst)
-# vector("list", 10)
-# rep(NA, 31)
-lst <- list()
-# ?list
-# pb <- txtProgressBar(min = 0, max = f, style = 2)
-# ?txtProgressBar
-# system.time({lst <- foreach(i = seq(along = flight_id )) %dopar%{
-# system.time({
-#   for(i in seq(along = flight_id)){
-#     for(i in c(1:10)){
-      
-system.time({
-  lst <- foreach(i = c(1:10)) %dopar%{
 
-    gc()
-  #   source("flight_info.R")
-  #calculate the trip numbers for the device i. i.e. the function 
-  #which we wish to run for each device.   
-    
-#   x <-  flight.info(12247, type = "com")
-  # i <-  2
-  x <- flight.info(flight_id[i], type = "com")
+fun.wrap <- function(id){
+  source("flight_info.R")
+  x <- flight.info(id, type = "com")
   
-#     system.time({test <- lapply(flight_id[1:10], flight.info, type = "com")})
-#     ?showConnections
-#   warnings()
-#   ?gc
-  # If it fails try again ten times, wait 2 s between each try then give up
-   if(is.na(x[3])){
+  if(is.na(x[3])){
+    # If it fails try again ten times, wait 1 s between each try then give up
     count <- 0
-    while((is.na(x[3])) & (count < 10)){
+    while((is.na(x[3])) & (count < 20)){
       source("flight_info.R")  # load function again
       # Not sure whey there's an error, but probably some how related to database access,     
       # waiting some time may help with this
       Sys.sleep(1)
-      x <- flight.info(as.character(flight_id[i]), type = "com")
+      x <- flight.info(as.character(id), type = "com")
       count <- count + 1
-    }  
+    }
   }
-      
+  
   x <- t(x)
-#   odbcClose(gps.db)
+  gc()
   #output data as list (this will be appended to the global list, lst.
-  return(x)   
-#   lst[[i]] <- x
-} #end of foreach functions
-}) #end of things being timed by system.time
-# str(lst)
-# warnings()
+  return(x)
+}
 
-#close cluster
-stopCluster(cl)
-#Time taken one time  ca. 450 s (< 10 minutes)
+
+
+lst <- list()
+system.time({
+for(i in 1:f){
+  id <- flight_id[i]
+  lst[[i]] <- fun.wrap(id)
+#   odbcCloseAll()
+}
+})
+
 str(lst)
 
 
