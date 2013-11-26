@@ -57,7 +57,7 @@ fun <- function(x){
   paste(" ", x, ",", sep = "")
 }
 # ?paste
-q2 <- paste(sapply(flights$flight_id,fun), collapse = "")                            
+q2 <- paste(sapply(flights$flight_id, fun), collapse = "")                            
 q3 <- ")
 ORDER BY f.flight_id ASC;"
 
