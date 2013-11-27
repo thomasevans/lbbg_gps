@@ -81,6 +81,8 @@ for(i in 1:f){
 }
 })
 
+save(lst, file = "com_fl_par_data.RData")
+
 str(lst)
 
 
@@ -135,9 +137,14 @@ fx <- function(x){
 }
 
 flights2 <- cbind(sapply(flights[,c(1,2)], fx), flights[,c(3,4)],sapply(flights[,5:31], fx))
+# summary(is.na(flights2$flight_id))
 
 
 #output data to database##################
+
+# Re-open RODBC channel
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+
 
 #export flight information to the database
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
