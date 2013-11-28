@@ -250,7 +250,8 @@ flights.combined   <- flights.combined[order(flights.combined$trip_id),]
 logit <- function(x){
   if(x <1.000000000000001 & x > -0.00000000000001){   #Return NAs for values outside of range 0 - 1, with small tollerance either way.
     x.new <- 0.99999999999*x    #Bring all values in slightly, so that values of 1.0 can be processed.
-    x.new[x.new == 0] <- 0.0000000000001
+#     x.new[x.new == 0] <- 0.0000000000001
+    x.new[x.new == 0] <- 0.001
     x.logit <- log(x.new/(1-x.new))
     return(x.logit)}
   else return(NA)
@@ -312,8 +313,9 @@ t.test(flights.in$speed_inst_mean,flights.out$speed_inst_mean, paired = TRUE)
 # Rho comparison ####
 win.metafile("Out_in_straightness_comparison.wmf")
 par(mfrow = c(1,2))
-hist(flights$rho[outward],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,450), xlim = c(0,1), main = "Outward")
-hist(flights$rho[inward] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,450), xlim = c(0,1), main = "Inward")
+b.break <- seq(0,1,0.05)
+hist(flights$rho[outward],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", ylim = c(0,500), xlim = c(0,1), main = "Outward", breaks = b.break)
+hist(flights$rho[inward] ,xlab = "Straightness", las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", ylim = c(0,500), xlim = c(0,1), main = "Inward", breaks = b.break)
 dev.off()
 str(flights)
 
@@ -347,7 +349,7 @@ flights$alt_med[1:20]
 flights$alt_mean[1:20]
 
 par(mfrow = c(1,2))
-b.break <- seq(-1000,1000,10)
+b.break <- seq(-10000,10000,10)
 hist(flights$alt_mean[outward & (flights$alt_med > -50) & flights$alt_med < 500],
      xlab = "Altitude (m)",las = 1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",
      main = "Outward", xlim = c(-20,150), ylim = c(0,150), breaks =  b.break)
@@ -385,6 +387,8 @@ t.test(flights$alt_max[outward & (flights$alt_max > -50) & flights$alt_max < 500
 # ?median
 wilcox.test(flights$alt_max[outward & (flights$alt_max > -50) & flights$alt_max < 500 ],flights$alt_max[inward & (flights$alt_max > -50) & flights$alt_max < 500 ])
 
+wilcox.test(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ],flights$alt_max[inward & (flights$alt_med > -50) & flights$alt_med < 500 ])
+
 
 
 t.test(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med < 500 ],flights$alt_med[inward& (flights$alt_med > -50) & flights$alt_med < 500 ])
@@ -397,13 +401,14 @@ wilcox.test(flights$alt_med[outward & (flights$alt_med > -50) & flights$alt_med 
 # Rho - wind condition -----
 b.spec <- seq(0,1,0.05)
 #Graphing non-transformned data
+, ylim = c(0,150)
 par(mfrow = c(2,3))
-hist(flights.out$rho[flights.out$wind.type == "tail"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",xlim = c(0,1), ylim = c(0,110), breaks = b.spec, main = "Out - tail")
-hist(flights.out$rho[flights.out$wind.type == "head"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",xlim = c(0,1), ylim = c(0,110), breaks = b.spec, main = "Out - head")
-hist(flights.out$rho[flights.out$wind.type == "side"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",xlim = c(0,1), ylim = c(0,110), breaks = b.spec, main = "Out - side")
-hist(flights.in$rho[flights.in$wind.type == "tail"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",xlim = c(0,1), ylim = c(0,110), breaks = b.spec,main = "In - tail")
-hist(flights.in$rho[flights.in$wind.type == "head"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",xlim = c(0,1), ylim = c(0,110), breaks = b.spec,main = "In - head")
-hist(flights.in$rho[flights.in$wind.type == "side"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",xlim = c(0,1), ylim = c(0,110), breaks = b.spec,  main = "In - side")
+hist(flights.out$rho[flights.out$wind.type == "tail"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",xlim = c(0,1), breaks = b.spec, main = "Out - tail")
+hist(flights.out$rho[flights.out$wind.type == "head"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",xlim = c(0,1), breaks = b.spec, main = "Out - head")
+hist(flights.out$rho[flights.out$wind.type == "side"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue",xlim = c(0,1), breaks = b.spec, main = "Out - side")
+hist(flights.in$rho[flights.in$wind.type == "tail"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",xlim = c(0,1), breaks = b.spec,main = "In - tail")
+hist(flights.in$rho[flights.in$wind.type == "head"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",xlim = c(0,1), breaks = b.spec,main = "In - head")
+hist(flights.in$rho[flights.in$wind.type == "side"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",xlim = c(0,1), breaks = b.spec,  main = "In - side")
 
 
 #logit transform data first
@@ -427,6 +432,26 @@ hist(flights.in.rho[flights.in$wind.type == "tail"],xlab = "Straightness",las=1,
 hist(flights.in.rho[flights.in$wind.type == "head"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",xlim = c(-4,8), breaks = b.spec,main = "In - head")
 hist(flights.in.rho[flights.in$wind.type == "side"],xlab = "Straightness",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red",xlim = c(-4,8), breaks = b.spec,  main = "In - side")
 
+par(mfrow=c(1,1))
+plot(flights.in.rho[flights.in$wind.type == "side"]~ 
+     flights.in$tcdceatm[flights.in$wind.type == "side"])
+abline(lm(flights.in.rho[flights.in$wind.type == "side"]~ 
+            flights.in$tcdceatm[flights.in$wind.type == "side"]))
+
+plot(flights.in.rho[flights.in$wind.type == "head"]~ 
+       flights.in$tcdceatm[flights.in$wind.type == "head"])
+abline(lm(flights.in.rho[flights.in$wind.type == "head"]~ 
+            flights.in$tcdceatm[flights.in$wind.type == "head"]))
+
+plot(flights.in.rho[flights.in$wind.type == "tail"]~ 
+       flights.in$tcdceatm[flights.in$wind.type == "tail"])
+abline(lm(flights.in.rho[flights.in$wind.type == "tail"]~ 
+            flights.in$tcdceatm[flights.in$wind.type == "tail"]))
+
+plot(flights.out.rho[flights.out$wind.type == "tail"]~ 
+       flights.out$tcdceatm[flights.out$wind.type == "tail"])
+abline(lm(flights.out.rho[flights.out$wind.type == "tail"]~ 
+            flights.out$tcdceatm[flights.out$wind.type == "tail"]))
 
 
 device_info_serial <- as.factor(flights.combined$device_info_serial)
@@ -523,15 +548,15 @@ t(mod_ML_AIC)
 min(mod_ML_AIC)
 
 
-summary(mod_ML[[7]])
-anova(mod_ML[[7]])
+summary(mod_ML[[11]])
+anova(mod_ML[[11]])
 
-anova(mod_ML[[7]],mod_ML[[9]])
+# anova(mod_ML[[11]],mod_ML[[9]])
 
 # Model 7 has lowest AIC value
 
 # Refit final model by REML
-mod_final <- update(mod_ML[[7]], method="REML")
+mod_final <- update(mod_ML[[11]], method="REML")
 summary(mod_final)
 anova(mod_final)
 
@@ -546,39 +571,40 @@ plot( ACF(mod_final, maxLag = 50, resType = "n"), alpha = 0.01)
 
 # Get p values for model terms
 # cloud
-anova(mod_ML[[7]], mod_ML[[9]])
+anova(mod_ML[[11]], mod_ML[[16]])
 
 # Wind
-anova(mod_ML[[7]], mod_ML[[11]])
+anova(mod_ML[[11]], mod_ML[[7]])
 
 # Flight.type
-anova(mod_ML[[7]], mod_ML[[13]])
+anova(mod_ML[[11]], mod_ML[[15]])
 
-# All main effects (comparing to null model)
-anova(mod_ML[[7]],mod_ML[[17]])
+# Final model (comparing to null model)
+anova(mod_ML[[11]],mod_ML[[17]])
 
 
 summary(mod_final)
+inc <- 3.708102
 
 # Reduction in straightness for outward vs. inward flights
--(anti.logit(3.333813) - anti.logit(3.333813-0.895545))
+-(anti.logit(inc) - anti.logit(inc-0.651881))
 #[1] -0.04587149
 
 # side vs head wind
--(anti.logit(3.333813) - anti.logit(3.333813+0.182591))
+-(anti.logit(inc) - anti.logit(inc+0.182591))
 # [1] 0.005580172
 
 # tail vs head wind
--(anti.logit(3.333813) - anti.logit(3.333813+0.013179))
+-(anti.logit(inc) - anti.logit(inc+0.013179))
 # [1] 0.0004354429
 
 # cloud
-anti.logit(3.333813) - anti.logit(3.333813*-0.004016)
+anti.logit(inc) - anti.logit(inc*-0.003872)
 
 -0.004016
 
 # grand mean
-anti.logit(3.333813)
+anti.logit(inc)
 
 # Get R squared values
 library(MuMIn)
@@ -598,56 +624,64 @@ sort(flights.combined$alt_med)[1:100]
 # Inspect highest values.
 par(mfrow=c(1,1))
 hist(rev(sort(flights.combined$alt_med))[1:200],breaks = 80)
-
+abline(v = 150)
+hist((sort(flights.combined$alt_med))[1:200],breaks = 80)
+abline(v = -10)
 # Maybe sensible to exclude values > 100 and < -10 - outlying values potentially leading from GPS errors
 # Make a filter to this effect
-f <- flights.combined$alt_med < 200  &   flights.combined$alt_med > -10
+f <- flights.combined$alt_med < 150  &   flights.combined$alt_med > -20
 
 # Transformation
 # Strong right-hand skew
 hist(flights.combined$alt_med[f])
 # log - too strong, now left hand skew
-hist(log(flights.combined$alt_med[f]))
-hist(log10(flights.combined$alt_med[f]))
+hist(log(flights.combined$alt_med[f]+20))
+hist(log10(flights.combined$alt_med[f]+20))
 # ?log
 # square-root - better
-hist(sqrt(flights.combined$alt_med[f] + 10))
+hist(sqrt(flights.combined$alt_med[f] + 20))
 # cubed-root - best apparently, also close to Boxcox recomendation
-hist((flights.combined$alt_med[f]+10)^(1/3))
-hist((flights.combined$alt_med[f]+10)^(1/4))  # This may relate to the wind-shear exponent
+hist((flights.combined$alt_med[f]+20)^(1/3))
+hist((flights.combined$alt_med[f]+20)^(1/4))  # This may relate to the wind-shear exponent
+hist((flights.combined$alt_med[f]+20)^(0.10))  # This may relate to the wind-shear exponent
+
 # hist((flights.combined$alt_med[f]+10)^(0.1))
 
 
 library(MASS)
 # intercept only model for testing here - ideally do on final model though
-mod <- lm((flights.combined$alt_med[f]+10) ~ 1)
+mod <- lm((flights.combined$alt_med[f]+20) ~ 1)
 summary(mod)
+mod
 boxcox(mod, lambda = seq(.1, 0.45, len = 20))
+# 95% CI includes zero, therefor the log transform is selected.
+
 
 # Transformed vairable for further analysis
-alt_trans <- (flights.combined$alt_med[f]+10)^(1/4)
+alt_trans <- log10(flights.combined$alt_med[f]+20)
 
 
 names(flights.combined)
 
-
+range(alt_trans)
 
 # Histograms to show data - transformed
 par(mfrow = c(2,3))
-b.fix <- seq(1,4,0.25)
-hist((flights.combined$alt_med[f & flights.combined$wind.type == "tail" & flights.combined$flight.type == "out"]+10)^(1/4), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = b.fix, main = "Out - tail")
-hist((flights.combined$alt_med[f & flights.combined$wind.type == "side" & flights.combined$flight.type == "out"]+10)^(1/4), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = b.fix, main = "Out - side")
-hist((flights.combined$alt_med[f & flights.combined$wind.type == "head" & flights.combined$flight.type == "out"]+10)^(1/4), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = b.fix, main = "Out - head")
+b.fix <- seq(0,2.3,0.1)
+hist((alt_trans[flights.combined$wind.type[f] == "tail" & flights.combined$flight.type[f] == "out"]),xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = b.fix, xlim = range(alt_trans),  main = "Out - tail")
+hist((alt_trans[flights.combined$wind.type[f] == "side" & flights.combined$flight.type[f] == "out"]),xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = b.fix, xlim = range(alt_trans),  main = "Out - side")
+hist((alt_trans[flights.combined$wind.type[f] == "head" & flights.combined$flight.type[f] == "out"]),xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = b.fix, xlim = range(alt_trans),  main = "Out - head")
 
-hist((flights.combined$alt_med[f & flights.combined$wind.type == "tail" & flights.combined$flight.type == "in"]+10)^(1/4), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", breaks = b.fix, main = "In - tail")
-hist((flights.combined$alt_med[f & flights.combined$wind.type == "side" & flights.combined$flight.type == "in"]+10)^(1/4), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", breaks = b.fix, main = "In - side")
-hist((flights.combined$alt_med[f & flights.combined$wind.type == "head" & flights.combined$flight.type == "in"]+10)^(1/4), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", breaks = b.fix, main = "In - head")
+hist((alt_trans[flights.combined$wind.type[f] == "tail" & flights.combined$flight.type[f] == "in"]),xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", breaks = b.fix, xlim = range(alt_trans),  main = "In - tail")
+hist((alt_trans[flights.combined$wind.type[f] == "side" & flights.combined$flight.type[f] == "in"]),xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", breaks = b.fix, xlim =range(alt_trans),  main = "In - side")
+hist((alt_trans[flights.combined$wind.type[f] == "head" & flights.combined$flight.type[f] == "in"]),xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "red", breaks = b.fix, xlim = range(alt_trans),  main = "In - head")
+
 
 
 #Histograms of non-transformed data
 
 par(mfrow = c(2,3))
-b.fix <- seq(-10,200,20)
+b.fix <- seq(-20,150,10)
 hist((flights.combined$alt_med[f & flights.combined$wind.type == "tail" & flights.combined$flight.type == "out"]), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = b.fix, main = "Out - tail")
 hist((flights.combined$alt_med[f & flights.combined$wind.type == "side" & flights.combined$flight.type == "out"]), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = b.fix, main = "Out - side")
 hist((flights.combined$alt_med[f & flights.combined$wind.type == "head" & flights.combined$flight.type == "out"]), ,xlab = "Altitude (trans)",las=1, cex.axis = 1.0, cex.lab = 1.1, col = "blue", breaks = b.fix, main = "Out - head")
@@ -673,8 +707,8 @@ wind.type <- as.factor(flights.combined$wind.type[f])
 cloud <- flights.combined$tcdceatm[f]
 
 # Transformed vairable for further analysis
-alt_trans <- (flights.combined$alt_med[f]+10)^(1/4)
-
+alt_trans <- log10(flights.combined$alt_med[f]+20)
+# log10
 
 # Full factorial model
 mod01 <- lme(alt_trans ~ flight.type * wind.type * cloud, random = ~1|device_info_serial/trip_id)
@@ -682,21 +716,21 @@ mod02 <- lme(alt_trans ~ flight.type * wind.type*cloud, random = ~1|device_info_
 anova(mod01,mod02)
 
 # Temporal autocorrelation structure
-plot(ACF(mod02, maxLag = 50),alpha=0.01)
+plot(ACF(mod01, maxLag = 50), alpha = 0.01)
 # ?corARMA
 mod_cor <- list()
 i <- 1
 for(i in 1:7){
  mod_cor[[i]] <- update(mod02, correlation = corARMA(q = i))
 }
-mod_cor_aic <- NULL
-for(i in 1:7){
-  mod_cor_aic[i] <- AIC(mod_cor[[i]])
-}
-mod_cor_aic
-AIC(mod02)
-mod01_cor <- update(mod01, correlation = corARMA(q = 1))
-anova(mod01,mod01_cor)
+mod_1_cor <- list()
+mod_1_cor[[1]] <- update(mod01, correlation = corARMA(q = 1))
+mod_1_cor[[2]] <- update(mod01, correlation = corARMA(q = 2))
+
+
+AIC(mod01,mod02,mod_cor[[1]],mod_cor[[2]],mod_cor[[3]],mod_1_cor[[1]], mod_1_cor[[2]])
+
+# Choose model 01 (mod01), including nested trip effect, but no autocorrelation structure
 
 
 # Model simplification
@@ -749,7 +783,7 @@ min(mods_ML_AIC)
 
 
 # Refit final model by REML
-mod_final <- update(mods_ML[[8]], method="REML")
+mod_final <- update(mods_ML[[13]], method="REML")
 summary(mod_final)
 anova(mod_final)
 
@@ -766,45 +800,71 @@ plot( ACF(mod_final, maxLag = 50, resType = "n"), alpha = 0.01)
 
 # Get p values for model terms
 # cloud
-anova(mods_ML[[8]], mods_ML[[10]])
+anova(mods_ML[[13]], mods_ML[[17]])
 # p = 0.0002
 
+# Wind type * cloud interaction
+anova(mods_ML[[13]], mods_ML[[14]])
+# p <.0001
+
 # Wind
-anova(mods_ML[[8]], mods_ML[[12]])
+anova(mods_ML[[13]], mods_ML[[17]])
 # p <.0001
 
 # Flight.type
-anova(mods_ML[[8]], mods_ML[[14]])
+anova(mods_ML[[13]], mods_ML[[4]])
 # p = 0.113
 
 # All main effects (comparing to null model)
-anova(mods_ML[[8]],mods_ML[[18]])
+anova(mods_ML[[13]],mods_ML[[18]])
 # p = <.0001
-
+# str(cloud)
 summary(mod_final)
 
+x <- 2
+
 fx <- function(x){
-  x <- x ^ 4
-  x - 10
+  x <- 10 ^ x
+  x <- x - 20
+  return(x)
 }
-# Reduction in altitude for outward vs. inward flights
-inc <- 2.3516817
-fx(inc) - fx(inc-0.0471570)
-# outward flights typicall at 2.38m > than inward flights
 
-# side vs head wind
-fx(inc) - fx(inc + 0.0525925)
-# 0.0525925
-# sidewinds altitude 2.829 m higher
 
-# tail vs head wind
-fx(inc + 0.3475488) - fx(inc) 
-#  0.3475488
-# Tailwind flights at 22.498 m higher than headwind flights
+inc <- 1.6513969
+cl.mean <- mean(cloud)
+
+# side vs head vs tail under mean cloud level
+# head:
+fx(inc + ((0 + (-0.0028193*cl.mean))*1 ) )
+
+# tail:
+fx(inc + ((0.1052224 + (-0.0028193*cl.mean))*0.561 ) )
+
+# side:
+fx(inc + ((-0.0867704 + (-0.0028193*cl.mean))*0.0028478 ) )
+
+
+intercept + (wind.type + cloud*cloud.level)*interaction
+
 
 # cloud
-fx(inc) - fx(inc * -0.0029123)
-# 30.585  - Flight is lower under cloudy conditions - how much a bit unsure how to interpret the coeficients here.
+
+# High cloud (2*mean) vs mean cloud
+# head:
+fx(inc + ((0 + (-0.0028193*cl.mean*2))*1 ) ) -
+  fx(inc + ((0 + (-0.0028193*cl.mean))*1 ) )
+
+# tail:
+fx(inc + ((0.1052224 + (-0.0028193*cl.mean*2))*0.561 ) ) -
+  fx(inc + ((0.1052224 + (-0.0028193*cl.mean*1))*0.561 ) )
+
+
+# side:
+fx(inc + ((-0.0867704 + (-0.0028193*cl.mean*2))*0.0028478 ) ) -
+  fx(inc + ((-0.0867704 + (-0.0028193*cl.mean*1))*0.0028478 ) ) 
+
+
+par(mfrow = c(1,1))
 plot(alt_trans~cloud)
 plot(fx(alt_trans)~cloud)
 abline(lm(alt_trans~cloud))
@@ -827,7 +887,7 @@ r.squaredGLMM(mod_final)
 
 
 # LMMs of straightness - r - windcondition ####
-
+par(mfrow=c(1,1))
 flights.combined.r <- sapply(flights.combined$straigtness, FUN = logit)
 hist(flights.combined.r)
 
@@ -859,10 +919,40 @@ trip <- as.factor(flights.combined$trip_id)
 device_id <- as.factor(as.character((device_info_serial)))
 
 library(nlme)
-
+# cloud.original <- cloud
+# cloud <- cl.th
 mod <- list()
 # Full factorial model
 mod[[1]] <- lme(r_straight ~ flight.type * wind.type* cloud, random = ~1|device_id/trip)
+
+
+###
+# mod.cl <- lme(r_straight ~ flight.type * wind.type* cloud, random = ~1|device_id/trip, method="ML")
+# t.cloud <- sapply((cloud/100),logit)
+# mod.t.cl <- lme(r_straight ~ flight.type * wind.type* t.cloud, random = ~1|device_id/trip, method="ML")
+# thresh <- function(x){
+#   if(x < 50) return(0) else return(1)
+# }
+# cl.th <- as.factor(sapply(cloud, thresh))
+# mod.cl.th <- lme(r_straight ~ flight.type * wind.type* cl.th, random = ~1|device_id/trip, method="ML")
+# 
+# mod.cl.poly <- lme(r_straight ~ flight.type * wind.type* cloud* cloud, random = ~1|device_id/trip, method="ML")
+# 
+# AIC(mod.cl.th)
+# 
+# summary(cl.th)
+# plot(r_straight ~ cl.th)
+# plot(r_straight ~ t.cloud)
+# plot(r_straight ~ cloud)
+# 
+# AIC(mod.cl,mod.t.cl,mod.cl.th,mod.cl.poly)
+# hist(t.cloud)
+# hist(cloud)
+# range(t.cloud)
+# range(cloud)
+# # logit(0)
+# logit(0.01)
+# sort(cloud)[1:100]
 
 # Removing nested random effect of foraging trip id
 mod[[2]] <- lme(r_straight ~ flight.type * wind.type* cloud, random = ~1|device_id)
@@ -877,7 +967,7 @@ plot(ACF(mod[[2]], maxLag = 100), alpha = 0.05, new = TRUE)
 # Refit model with different correlation lags
 mod_cor <- list()
 for(i in 1:7){
-  mod_cor[[i]] <- update(mod[[2]],correlation = corARMA(q = i), method="ML")
+  mod_cor[[i]] <- update(mod[[2]],correlation = corARMA(q = i))
 }
 
 mod_ML <- list()
@@ -892,13 +982,13 @@ for(i in 1:7){
 }
 min(x)
 x
-AIC(mod_ML[[1]])
+AIC(mod[[2]])
 
-model.full <- mod_cor[[4]]
+model.full <- mod[[2]]
 
 mod_ML <- list()
 # lag 4 has lowest AIC
-mod_ML[[1]] <- mod_cor[[4]]
+mod_ML[[1]] <- update(mod[[2]], method="ML")
 # Model simplification
 mod_ML[[2]] <- lme(r_straight ~ flight.type * wind.type + cloud, random = ~1|device_info_serial, method="ML")
 
@@ -941,13 +1031,13 @@ t(mod_ML_AIC)
 min(mod_ML_AIC)
 
 
-summary(mod_ML[[9]])
-anova(mod_ML[[9]])
+summary(mod_ML[[6]])
+anova(mod_ML[[6]])
 
 
 
 # Refit final model by REML
-mod_final <- update(mod_ML[[9]], method="REML")
+mod_final <- update(mod_ML[[6]], method="REML")
 summary(mod_final)
 anova(mod_final)
 
@@ -963,22 +1053,92 @@ plot( ACF(mod_final, maxLag = 50, resType = "n"), alpha = 0.01)
 
 # Get p values for model terms
 # cloud
-anova(mod_ML[[9]], mod_ML[[7]])
+anova(mod_ML[[6]], mod_ML[[9]])
 
 # Wind
-anova(mod_ML[[9]], mod_ML[[16]])
+anova(mod_ML[[6]], mod_ML[[10]])
 
 # Flight.type
-anova(mod_ML[[9]], mod_ML[[14]])
+anova(mod_ML[[6]], mod_ML[[13]])
+
+# Interaction
+anova(mod_ML[[6]], mod_ML[[7]])
+
 
 # All main effects (comparing to null model)  ########
-anova(mod_ML[[9]], mod_ML[[17]])
+anova(mod_ML[[6]], mod_ML[[17]])
 
 
 summary(mod_final)
-inc <- 3.426352
+inc <- 3.884219
+mean.cloud <- mean(cloud)
+mean.st <- mean(r_straight)
+anti.logit(mean(r_straight))
 # Reduction in straightness for outward vs. inward flights
--(anti.logit(inc) - anti.logit(inc-0.700548))
+# out mean cloud + tail wind
+# constand + windtype + interaction*(flighttype + cloud*cloud.level)
+calc <- inc + 0.345060 + (0.008207*(-0.927643 + (-0.006145 * mean.cloud)))
+anti.logit(calc)
+calc
+calc/mean.st
+x1 <- calc
+
+# out ... + head wind
+calc <- inc + 0 + (0.008207*(-0.927643 + (-0.006145 * mean.cloud)))
+anti.logit(calc)
+calc
+calc/mean.st
+
+# out + side wind
+calc <- inc + 0.312355 + (0.008207*(-0.927643 + (-0.006145 * mean.cloud)))
+anti.logit(calc)
+calc
+calc/mean.st
+
+
+
+
+# out 2 * mean cloud + tail wind
+# constand + windtype + interaction*(flighttype + cloud*cloud.level)
+calc <- inc + 0.345060 + (0.008207*(-0.927643 + (-0.006145 * 2*mean.cloud)))
+anti.logit(calc)
+calc
+calc/mean.st
+
+
+
+
+# in mean cloud + tail wind
+# constand + windtype + interaction*(flighttype + cloud*cloud.level)
+calc <- inc + 0.345060 + (1*(0 + (-0.006145 * mean.cloud)))
+anti.logit(calc)
+calc
+calc/mean.st
+x2 <- calc
+
+x1/x2
+
+# in mean 2 * cloud + tail wind
+# constand + windtype + interaction*(flighttype + cloud*cloud.level)
+calc <- inc + 0.345060 + (1*(0 + (-0.006145 * 2* mean.cloud)))
+anti.logit(calc)
+calc
+calc/mean.st
+
+
+# in mean  cloud + head wind
+# constand + windtype + interaction*(flighttype + cloud*cloud.level)
+calc <- inc + 0 + (1*(0 + (-0.006145 *  mean.cloud)))
+anti.logit(calc)
+calc
+calc/mean.st
+
+###
+
+anti.logit(inc + 0.008207*(-0.006145*mean.cloud - 0.927643))
+# In mean cloud
+anti.logit(inc + 1*(1*mean.cloud*-0.805 -0))
+
 #[1] -0.02998581
 
 # side vs head wind
