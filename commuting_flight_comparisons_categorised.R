@@ -299,7 +299,8 @@ sd(flights$speed_inst_mean[inward], na.rm = TRUE)
 
 
 par(mfrow = c(1,1))
-hist(flights.in$speed_inst_mean-flights.out$speed_inst_mean, main = "Speed difference between outward and inward flights",xlab = "Speed ms-1", col = "grey", cex.main = 0.8)
+b.break <- seq(-20,20,2.5)
+hist(flights.in$speed_inst_mean-flights.out$speed_inst_mean, main = "Speed difference between outward and inward flights",xlab = "Speed ms-1", col = "grey", cex.main = 0.8, breaks = b.break)
 x3 <- mean(flights.in$speed_inst_mean-flights.out$speed_inst_mean)
 abline(v = x3, lwd = 2, lty = 2, col = "red", main = "in")
 sd3 <- sd(flights.in$speed_inst_mean-flights.out$speed_inst_mean)
@@ -1044,6 +1045,8 @@ anova(mod_final)
 #Checking final model assumptions
 plot(mod_final,resid(.,type="p")~fitted(.)|device_info_serial)
 qqnorm(mod_final,~resid(.)|device_info_serial)
+qqnorm(mod_final)
+# ?qqnorm
 plot(mod_final)
 
 # See how autocorrelation structure looks - ok
