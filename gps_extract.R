@@ -28,8 +28,9 @@ gps.extract <- function(i, start.t, end.t){
    }
 
   q1a <- "SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude,
-  g.latitude, g.x_speed, g.y_speed, g.z_speed, g.positiondop,
-  g.speed_accuracy, c.bearing_next, c.bearing_prev, c.nest_gc_dist,
+  g.latitude, g.positiondop, g.speed_accuracy, g.vnorth,
+  g.veast, g.vdown, g.speed_3d, c.bearing_next,
+  c.bearing_prev, c.nest_gc_dist, c.calculated_speed,
   c.nest_bear, c.inst_ground_speed, c.p2p_dist,  c.time_interval_s,
   c.turning_angle, c.flight_class,  c.flight_id, g.altitude
   FROM gps_uva_tracking_speed_3d_limited AS g, lund_gps_parameters AS c
