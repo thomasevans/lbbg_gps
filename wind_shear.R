@@ -18,35 +18,29 @@
 # Calculating first uwnd.10m.flt.ht and vwn.10m.flt.ht
 # Then with simple Pythagoras theorem, the wind velocity
 # (square root of sum of the squared values for u and v)
-# (3^0.11)*5.69
-# 
-# ((43.5/10)^0.11)
-# ((17.5/10)^0.11)
 
-wind.shear <- function(uwind10, vwind10, ht.med){
+wind.shear <- function(uwind10, vwind10, height){
   
   # Remove negative altitude values, if x is 1 m or less, replace with 1 m
   # Leave NA values as is.
   rem.neg <- function(x){
     if(is.na(x) == FALSE){
-      if(x < 1) x <- 1
+      if(x < .5) x <- .5
     }
     return(x)
   }
   
-  #   rem.neg(-1)
-  
   
   #For median flight height, remove values less than 1, and replace with
   # 1. See function 'rem.neg' above.
-  ht.med <- sapply(ht.med, rem.neg)
+  height <- sapply(height, rem.neg)
   
-  #Calculate the new wind speeds for both u and v wind vectors
-  uwind.new <- uwind10 * ((ht.med / 10) ^ 0.11)
-  vwind.new <- vwind10 * ((ht.med / 10) ^ 0.11)
+  # Calculate the new wind speeds for both u and v wind vectors
+  uwind.new <- uwind10 * ((height / 10) ^ 0.11)
+  vwind.new <- vwind10 * ((height / 10) ^ 0.11)
   
   
-  #New wind speed, using Pythagoras theorem to calculate wind speed
+  # New wind speed, using Pythagoras theorem to calculate wind speed
   wind.new  <- sqrt((uwind.new * uwind.new) + (vwind.new * vwind.new))
   
   #Vairables to export
