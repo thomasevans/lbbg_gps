@@ -31,7 +31,8 @@ source("gps_extract.R")
 gps.wrap <- function(flight_id, flights){
   idx <- flights$flight_id == flight_id
   x <- gps.extract(flights$device_info_serial[idx], flights$start_time[idx], flights$end_time[idx], weather = TRUE)
-  return(cbind(flight_id,x))
+  if(length(x[,1]) == 0) return(cbind(flight_id,rep(NA,51)))
+  else return(cbind(flight_id,x))
 #   return(list(n))
 }
 
@@ -39,76 +40,58 @@ gps.wrap <- function(flight_id, flights){
 # x <- gps.extract(flights$device_info_serial[1], flights$start_time[1], flights$end_time[1], weather = TRUE)
 
 # Testing
-#  gps.wrap(flights$flight_id[10], flights)
+#  gps.wrap(flights$flight_id[idx.wrong[1]], flights)
 
 # Get the data (took ca. 1 h for <5000 flights - after had
 # 'pooled' driver setting)
-gps.data.list <- list()
-system.time({
-  gps.data.list <- lapply(X = flights$flight_id, gps.wrap, flights = flights)
-})
+# gps.data.list <- list()
+# system.time({
+#   gps.data.list <- lapply(X = flights$flight_id, gps.wrap, flights = flights)
+# })
 
-save(gps.data.list, file = "gps.data.list.weather.RData")
+# save(gps.data.list, file = "gps.data.list.weather.RData")
 
-# load(file = "gps.data.list.RData")
+load(file = "gps.data.list.weather.RData")
 
-# Merge to dataframe
-gps.data <- do.call( rbind , gps.data.list)
+# Determin which flights failed to return data
 
-# warnings()
-
-# Then get GPS point weather data and (?) add to gps.data table
-gps.data$device_info_serial[1:10]
-gps.data$date_time[1:10]  #still in character format
-
-
-gps.data$date_time <- as.POSIXct(gps.data$date_time,
-                                         tz="GMT",
-                                         format="%Y-%m-%d %H:%M:%S")
-
-
-
-weather.data.all <- sqlQuery(
-  gps.db, query =
-    paste0("SELECT DISTINCT t.*
-           FROM lund_points_weather AS t
-           ORDER BY t.device_info_serial, t.date_time ASC;", collapse = NULL)
-          , as.is = TRUE)
-
-weather.data.all$date_time <- as.POSIXct(weather.data.all$date_time,
-                            tz="GMT",
-                            format="%Y-%m-%d %H:%M:%S")
-
-
-get.data <- function(device, date_time, data.set = weather.data.all){
-  x <- data.set[data.set$device_info_serial == device  &
-                  data.set$date_time == date_time,]
-  if(length(x[,1]) == 0) return(as.numeric(rep(NA,6)))
-  else return(x)
+x <- NULL
+for(i in 1:4655){
+  x[i] <- length(gps.data.list[[i]])
 }
 
-# 
-# str(gps.data$date_time[3])
-# str(weather.data.all$date_time)
-get.data(gps.data$device_info_serial[3],
-         date_time = gps.data$date_time[3],
-         data.set = weather.data.all)
+# summary(as.factor(x))
+
+idx <- c(1:4655)
+
+idx.wrong <- idx[x == 102]
+# gps.data.list[[idx.wrong[1]]]
+# gps.wrap(flights$flight_id[idx.wrong[1]], flights)
+
+# x <- gps.extract(flights$device_info_serial[idx.wrong[1]],
+#                  flights$start_time[idx.wrong[1]],
+#                  flights$end_time[idx.wrong[1]],
+#                  weather = FALSE)
+
+# Remove list items for flights that didn't return data
+gps.data.list.ok <- gps.data.list[(!(idx %in% idx.wrong))]
 
 
+# Merge to dataframe
+gps.data <- do.call( rbind , gps.data.list.ok)
+# str(gps.data)
+flights.ok <- flights[(flights$flight_id %in% unique(gps.data$flight_id)),]
 
-test <- mapply(FUN = get.data, 
-               device = gps.data$device_info_serial[1:10],
-               date_time = gps.data$date_time[1:10])
 
-test2 <- t(test)
-weather.points <- as.data.frame(test2)
-summary(is.na(as.data.frame(test2$device_info_serial)))
-str(weather.points)
-?mapply
-test2 <- do.call( rbind , test)
-?lapply
+# Clearn workspace so we only have the data we want
+flights <- flights.ok
+rm(list=setdiff(ls(), c("flights","gps.data")))
 
 # Close connection
 odbcCloseAll()
+
+
+
+
 
 
