@@ -91,7 +91,46 @@ rm(list=setdiff(ls(), c("flights","gps.data")))
 odbcCloseAll()
 
 
+# Calculations ----
+
+# Calculate wind.speed at flight height for all points
+source("wind_shear.R")
+wind.data <- mapply(wind.shear,
+                    uwind10 = gps.data$uwnd_10m,
+                    vwind10 = gps.data$vwnd_10m,
+                    height = gps.data$altitude)
+wind.data <- t(wind.data)
+wind.data <- as.data.frame(wind.data)
+row.names(wind.data) <- NULL
+names(wind.data) <- c("wind_u", "wind_v", "wind")
+
+# Have a look at these data
+wind_u.rat <- wind.data$wind_u/ gps.data$uwnd_10m
+hist(wind_u.rat)
+
+wind_v.rat <- wind.data$wind_v/ gps.data$vwnd_10m
+hist(wind_v.rat)
+max(wind_v.rat, na.rm = TRUE)
+min(wind_v.rat, na.rm = TRUE)
 
 
+# Remove negative altitude values
+rep.neg.alt <- function(x){
+  if(is.na(x)) return(x) else{
+    if(x < -20) return(NA) else{
+      if(x < 0.1){
+        return(0.1)} else {
+          return(x)}
+    }
+  }
+}
 
+# Remove negative or <0.1 m altitudes with 0.1 value
+alt.new <- sapply(gps.data$altitude, rep.neg.alt)
+hist(alt.new[alt.new < 100])
+sort(gps.data$altitude)[1:1000]
 
+# hist(alt.new[alt.new < 100  & gps.data$positiondop < 2 ])
+# hist(gps.data$positiondop)
+
+str(gps.data)
