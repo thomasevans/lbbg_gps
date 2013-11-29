@@ -85,7 +85,7 @@ flights.ok <- flights[(flights$flight_id %in% unique(gps.data$flight_id)),]
 
 # Clearn workspace so we only have the data we want
 flights <- flights.ok
-rm(list=setdiff(ls(), c("flights","gps.data")))
+rm(list = setdiff(ls(), c("flights","gps.data")))
 
 # Close connection
 odbcCloseAll()
@@ -133,4 +133,28 @@ sort(gps.data$altitude)[1:1000]
 # hist(alt.new[alt.new < 100  & gps.data$positiondop < 2 ])
 # hist(gps.data$positiondop)
 
-str(gps.data)
+
+# Dataframe of calculated paramaters ------------
+gps.data.par <- cbind(gps.data[,1:3], wind.data, alt.new)
+# str(wind.data)
+
+# Calculate wind speed and direction (bearing from gN) ---------
+source("wind_dir_speed.R")
+
+# Calculate at flight height
+wind.temp <- mapply(FUN = wind.dir.speed,
+                    uwind10 = gps.data.par$wind_u,
+                    vwind10 = gps.data.par$wind_v)
+wind.temp <- t(wind.temp)
+names.df <- names(gps.data.par)
+gps.data.par <- cbind(gps.data.par,wind.temp)
+names(gps.data.par) <- c(names.df, "wind_sc", "wind_dir_deg")
+
+
+?sapply
+
+str(gps.data.par)
+gc()
+
+
+
