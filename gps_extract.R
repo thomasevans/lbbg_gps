@@ -29,7 +29,7 @@ gps.extract <- function(i, start.t, end.t, weather = FALSE){
 
   if(weather == FALSE) {q1a <- "SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude,
   g.latitude, g.positiondop, g.speed_accuracy, g.vnorth,
-  g.veast, g.vdown, g.speed_3d, c.bearing_next,
+  g.veast, g.vdown, g.speed_3d, g.h_accuracy, g.v_accuracy, c.bearing_next,
   c.bearing_prev, c.nest_gc_dist, c.calculated_speed,
   c.nest_bear, c.inst_ground_speed, c.p2p_dist,  c.time_interval_s,
   c.turning_angle, c.flight_class,  c.flight_id, g.altitude
@@ -39,7 +39,7 @@ gps.extract <- function(i, start.t, end.t, weather = FALSE){
   AND "} else {
     q1a <- "SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude,
   g.latitude, g.positiondop, g.speed_accuracy, g.vnorth,
-  g.veast, g.vdown, g.speed_3d, c.bearing_next,
+  g.veast, g.vdown, g.speed_3d, g.h_accuracy, g.v_accuracy, c.bearing_next,
   c.bearing_prev, c.nest_gc_dist, c.calculated_speed,
   c.nest_bear, c.inst_ground_speed, c.p2p_dist,  c.time_interval_s,
   c.turning_angle, c.flight_class,  c.flight_id, g.altitude, lw.uwnd_10m,
