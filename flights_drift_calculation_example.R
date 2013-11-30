@@ -317,7 +317,18 @@ head.info <- as.data.frame(head.info)
 # Give names to columns
 names(head.info) <- c("head.speed", "head.dir")
 
-#' Angle of compensation
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+# Angle of compensation -------
 #' To calculate this, we require both the bearing from the current
 #' location to the goal (in this example the nest), and the
 #' heading vector (calculated above). 
