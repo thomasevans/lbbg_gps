@@ -153,9 +153,14 @@ names.df <- names(gps.data.par)
 gps.data.par <- cbind(gps.data.par,wind.temp)
 names(gps.data.par) <- c(names.df, "wind_sc", "wind_dir_deg")
 
+# Clean up a bit
+rm(wind.temp)
+rm(wind.data)
+
+
 # Direction from which wind is coming from (origin)
 wind_origin <- ((gps.data.par$wind_dir_deg + 180) %% 360)
-# hist(wind.origin.10m)
+# hist(wind_origin)
 gps.data.par <- cbind(gps.data.par,wind_origin)
 
 
@@ -214,26 +219,28 @@ bear_cor <- function(x, track){
 }
 
 head_dir <-  mapply(bear_cor,
-                 x = gps.data.par$head_dir[1:10],
-                 track = gps.data.par$ground_heading[1:10])
+                 x = gps.data.par$head_dir,
+                 track = gps.data.par$ground_heading)
 
 
 wind_dir <-   mapply(bear_cor,
-                      x = gps.data.par$wind_dir_deg[1:10],
-                      track = gps.data.par$ground_heading[1:10])
+                      x = gps.data.par$wind_dir_deg,
+                      track = gps.data.par$ground_heading)
 
 
 
-par <- cbind(wind_dir,gps.data.par$wind_sc[1:10],head_dir, gps.data.par$head_speed[1:10],gps.data.par$ground_speed[1:10])
+par <- cbind(wind_dir,gps.data.par$wind_sc,head_dir, gps.data.par$head_speed,gps.data.par$ground_speed)
 par <- as.data.frame(par)
 names(par) <- c("wind_dir","wind_speed","head_dir","head_speed","track_speed")
 
-par
+head(par)
+
 
 # Function to get alpha or beta, if angle is reflex then subtract it from 360
 ang.cor <- function(x){
-  if(x > 180) return(360 - x)
-  else return(x)
+  if(is.na(x)) return(x) else{
+    if(x > 180) return(360 - x)
+    else return(x)}
 }
 
 # alpha <- NULL
@@ -241,35 +248,45 @@ alpha <- sapply(X = par$head_dir, FUN = ang.cor)
 
 beta <- sapply(X = par$wind_dir, FUN = ang.cor)
 
-par <- cbind(par,alpha,beta)
+par <- cbind(par, alpha, beta)
 
 # side and head wind components
 wind.comp <- function(beta, wind_speed, wind_dir){
-  require(CircStats)
-  if(beta > 90){
-    beta <- 180 - beta
-    beta.rad <- rad(beta)
-    
-    wind_head_tail <- (cos(beta.rad))*wind_speed
-    wind_head_tail <- wind_head_tail * -1
-    
-    wind_side <- (sin(beta.rad))*wind_speed
-    if(wind_dir < 180)  wind_side <- wind_side * -1
-  } else {
-    beta.rad <- rad(beta)
-    wind_head_tail <- (cos(beta.rad))*wind_speed
-    wind_side <- (sin(beta.rad))*wind_speed
-    if(wind_dir < 180)  wind_side <- wind_side * -1
-  }
-  test_var <- sqrt((wind_side*wind_side) + (wind_head_tail*wind_head_tail))
-  return(c(wind_side, wind_head_tail, test_var))
+  if(is.na(beta) | is.na(wind_speed) | is.na(wind_dir)){
+    return(c(NA,NA,NA))} else {
+      # Package needed to convert degrees to radians
+      require(CircStats)
+      # If beta angle is more than 90 do these calculations
+      if(beta > 90){
+        beta <- 180 - beta
+        beta.rad <- rad(beta)
+        
+        wind_head_tail <- (cos(beta.rad))*wind_speed
+        # As beta >90 wind must be tails wind, make negative
+        wind_head_tail <- wind_head_tail * -1
+        
+        wind_side <- (sin(beta.rad))*wind_speed
+        # If wind comes from left make negative
+        if(wind_dir < 180)  wind_side <- wind_side * -1
+      } else {
+        beta.rad <- rad(beta)
+        wind_head_tail <- (cos(beta.rad))*wind_speed
+        wind_side <- (sin(beta.rad))*wind_speed
+        if(wind_dir < 180)  wind_side <- wind_side * -1
+      }
+      # For testing, check that calculated side wind and head wind components would add up to original wind vector (i.e. wind speed)
+    #   test_var <- sqrt((wind_side*wind_side) + (wind_head_tail*wind_head_tail))
+    #   return(c(wind_side, wind_head_tail, test_var))
+      return(c(wind_side, wind_head_tail))
+}
 }
 
-test.wind.comp <- mapply(wind.comp,
+wind.comp_calc <- mapply(wind.comp,
                          beta = par$beta,
                          wind_speed = par$wind_speed,
                          wind_dir = par$wind_dir) 
 # Merge to dataframe
-test.wind <- as.data.frame(t(test.wind.comp))
-names(test.wind) <- c("wind_side", "wind_head_tail", "wind_recov")
-temp <- cbind(par,test.wind)
+temp <- as.data.frame(t(wind.comp_calc))
+names(temp) <- c("wind_side", "wind_head_tail")
+temp <- cbind(par, temp)
+
