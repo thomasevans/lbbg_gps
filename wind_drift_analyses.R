@@ -253,7 +253,7 @@ par <- cbind(par, alpha, beta)
 # side and head wind components
 wind.comp <- function(beta, wind_speed, wind_dir){
   if(is.na(beta) | is.na(wind_speed) | is.na(wind_dir)){
-    return(c(NA,NA,NA))} else {
+    return(c(NA,NA))} else {
       # Package needed to convert degrees to radians
       require(CircStats)
       # If beta angle is more than 90 do these calculations
@@ -285,8 +285,39 @@ wind.comp_calc <- mapply(wind.comp,
                          beta = par$beta,
                          wind_speed = par$wind_speed,
                          wind_dir = par$wind_dir) 
+# str(wind.comp_calc)
+
+# Merge to dataframe
+# temp <- do.call( rbind , wind.comp_calc)
+
+
 # Merge to dataframe
 temp <- as.data.frame(t(wind.comp_calc))
 names(temp) <- c("wind_side", "wind_head_tail")
-temp <- cbind(par, temp)
+par <- cbind(par, temp)
+names(par)
+new.par <- par[,c(1,3,6:9)]
+names(new.par) <- c("wind_dir_track",
+                    "head_dir_track", "alpha",
+                    "beta", "wind_side",
+                    "wind_head_tail")
 
+gps.data.par.out <- cbind(gps.data.par, new.par)
+head(gps.data.par.out)
+# length(unique(names(gps.data.par.out))) == length(names(gps.data.par.out))
+# Save data to database -------
+odbcCloseAll()
+
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+# names(gps.data.par)
+
+#Output weather data to database #####
+#will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
+sqlSave(gps.db, gps.data.par.out, tablename = "lund_flight_points_wind_par",
+        append = FALSE, rownames = FALSE, colnames = FALSE,
+        verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
+        test = FALSE, nastring = NULL,
+        varTypes =  c(device_info_serial = "integer",
+                      date_time = "datetime"))
+
+odbcCloseAll()
