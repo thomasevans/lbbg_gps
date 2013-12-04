@@ -71,7 +71,7 @@ clusterExport(cl, c("flights.com"))
 #make a list object to recieve the data
 lst <- list()
 
-# i <- 1
+# i <- 6
   system.time({lst <- foreach(i = seq(along = flights.com$trip_flight_type)) %dopar%{
 #    for(i in 1:10){
   
@@ -249,6 +249,26 @@ lst <- list()
       flights.com$end_time[i])
   }
   
+#   data.flight$start_time[i]
+#   flights.com$end_time[i]
+  # Get mid-time
+#   pointsx$date_time ==data.flight[3]
+  # Find mid-point of flight by distance
+  pointsx <- subset(points, date_time >= data.flight[3] &
+                      date_time <=   data.flight[4])
+  n <- length(pointsx$device_info_serial)
+  
+  final.dist <- deg.dist(pointsx$longitude, pointsx$latitude,
+                          points$longitude[n], points$latitude[n])
+  dist.rat <- final.dist/final.dist[1]
+  dist.val <- dist.rat < 0.5
+  
+  dist.close <- which((dist.val))
+  first.close <- min(dist.close)
+  
+  mid.time <- pointsx$date_time[first.close]
+  data.flight <- cbind(data.flight, mid.time)
+  
 #   lst[[i]] <- list(data.flight)  
   list(data.flight)  
 #   warnings()
@@ -263,7 +283,7 @@ stopCluster(cl)
 # flight.info <-  data.frame(matrix(unlist(lst), nrow = 10, byrow = T))
 
 flight.info <-  data.frame(matrix(unlist(lst), nrow = length(flights.com$trip_flight_type), byrow = T))
-names(flight.info) <- c("flight_id","device_info_serial","start_time","end_time")             
+names(flight.info) <- c("flight_id","device_info_serial","start_time","end_time","mid_dist_time")             
         
 flight.info$start_time <- as.POSIXct(flight.info$start_time,
                                      tz="GMT",
@@ -274,6 +294,12 @@ flight.info$end_time <- as.POSIXct(flight.info$end_time,
                                      tz="GMT",
                                      format="%Y-%m-%d %H:%M:%S",
                                      origin = "1970-01-01 00:00:00")
+
+flight.info$mid_dist_time <- as.POSIXct(flight.info$mid_dist_time,
+                                   tz="GMT",
+                                   format="%Y-%m-%d %H:%M:%S",
+                                   origin = "1970-01-01 00:00:00")
+
 # flights.com[1:10,]
 # flight.info.back <- flight.info
 
@@ -293,7 +319,7 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #Output data to database #####
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
-sqlSave(gps.db, flight.info, tablename = "lund_flights_commuting_19",
+sqlSave(gps.db, flight.info, tablename = "lund_flights_commuting",
         append = FALSE, rownames = FALSE, colnames = FALSE,
         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
         test = FALSE, nastring = NULL,
