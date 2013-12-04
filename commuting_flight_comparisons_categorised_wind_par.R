@@ -60,6 +60,14 @@ get.stats <- function(i, points_par = points_par, flights = flights){
   wind_sc_mean <- mean(sub.points$wind_sc, na.rm = TRUE)
   wind_sc_median <- median(sub.points$wind_sc, na.rm = TRUE)
   
+  head_speed_mean <- mean(sub.points$head_speed, na.rm = TRUE)
+  head_speed_median <- median(sub.points$head_speed, na.rm = TRUE)
+  
+  ground_speed_mean <- mean(sub.points$ground_speed, na.rm = TRUE)
+  ground_speed_median <- median(sub.points$ground_speed, na.rm = TRUE)
+  
+  
+  
   alt_new_mean <- mean(sub.points$altnew, na.rm = TRUE)
   alt_new_median <- median(sub.points$altnew, na.rm = TRUE)
   
@@ -111,7 +119,11 @@ get.stats <- function(i, points_par = points_par, flights = flights){
                 wind_dir_deg_rho,
                 head_dir_mean,
                 head_dir_rho,
-                head_dir_circvar
+                head_dir_circvar,
+                head_speed_mean,
+                head_speed_median,
+                ground_speed_mean,
+                ground_speed_median
                 )
   
   return(calc.par)
@@ -158,7 +170,11 @@ names(flights.par) <- c("flight_id", "n_points", "
                         wind_dir_deg_rho",
                         "head_dir_mean",
                         "head_dir_rho",
-                        "head_dir_circvar")
+                        "head_dir_circvar",
+                        "head_speed_mean",
+                        "head_speed_median",
+                        "ground_speed_mean",
+                        "ground_speed_median")
 
 # head(flights.par)
 # str(flights.par)
