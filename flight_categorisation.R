@@ -148,11 +148,12 @@ lst <- list()
           is.dis <- island.dist
         }
       
-      
+      # If distance from island centre is more than 1.5 km break - i.e. keep index of first point outside of buffer.
       for(ix in 1:length(is.dis)){
         if(is.dis[ix] > 1.5) break
       }
       
+      # Get index for last point inside buffer.
       if(ix > 1) ix <- ix - 1
       
       ds <- ds[ix:length(ds)]
