@@ -158,6 +158,19 @@ names.df <- names(gps.data.par)
 gps.data.par <- cbind(gps.data.par,wind.temp)
 names(gps.data.par) <- c(names.df, "wind_sc", "wind_dir_deg")
 
+
+# calculate wind speed at 10 m too
+#*****************************
+uwind10_10m <- gps.data$uwnd_10m
+vwind10_10m <- gps.data$vwnd_10m
+temp <- NULL
+temp <- mapply(FUN = wind.dir.speed,
+          uwind10 = uwind10_10m,
+          vwind10 = vwind10_10m)
+wind10_10m_sc <- temp[1,]
+
+gps.data.par <- cbind(gps.data.par,uwind10_10m,vwind10_10m,wind10_10m_sc)
+
 # Clean up a bit
 rm(wind.temp)
 rm(wind.data)
@@ -290,6 +303,35 @@ wind.comp_calc <- mapply(wind.comp,
                          beta = par$beta,
                          wind_speed = par$wind_speed,
                          wind_dir = par$wind_dir) 
+names(gps.data)
+names(gps.data.par)
+alpha.new <- gps.data.par$ground_heading - gps.data.par$head_dir
+
+
+alpha.calc <- function(head, track){
+  if(is.na(track) | is.na(head)){
+    theta = NA
+    }else{
+      theta <- track - head
+      if(abs(theta) > 180){
+        theta <- 360 - abs(theta)
+      }
+      theta <- abs(theta)
+      if(head > track){
+        theta <- theta*-1
+      }
+    }
+  return(theta)  
+}
+
+alpha.new <- mapply(alpha.calc,gps.data.par$head_dir,gps.data.par$ground_heading)
+
+# hist(alpha.new)
+# min(alpha.new, na.rm = TRUE)
+# max(alpha.new, na.rm = TRUE)
+# 
+# beta.new
+
 # str(wind.comp_calc)
 
 # Merge to dataframe
@@ -302,16 +344,21 @@ names(temp) <- c("wind_side", "wind_head_tail")
 par <- cbind(par, temp)
 names(par)
 new.par <- par[,c(1,3,6:9)]
+new.par <- cbind(new.par,alpha.new)
 names(new.par) <- c("wind_dir_track",
-                    "head_dir_track", "alpha",
-                    "beta", "wind_side",
-                    "wind_head_tail")
-
+                    "head_dir_track", "alpha.old",
+                    "beta.old", "wind_side",
+                    "wind_head_tail", "alpha")
+# head(new.par)
 gps.data.par.out <- cbind(gps.data.par, new.par)
 head(gps.data.par.out)
 # length(unique(names(gps.data.par.out))) == length(names(gps.data.par.out))
+
+
 # Save data to database -------
 odbcCloseAll()
+
+
 
 gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 # names(gps.data.par)
@@ -324,5 +371,7 @@ sqlSave(gps.db, gps.data.par.out, tablename = "lund_flight_points_wind_par",
         test = FALSE, nastring = NULL,
         varTypes =  c(device_info_serial = "integer",
                       date_time = "datetime"))
+
+# length(unique(gps.data.par.out$flight_id))
 
 odbcCloseAll()
