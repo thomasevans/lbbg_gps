@@ -235,8 +235,8 @@ flights.in$wind.type[flights.in$dif.angle > 90] <- "head"
 
 
 
-names(flights.out)[87] <- "dif.angle"
-names(flights.in)[87] <- "dif.angle"
+names(flights.out)[length(flights.out)-2] <- "dif.angle"
+names(flights.in)[length(flights.in)-2] <- "dif.angle"
 names(flights.out) == names(flights.in)
 # 
 # flights.out[1:10,87]
@@ -2314,9 +2314,9 @@ pred <- predict(mod_final, newdata = fit.tail.1)
 fx(pred)
 
 
-fit.tail.1 <- data.frame(flight.type ="in",
+fit.tail.1 <- data.frame(flight.type ="out",
                          cloud = mean(cloud),
-                         head_tail.type = 0,
+                         head_tail.type = 1,
                          side_abs = c(0.5*mean(side_abs),mean(side_abs), 2*mean(side_abs)),
                          side.type = 1,
                          head_tail_abs= mean(head_tail_abs),
@@ -2326,3 +2326,60 @@ pred <- NULL
 pred <- predict(mod_final, newdata = fit.tail.1)
 
 fx(pred)
+
+
+
+
+# Drift -------
+names(flights.combined)
+wind_sc_mean
+ground_speed_mean
+head_speed_mean
+
+wind_dir_deg_mean
+
+rat.speed <- flights.combined$ground_speed_mean/flights.combined$head_speed_mean
+
+par(mfrow=c(1,1))
+hist(rat.speed)
+
+plot(rat.speed ~ abs(flights.combined$wind_side_mean))
+abline(lm(rat.speed ~ abs(flights.combined$wind_side_mean)))
+
+plot(abs(flights.combined$alpha_mean) ~ rat.speed)
+abline(lm(abs(flights.combined$alpha_mean) ~ rat.speed))
+
+fun <- function(x){
+  if(x > 180){
+    out <- x -180
+    out <- 180 - out
+  } else out <- x
+  return(out)
+}
+win.track <- sapply(flights.combined$wind_dir_track_mean,fun)
+plot(win.track ~ rat.speed)
+
+fun2 <- function(x){
+  if(x > 90) return(-1*(90-(x-90)))
+  else return(x)
+}
+plot(win.track ~ flights.combined$alpha_mean)
+
+win.new <- mapply(fun2,win.track)
+
+plot(flights.combined$alpha_mean ~ win.new)
+
+
+fun3 <- function(x,y){
+  if(y < 0) return(-x)
+  else return(x)
+}
+al.new <- mapply(fun3,flights.combined$alpha_mean,win.new)
+
+plot(win.new ~ al.new)
+abline(lm(win.new ~ al.new))
+summary(lm(win.new ~ al.new))
+
+# abline(lm(abs(flights.combined$alpha_mean) ~ rat.speed))
+
+plot(flights.combined$alpha_mean~)
