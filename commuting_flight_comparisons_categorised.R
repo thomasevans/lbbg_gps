@@ -22,28 +22,44 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 
 #Get a copy of the flights DB table.
+# WHOLE FLIGHT
 flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*, l.trip_flight_n,l.trip_id, l.trip_flight_type, w.* 
                     FROM lund_flights_commuting_par AS f, lund_flights as l, lund_flight_com_wind_par AS w
                     WHERE f.flight_id = l.flight_id
                     AND f.flight_id = w.flight_id
                     ORDER BY f.flight_id ASC;")
 
+# First half
+flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*, l.trip_flight_n,l.trip_id, l.trip_flight_type, w.* 
+                    FROM lund_flights_commuting_par AS f, lund_flights as l, lund_flight_com_wind_par_half1 AS w
+                    WHERE f.flight_id = l.flight_id
+                    AND f.flight_id = w.flight_id
+                    ORDER BY f.flight_id ASC;")
+
+# str(flights)
 
 # Hack to set time zone back to UTC rather than system locale.
 # See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
-
-tm <- as.POSIXlt(flights$start_time)
-# tm[1:10]
-attr(tm,"tzone") <- "UTC"
-# tm[1:10]
-flights$start_time <- tm
-
-tm <- as.POSIXlt(flights$end_time)
-# tm[1:10]
-attr(tm,"tzone") <- "UTC"
-# tm[1:10]
-flights$end_time <- tm
-
+# 
+# tm <- as.POSIXlt(flights$start_time)
+# # tm[1:10]
+# attr(tm,"tzone") <- "UTC"
+# # tm[1:10]
+# flights$start_time <- tm
+# 
+# tm <- as.POSIXlt(flights$end_time)
+# # tm[1:10]
+# attr(tm,"tzone") <- "UTC"
+# # tm[1:10]
+# flights$end_time <- tm
+# 
+# str(flights)
+# 
+# tm <- as.POSIXlt(flights$mid_dist_time)
+# # tm[1:10]
+# attr(tm,"tzone") <- "UTC"
+# # tm[1:10]
+# flights$mid_dist_time <- tm
 
 # flights$start_time[1:10]
 
@@ -67,9 +83,10 @@ flights.weather <- sqlQuery(gps.db, query =
                               gsub("\n", " ",
                                    paste(q1, q2, q3, sep="")),
                             as.is = TRUE)
-
+# str(flights.weather)
 # Hack to set time zone back to UTC rather than system locale.
 # See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
+tm <- NULL
 tm <- as.POSIXlt(flights.weather$start_time)
 #Check how this appears (i.e. time zone)
 # tm[1:10]
@@ -86,13 +103,14 @@ trips <- sqlQuery(gps.db, query="SELECT DISTINCT t.*
                   ORDER BY t.trip_id ASC;")
 
 #str(trips)
-
+tm <- NULL
 tm <- as.POSIXlt(trips$start_time)
 # tm[1:10]
 attr(tm,"tzone") <- "UTC"
 # tm[1:10]
 trips$start_time <- tm
 
+tm <- NULL
 tm <- as.POSIXlt(trips$end_time)
 # tm[1:10]
 attr(tm,"tzone") <- "UTC"
@@ -2332,54 +2350,10 @@ fx(pred)
 
 # Drift -------
 names(flights.combined)
-wind_sc_mean
-ground_speed_mean
+
+flight.type
+alpha_mean
 head_speed_mean
+ground_speed_mean
+head_dir_mean
 
-wind_dir_deg_mean
-
-rat.speed <- flights.combined$ground_speed_mean/flights.combined$head_speed_mean
-
-par(mfrow=c(1,1))
-hist(rat.speed)
-
-plot(rat.speed ~ abs(flights.combined$wind_side_mean))
-abline(lm(rat.speed ~ abs(flights.combined$wind_side_mean)))
-
-plot(abs(flights.combined$alpha_mean) ~ rat.speed)
-abline(lm(abs(flights.combined$alpha_mean) ~ rat.speed))
-
-fun <- function(x){
-  if(x > 180){
-    out <- x -180
-    out <- 180 - out
-  } else out <- x
-  return(out)
-}
-win.track <- sapply(flights.combined$wind_dir_track_mean,fun)
-plot(win.track ~ rat.speed)
-
-fun2 <- function(x){
-  if(x > 90) return(-1*(90-(x-90)))
-  else return(x)
-}
-plot(win.track ~ flights.combined$alpha_mean)
-
-win.new <- mapply(fun2,win.track)
-
-plot(flights.combined$alpha_mean ~ win.new)
-
-
-fun3 <- function(x,y){
-  if(y < 0) return(-x)
-  else return(x)
-}
-al.new <- mapply(fun3,flights.combined$alpha_mean,win.new)
-
-plot(win.new ~ al.new)
-abline(lm(win.new ~ al.new))
-summary(lm(win.new ~ al.new))
-
-# abline(lm(abs(flights.combined$alpha_mean) ~ rat.speed))
-
-plot(flights.combined$alpha_mean~)
