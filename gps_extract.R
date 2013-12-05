@@ -8,7 +8,7 @@
 
 
 #Extract GPS points
-gps.extract <- function(i, start.t, end.t, weather = FALSE){
+gps.extract <- function(i, start.t, end.t, weather = FALSE, DB = FALSE){
 
   gc()
   # i - device info serial
@@ -17,6 +17,8 @@ gps.extract <- function(i, start.t, end.t, weather = FALSE){
   #Function to extract required GPS data
   
   require(RODBC)
+  
+  if(DB == FALSE){
   
   gps.db2 <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 #   class(gps.db2)
@@ -27,6 +29,8 @@ gps.extract <- function(i, start.t, end.t, weather = FALSE){
      }
    }
 
+  } else gps.db2 <- DB
+  
   if(weather == FALSE) {q1a <- "SELECT DISTINCT g.device_info_serial, g.date_time, g.longitude,
   g.latitude, g.positiondop, g.speed_accuracy, g.vnorth,
   g.veast, g.vdown, g.speed_3d, g.h_accuracy, g.v_accuracy, c.bearing_next,
@@ -73,9 +77,11 @@ gps.extract <- function(i, start.t, end.t, weather = FALSE){
                                                ,as.is=TRUE)
                            return(gps.sub)}
 )
-  
-  odbcClose(gps.db2)
 
+  if(DB == FALSE){
+  odbcClose(gps.db2)
+}
+  
   return(out)
 }
 # 
