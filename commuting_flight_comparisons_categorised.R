@@ -295,7 +295,7 @@ if.neg <- function(x){
 }
 
 
-# sample sizes ####
+# sample sizes ---------
 # install.packages("reshape2")
 library(reshape2)
 
@@ -2356,4 +2356,187 @@ alpha_mean
 head_speed_mean
 ground_speed_mean
 head_dir_mean
+ground_dir_mean
 
+library(CircStats)
+cos.alpha.inv <- 1/(cos(rad(flights.combined$alpha_mean)))
+hist(cos.alpha.inv)
+
+vg.sub.va <- flights.combined$ground_speed_mean - 
+  flights.combined$head_speed_mean
+
+flight.type <- as.factor(flights.combined$flight.type)
+
+
+range(flights.combined$alpha_mean)
+mean(flights.combined$alpha_mean)
+hist(flights.combined$alpha_mean)
+
+hist(vg.sub.va)
+par(mfrow=c(1,1))
+plot(flights.combined$ground_dir_mean %% 180 ~ flights.combined$alpha_mean)
+
+track_head <- flights.combined$ground_speed_mean - flights.combined$head_dir_mean
+
+plot(flights.combined$ground_dir_mean ~ track_head,
+     xlab = "Track - Heading", ylab = "Track")
+abline(lm(flights.combined$ground_dir_mean ~ track_head),
+       lwd = 2, lty = 3, col = "red")
+lm(flights.combined$ground_dir_mean ~ track_head)
+
+
+plot(sin(rad(flights.combined$ground_dir_mean)) ~ sin(rad(track_head)),
+     xlab = "Sine of Track - Heading", ylab = "Sine of Track")
+abline(lm(sin(rad(flights.combined$ground_dir_mean)) ~ sin(rad(track_head))),
+       lwd = 3, lty = 3, col = "red")
+lm(sin(rad(flights.combined$ground_dir_mean)) ~ sin(rad(track_head)))
+
+plot(sin(rad(flights.combined$ground_dir_mean[flight.type == "in"])) ~ sin(rad(track_head[flight.type == "in"])),
+     xlab = "Sine of Track - Heading", ylab = "Sine of Track")
+abline(lm(sin(rad(flights.combined$ground_dir_mean[flight.type == "in"])) ~ sin(rad(track_head[flight.type == "in"]))),
+       lwd = 3, lty = 3, col = "black")
+lm(sin(rad(flights.combined$ground_dir_mean[flight.type == "in"])) ~ sin(rad(track_head[flight.type == "in"])))
+
+points(sin(rad(flights.combined$ground_dir_mean[flight.type == "out"])) ~ sin(rad(track_head[flight.type == "out"])), col = "red")
+abline(lm(sin(rad(flights.combined$ground_dir_mean[flight.type == "out"])) ~ sin(rad(track_head[flight.type == "out"]))),
+       lwd = 3, lty = 3, col = "red")
+lm(sin(rad(flights.combined$ground_dir_mean[flight.type == "out"])) ~ sin(rad(track_head[flight.type == "out"])))
+
+
+plot(cos(rad(flights.combined$ground_dir_mean)) ~ cos(rad(track_head)),
+     xlab = "Track - Heading", ylab = "Track")
+
+plot(flights.combined$ground_dir_mean ~ flights.combined$alpha_mean,
+     xlab = "Alpha", ylab = "Track")
+abline(lm(flights.combined$ground_dir_mean ~ flights.combined$alpha_mean),
+       lwd = 2, lty = 3, col = "red")
+lm(flights.combined$ground_dir_mean ~ flights.combined$alpha_mean)
+
+
+
+
+mod.01 <- glm(flights.combined$head_speed_mean ~ vg.sub.va*cos.alpha.inv*flight.type)
+summary(mod.01)
+mod.01 <- glm(flights.combined$head_speed_mean ~ vg.sub.va*cos.alpha.inv+vg.sub.va*flight.type + cos.alpha.inv*flight.type)
+summary(mod.01)
+
+mod.02 <- glm(flights.combined$head_speed_mean ~ vg.sub.va*cos.alpha.inv+vg.sub.va*flight.type)
+summary(mod.02)
+
+mod.03 <- glm(flights.combined$head_speed_mean ~ vg.sub.va + cos.alpha.inv+flight.type)
+summary(mod.03)
+anova(mod.03)
+?glm
+
+plot(flights.combined$head_speed_mean ~ vg.sub.va,
+     ylab = "Va", xlab = "Vg - Va",
+     ylim = c(5,22))
+abline(lm(flights.combined$head_speed_mean ~ vg.sub.va), lwd = 3, lty = 2)
+abline(lm(flights.combined$head_speed_mean[vg.sub.va< -1] ~ vg.sub.va[vg.sub.va< -1]), col = "blue", lwd = 3, lty = 2)
+abline(lm(flights.combined$head_speed_mean[vg.sub.va> +1] ~ vg.sub.va[vg.sub.va> +1]), col = "red", lwd = 3, lty = 2)
+
+plot(flights.combined$head_speed_mean ~ cos.alpha.inv, xlim = c(1,1.4))
+
+
+plot(flights.combined$ground_dir_mean ~ flights.combined$alpha_mean)
+plot(sin(rad(flights.combined$ground_dir_mean)) ~ flights.combined$alpha_mean)
+plot(cos(rad(flights.combined$ground_dir_mean)) ~ flights.combined$alpha_mean)
+
+plot(sin(rad(flights.combined$ground_dir_mean)) ~ flights.combined$alpha_mean)
+lm.mod <- lm(sin(rad(flights.combined$ground_dir_mean)) ~ flights.combined$alpha_mean)
+lm.mod
+abline(lm.mod, col = "red", lwd = 2)
+
+hist(cos(rad(flights.combined$ground_dir_mean)))
+hist(sin(rad(flights.combined$ground_dir_mean)))
+hist(flights.combined$ground_dir_mean, xlim = c(0,360), breaks = seq(0,360,20))
+# max(flights.combined$ground_dir_mean)
+
+names(flights.combined)
+plot(flights.combined$wind_dir_track_mean~flights.combined$alpha_mean)
+
+maxColorValue <- 200
+palette <- colorRampPalette(c("light blue","dark red"))(maxColorValue)
+plot(flights.combined$wind_dir_track_mean~flights.combined$alpha_mean,
+     col = palette[cut(flights.combined$windspeed, maxColorValue)],
+     xlab = "alpha", ylab = "wind relative to track",
+     cex = 1)
+# warnings()
+abline(lm(flights.combined$wind_dir_track_mean~flights.combined$alpha_mean), lwd = 3, lty = 3)
+lm(flights.combined$wind_dir_track_mean~flights.combined$alpha_mean)
+# ?cut
+
+
+plot(flights.combined$wind_dir_track_mean~flights.combined$alpha_mean,
+     col = as.numeric(flight.type),
+     xlab = "alpha", ylab = "wind relative to track",
+     cex = 1)
+abline(lm(flights.combined$wind_dir_track_mean[flight.type == "out"]~flights.combined$alpha_mean[flight.type == "out"]), col = "red")
+abline(lm(flights.combined$wind_dir_track_mean[flight.type == "in"]~flights.combined$alpha_mean[flight.type == "in"]), col = "black")
+
+
+
+
+plot(cos(rad(flights.combined$wind_dir_track_mean))~flights.combined$alpha_mean,
+     col = palette[cut(flights.combined$windspeed, maxColorValue)],
+     xlab = "alpha", ylab = "wind relative to track",
+     cex = 1)
+
+
+
+plot(sin(rad(flights.combined$wind_dir_track_mean))~flights.combined$alpha_mean,
+     col = palette[cut(flights.combined$windspeed, maxColorValue)],
+     xlab = "alpha", ylab = "Sine of wind relative to track",
+     cex = 1)
+abline(lm(sin(rad(flights.combined$wind_dir_track_mean))~flights.combined$alpha_mean), lwd = 3, lty = 2)
+f <- flights.combined$windspeed < 2
+abline(lm(sin(rad(flights.combined$wind_dir_track_mean[f]))~flights.combined$alpha_mean[f]), lwd = 3, lty = 2, col = "blue")
+f <- flights.combined$windspeed > 6
+abline(lm(sin(rad(flights.combined$wind_dir_track_mean[f]))~flights.combined$alpha_mean[f]), lwd = 3, lty = 2, col = "red")
+# hist(flights.combined$windspeed)
+
+
+plot(sin(rad(flights.combined$wind_dir_track_mean))~sin(rad(flights.combined$alpha_mean)),
+     col = palette[cut(flights.combined$windspeed, maxColorValue)],
+     xlab = "Sine of alpha", ylab = "Sine of wind relative to track",
+     cex = 1)
+abline(lm(sin(rad(flights.combined$wind_dir_track_mean))~sin(rad(flights.combined$alpha_mean))), lwd = 3, lty = 2)
+f <- flights.combined$windspeed < 2
+abline(lm(sin(rad(flights.combined$wind_dir_track_mean[f]))~sin(rad(flights.combined$alpha_mean[f]))), lwd = 3, lty = 2, col = "blue")
+f <- flights.combined$windspeed > 6
+abline(lm(sin(rad(flights.combined$wind_dir_track_mean[f]))~sin(rad(flights.combined$alpha_mean[f]))), lwd = 3, lty = 2, col = "red")
+# hist(flights.combined$windspeed)
+
+lm(sin(rad(flights.combined$wind_dir_track_mean))~sin(rad(flights.combined$alpha_mean)))
+
+angles <- seq(-360,360,10)
+plot(angles, sin(rad(angles)))
+sin(rad(45))
+
+
+
+ft <- flight.type == "in"
+plot(sin(rad(flights.combined$wind_dir_track_mean[ft]))~sin(rad(flights.combined$alpha_mean[ft])),
+     col = palette[cut(flights.combined$windspeed[ft], maxColorValue)],
+     xlab = "Sine of alpha", ylab = "Sine of wind relative to track",
+     cex = 1)
+abline(lm(sin(rad(flights.combined$wind_dir_track_mean[ft]))~sin(rad(flights.combined$alpha_mean[ft]))), lwd = 3, lty = 2)
+f <- flights.combined$windspeed[ft] < 2
+abline(lm(sin(rad(flights.combined$wind_dir_track_mean[ft & f]))~sin(rad(flights.combined$alpha_mean[ft & f]))), lwd = 3, lty = 2, col = "blue")
+f <- flights.combined$windspeed > 6
+abline(lm(sin(rad(flights.combined$wind_dir_track_mean[ft & f]))~sin(rad(flights.combined$alpha_mean[ft & f]))), lwd = 3, lty = 2, col = "red")
+# hist(flights.combined$windspeed)
+
+
+
+ft <- flight.type == "out"
+plot(sin(rad(flights.combined$wind_dir_track_mean[ft]))~sin(rad(flights.combined$alpha_mean[ft])),
+     col = palette[cut(flights.combined$windspeed[ft], maxColorValue)],
+     xlab = "Sine of alpha", ylab = "Sine of wind relative to track",
+     cex = 1)
+abline(lm(sin(rad(flights.combined$wind_dir_track_mean[ft]))~sin(rad(flights.combined$alpha_mean[ft]))), lwd = 3, lty = 2)
+f <- flights.combined$windspeed[ft] < 2
+abline(lm(sin(rad(flights.combined$wind_dir_track_mean[ft & f]))~sin(rad(flights.combined$alpha_mean[ft & f]))), lwd = 3, lty = 2, col = "blue")
+f <- flights.combined$windspeed > 6
+abline(lm(sin(rad(flights.combined$wind_dir_track_mean[ft & f]))~sin(rad(flights.combined$alpha_mean[ft & f]))), lwd = 3, lty = 2, col = "red")
+# hist(flights.combined$windspeed)
