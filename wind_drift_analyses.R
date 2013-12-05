@@ -303,6 +303,14 @@ wind.comp_calc <- mapply(wind.comp,
                          beta = par$beta,
                          wind_speed = par$wind_speed,
                          wind_dir = par$wind_dir) 
+
+wind.comp_calc_10 <- mapply(wind.comp,
+                         beta = par$beta,
+                         wind_speed = gps.data.par$wind10_10m_sc,
+                         wind_dir = par$wind_dir) 
+
+
+
 names(gps.data)
 names(gps.data.par)
 alpha.new <- gps.data.par$ground_heading - gps.data.par$head_dir
@@ -341,6 +349,11 @@ alpha.new <- mapply(alpha.calc,gps.data.par$head_dir,gps.data.par$ground_heading
 # Merge to dataframe
 temp <- as.data.frame(t(wind.comp_calc))
 names(temp) <- c("wind_side", "wind_head_tail")
+
+# wind.comp_calc_10
+temp2 <- as.data.frame(t(wind.comp_calc_10))
+names(temp2) <- c("wind_side_10", "wind_head_tail_10")
+
 par <- cbind(par, temp)
 names(par)
 new.par <- par[,c(1,3,6:9)]
@@ -350,7 +363,7 @@ names(new.par) <- c("wind_dir_track",
                     "beta.old", "wind_side",
                     "wind_head_tail", "alpha")
 # head(new.par)
-gps.data.par.out <- cbind(gps.data.par, new.par)
+gps.data.par.out <- cbind(gps.data.par, new.par, temp2)
 head(gps.data.par.out)
 # length(unique(names(gps.data.par.out))) == length(names(gps.data.par.out))
 
@@ -375,3 +388,14 @@ sqlSave(gps.db, gps.data.par.out, tablename = "lund_flight_points_wind_par",
 # length(unique(gps.data.par.out$flight_id))
 
 odbcCloseAll()
+
+beep <- function(n = 9){
+  x <- c(1,1,3,1,1,3,1,1,3,1,1)
+  for(i in seq(n)){
+    system("rundll32 user32.dll,MessageBeep -1")
+    Sys.sleep(x[i])
+  }
+}
+beep()
+
+
