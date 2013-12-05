@@ -20,6 +20,9 @@ flights.all <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
                     FROM lund_flights AS f
                     ORDER BY f.flight_id ASC;")
 
+odbcClose(gps.db)
+# ?odbcOpen
+
 # Hack to set time zone back to UTC rather than system locale.
 # See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
 
@@ -52,12 +55,13 @@ require(foreach)
 require(doParallel)
 
 #use x cores, general solution for any windows machine.
-cl <- makeCluster(parallel::detectCores())     
+# cl <- makeCluster(parallel::detectCores())     
 
-# cl <- makeCluster(16)
+cl <- makeCluster(2)
 
 #start the parellel session of R; the 'slaves', which will run the analysis.
 registerDoParallel(cl)   
+
 
 
 #this maybe neccessary so that the clustered instances or R have the
@@ -70,9 +74,11 @@ clusterExport(cl, c("flights.com"))
 
 #make a list object to recieve the data
 lst <- list()
-
-# i <- 6
+# i <- idx[1]
+# sample(i,10)
+# idx <- sample(seq(along = flights.com$trip_flight_type),10)
   system.time({lst <- foreach(i = seq(along = flights.com$trip_flight_type)) %dopar%{
+#     system.time({lst <- foreach(i = idx) %dopar%{
 #    for(i in 1:10){
   
   # Get GPS points for these flights
@@ -80,7 +86,7 @@ lst <- list()
   require(RODBC)
   require(fossil)
   
-  gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+#   gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
   
   # Get flight id
   id <- flights.com$flight_id[i]
@@ -91,6 +97,8 @@ lst <- list()
     flights.com$device_info_serial[i],
     flights.com$start_time[i],
     flights.com$end_time[i])
+  
+#   odbcClose(gps.db)
   
   # Correct data_time format
   points$date_time <- as.POSIXct(points$date_time,
@@ -259,7 +267,7 @@ lst <- list()
   n <- length(pointsx$device_info_serial)
   
   final.dist <- deg.dist(pointsx$longitude, pointsx$latitude,
-                          points$longitude[n], points$latitude[n])
+                         pointsx$longitude[n], pointsx$latitude[n])
   dist.rat <- final.dist/final.dist[1]
   dist.val <- dist.rat < 0.5
   
@@ -279,7 +287,7 @@ lst <- list()
 #close cluster
 stopCluster(cl)
       
-
+save(lst,file="flight_cat_backup.RData")
 # flight.info <-  data.frame(matrix(unlist(lst), nrow = 10, byrow = T))
 
 flight.info <-  data.frame(matrix(unlist(lst), nrow = length(flights.com$trip_flight_type), byrow = T))
@@ -326,8 +334,9 @@ sqlSave(gps.db, flight.info, tablename = "lund_flights_commuting",
         varTypes =  c(device_info_serial = "integer",
                       flight_id = "integer",
                       start_time = "datetime",
-                      end_time   =  "datetime"))
-
+                      end_time   =  "datetime",
+                      mid_dist_time = "datetime"))
+# ?sqlSave
 beep <- function(n = 9){
   x <- c(1,1,3,1,1,3,1,1,3,1,1)
   for(i in seq(n)){
@@ -336,3 +345,9 @@ beep <- function(n = 9){
   }
 }
 beep()
+
+
+
+# install.packages("installr")
+# library(installr)
+# os.hibernate()
