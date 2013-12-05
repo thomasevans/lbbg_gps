@@ -100,9 +100,9 @@ get.stats <- function(i, points_par = points_par, flights = flights){
   wind_dir_track_rho <- est.rho(rad(sub.points$wind_dir_track))
   wind_dir_track_circvar <- circ.disp(rad(sub.points$wind_dir_track))[,4]
   
-  ground_track_mean <- if.neg(deg(circ.mean(rad(sub.points$ground_heading))))
-  ground_track_rho <- est.rho(rad(sub.points$ground_heading))
-  ground_track_circvar <- circ.disp(rad(sub.points$ground_heading))[,4]
+  ground_dir_mean <- if.neg(deg(circ.mean(rad(sub.points$ground_heading))))
+  ground_dir_rho <- est.rho(rad(sub.points$ground_heading))
+  ground_dir_circvar <- circ.disp(rad(sub.points$ground_heading))[,4]
 
   head_dir_mean <- if.neg(deg(circ.mean(rad(sub.points$head_dir))))
   head_dir_rho <- est.rho(rad(sub.points$head_dir))
@@ -140,9 +140,9 @@ get.stats <- function(i, points_par = points_par, flights = flights){
                 head_speed_median,
                 ground_speed_mean,
                 ground_speed_median,
-                ground_track_mean,
-                ground_track_rho,
-                ground_track_circvar                
+                ground_dir_mean,
+                ground_dir_rho,
+                ground_dir_circvar                
                 )
   
   return(calc.par)
@@ -199,9 +199,9 @@ names(flights.par) <- c("flight_id", "n_points",
                         "head_speed_median",
                         "ground_speed_mean",
                         "ground_speed_median",
-                        "ground_track_mean",
-                        "ground_track_rho",
-                        "ground_track_circvar"
+                        "ground_dir_mean",
+                        "ground_dir_rho",
+                        "ground_dir_circvar"
                         )
 
 # head(flights.par)
