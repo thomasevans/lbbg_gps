@@ -42,7 +42,7 @@ get.stats <- function(i, points_par = points_par, flights = flights){
   sub.points <- subset(points_par,
                        device_info_serial == flights$device_info_serial[i] &
                        date_time >= flights$start_time[i] &
-                       date_time <= flights$end_time[i] &
+                       date_time <= flights$mid_dist_time[i] &
                        head_speed > 5 &
                         ground_speed > 2   
                          )
@@ -57,6 +57,12 @@ get.stats <- function(i, points_par = points_par, flights = flights){
   wind_head_tail_mean <- mean(sub.points$wind_head_tail, na.rm = TRUE)
   wind_head_tail_median <- median(sub.points$wind_head_tail, na.rm = TRUE)
   
+  wind_side_mean_10 <- mean(sub.points$wind_side_10, na.rm = TRUE)
+  wind_side_median_10 <- median(sub.points$wind_side_10, na.rm = TRUE)
+  
+  wind_head_tail_mean_10 <- mean(sub.points$wind_head_tail_10, na.rm = TRUE)
+  wind_head_tail_median_10 <- median(sub.points$wind_head_tail_10, na.rm = TRUE)
+
   wind_sc_mean <- mean(sub.points$wind_sc, na.rm = TRUE)
   wind_sc_median <- median(sub.points$wind_sc, na.rm = TRUE)
   
@@ -76,14 +82,19 @@ get.stats <- function(i, points_par = points_par, flights = flights){
     else return(x)
   }
   
-  alpha_mean <- if.neg(deg(circ.mean(rad(sub.points$alpha))))
-  alpha_rho <- est.rho(rad(sub.points$alpha))
+  alpha_old_mean <- if.neg(deg(circ.mean(rad(sub.points$alphaold))))
+  alpha_old_rho <- est.rho(rad(sub.points$alphaold))
 #   circ.disp(rad(sub.points$alpha))
   
+  alpha_mean <- (deg(circ.mean(rad(sub.points$alpha))))
+  alpha_rho <- est.rho(rad(sub.points$alpha))
+  
   #   ?circ.disp
-  beta_mean <- if.neg(deg(circ.mean(rad(sub.points$beta))))
-  beta_rho <- est.rho(rad(sub.points$beta))
+  beta_old_mean <- if.neg(deg(circ.mean(rad(sub.points$betaold))))
+  beta_old_rho <- est.rho(rad(sub.points$betaold))
 
+  
+  
   
   wind_dir_track_mean <- if.neg(deg(circ.mean(rad(sub.points$wind_dir_track))))
   wind_dir_track_rho <- est.rho(rad(sub.points$wind_dir_track))
@@ -111,8 +122,13 @@ get.stats <- function(i, points_par = points_par, flights = flights){
                 wind_head_tail_mean, wind_head_tail_median,
                 wind_sc_mean, wind_sc_median,
                 alt_new_mean, alt_new_median,
-                alpha_mean, alpha_rho, beta_mean,
-                beta_rho, wind_dir_track_mean,
+                alpha_mean, alpha_rho,
+                alpha_old_mean, alpha_old_rho,
+                beta_old_mean, beta_old_rho,
+                wind_side_mean_10, wind_side_median_10,
+                wind_head_tail_mean_10,
+                wind_head_tail_median_10,
+                wind_dir_track_mean,
                 wind_dir_track_rho,
                 wind_dir_track_circvar,
                 wind_dir_deg_mean,
@@ -157,17 +173,22 @@ stopCluster(cl)
 # Merge to dataframe
 flights.par <- do.call(rbind , lst)
 flights.par <- as.data.frame(flights.par)
-names(flights.par) <- c("flight_id", "n_points", "
-                        wind_side_mean", " wind_side_median", "
-                        wind_head_tail_mean", " wind_head_tail_median", "
-                        wind_sc_mean", " wind_sc_median", "
-                        alt_new_mean", " alt_new_median", "
-                        alpha_mean", " alpha_rho", " beta_mean", "
-                        beta_rho", " wind_dir_track_mean", "
-                        wind_dir_track_rho", "
-                        wind_dir_track_circvar", "
-                        wind_dir_deg_mean", "
-                        wind_dir_deg_rho",
+names(flights.par) <- c("flight_id", "n_points",
+                        "wind_side_mean", "wind_side_median",
+                        "wind_head_tail_mean", "wind_head_tail_median",
+                        "wind_sc_mean", "wind_sc_median",
+                        "alt_new_mean", "alt_new_median",
+                        "alpha_mean", "alpha_rho",
+                        "alpha_old_mean", "alpha_old_rho",
+                        "beta_old_mean", "beta_old_rho",
+                        "wind_side_mean_10", "wind_side_median_10",
+                        "wind_head_tail_mean_10",
+                        "wind_head_tail_median_10",
+                        "wind_dir_track_mean",
+                        "wind_dir_track_rho",
+                        "wind_dir_track_circvar",
+                        "wind_dir_deg_mean",
+                        "wind_dir_deg_rho",
                         "head_dir_mean",
                         "head_dir_rho",
                         "head_dir_circvar",
@@ -187,10 +208,21 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #Output flight wind par data to database #####
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
-sqlSave(gps.db, flights.par, tablename = "lund_flight_com_wind_par",
+sqlSave(gps.db, flights.par, tablename = "lund_flight_com_wind_par_half1",
         append = FALSE, rownames = FALSE, colnames = FALSE,
         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
         test = FALSE, nastring = NULL)
 
 odbcCloseAll()
+
+
+beep <- function(n = 9){
+  x <- c(1,1,3,1,1,3,1,1,3,1,1)
+  for(i in seq(n)){
+    system("rundll32 user32.dll,MessageBeep -1")
+    Sys.sleep(x[i])
+  }
+}
+beep()
+
 
