@@ -355,12 +355,15 @@ points.new.in <- points.new[points.new$flight.type == "inward",]
 
 source("maps_flights_old_new.R")
 
+# 
+# source("maps_flights.R")
+# 
+# # ?tiff
+# tiff("all_out.tiff",width = 1000, height = 1000)
+# maps.flights(points.old.in, all.flights = TRUE, plot.title = "")
+# dev.off()
 
-
-
-# maps.flights(points.old.in, points.new.in, seed = 1, flight.num = 20, plot.title = "Inward flights")
-
-
+# ?tiff
 
 pdf("inward_flights_thresh_04_3_2n.pdf")
 # svg("inward_flights_02.svg")
