@@ -8,7 +8,7 @@
 
 
 
-maps.flights <- function(points.data = NULL, seed = 2, plot.title = "", all.flights = FALSE, flight.num = 50, alpha = 0.5, flight.id = FALSE){
+maps.flights <- function(points.data = NULL, seed = NULL, plot.title = "", all.flights = FALSE, flight.num = 50, alpha = 0.5, flight.id = FALSE){
   #   ?title
   #Function to map flights
   #  Provide dataframe with flights points
@@ -17,7 +17,10 @@ maps.flights <- function(points.data = NULL, seed = 2, plot.title = "", all.flig
   # Alpha - for transparency of lines - when saving to some image types transparency is not supported, then enter 1 for alpha (i.e. not transparent).
   library(maps)
   
-  set.seed(seed)
+  seed.new <- seed
+  if(is.null(seed)){seed.new <- 2}
+  
+  set.seed(seed.new)
   
   
   fl.n <- unique(points.data$flight_id)  
@@ -70,8 +73,9 @@ maps.flights <- function(points.data = NULL, seed = 2, plot.title = "", all.flig
   #          "black")
   title(plot.title)
   #     seed <- 3
+  if(!is.null(seed)){
   mtext(paste("seed: ",seed))
-  
+  }
   # colours for lines  
   #     library(RColorBrewer)
   # Generating more colours than are in the palette - includes intermediate values.
