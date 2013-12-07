@@ -1,0 +1,178 @@
+
+flight.numbers <- f.s
+# [1] 29534   428 16683 16341 35108 16014 32821 36693 37708  2918
+
+#Get the flight data from the db.
+library(RODBC)
+
+#Establish a connection to the database
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+
+
+flights.old <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
+                    FROM lund_flights AS f
+                    ORDER BY f.flight_id ASC;")
+
+flights.new <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*
+                    FROM lund_flights_commuting AS f
+                    ORDER BY f.flight_id ASC;")
+f.n <- flights.new$flight_id %in% flight.numbers
+
+f <- flights.old$flight_id %in% flight.numbers
+
+# summary(f)
+trip_ids <- flights.old$trip_id[f]
+
+# names(flights.new)
+
+trips <- sqlQuery(gps.db, query="SELECT DISTINCT t.*
+                  FROM lund_trips AS t
+                  ORDER BY t.trip_id ASC;")
+
+t.f <- trips$trip_id %in% trip_ids
+
+
+
+# Whole trip -----
+win.metafile("map.ex.trip_mono.wmf",width = 7, height = 7)
+
+source("map_start_source.R")
+
+# names(gps.data)
+for(i in 1:length(trip_ids)){
+  
+  x <- trip_ids[i]
+  gps.sub <- subset(gps.data, (date_time >= trips$start_time[t.f][i]) & date_time <= trips$end_time[t.f][i],
+                    select=c(longitude, latitude))
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = "black", lty = 1, lwd = 2)
+}
+
+source("map_end_source.R")
+dev.off()
+
+
+# Whole trip -----
+win.metafile("map.ex.trip.wmf",width = 7, height = 7)
+
+source("map_start_source.R")
+
+# names(gps.data)
+for(i in 1:length(trip_ids)){
+  
+  x <- trip_ids[i]
+  gps.sub <- subset(gps.data, (date_time >= trips$start_time[t.f][i]) & date_time <= trips$end_time[t.f][i],
+                    select=c(longitude, latitude))
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = col.vec[i], lty = 1, lwd = 2)
+}
+
+source("map_end_source.R")
+dev.off()
+
+# Flights ------
+win.metafile("map.ex.flight_trip.wmf",width = 7, height = 7)
+
+source("map_start_source.R")
+
+# names(gps.data)
+for(i in 1:length(trip_ids)){
+  
+  x <- trip_ids[i]
+  gps.sub <- subset(gps.data, (date_time >= trips$start_time[t.f][i]) & date_time <= trips$end_time[t.f][i],
+                    select=c(longitude, latitude))
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = col.vec[i], lty = 1, lwd = 1)
+}
+
+for(i in 1:length(trip_ids)){
+  
+  x <- trip_ids[i]
+  gps.sub <- subset(gps.data, (date_time >= flights.old$start_time[f][i]) & date_time <= flights.old$end_time[f][i],
+                    select=c(longitude, latitude))
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = col.vec[i], lty = 1, lwd = 3)
+}
+
+source("map_end_source.R")
+dev.off()
+
+# Flights old ------
+win.metafile("map.ex.flight.wmf",width = 7, height = 7)
+
+source("map_start_source.R")
+
+# names(gps.data)
+for(i in 1:length(trip_ids)){
+  
+  x <- trip_ids[i]
+  gps.sub <- subset(gps.data, (date_time >= flights.old$start_time[f][i]) & date_time <= flights.old$end_time[f][i],
+                    select=c(longitude, latitude))
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = col.vec[i], lty = 1, lwd = 2)
+}
+
+source("map_end_source.R")
+dev.off()
+
+
+# Flight new and old -------
+win.metafile("map.ex.new_old.wmf",width = 7, height = 7)
+
+source("map_start_source.R")
+
+# names(gps.data)
+for(i in 1:length(trip_ids)){
+  
+  x <- trip_ids[i]
+  gps.sub <- subset(gps.data, (date_time >= flights.old$start_time[f][i]) & date_time <= flights.old$end_time[f][i],
+                    select=c(longitude, latitude))
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = "black", lty = 1, lwd = 2)
+}
+
+
+for(i in 1:length(trip_ids)){
+  
+  x <- trip_ids[i]
+  gps.sub <- subset(gps.data, (date_time >= flights.new$start_time[f.n][i]) & date_time <= flights.new$end_time[f.n][i],
+                    select=c(longitude, latitude))
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = col.vec[i], lty = 1, lwd = 2)
+}
+
+source("map_end_source.R")
+dev.off()
+
+# Map new only ----
+win.metafile("map.ex.new.wmf",width = 7, height = 7)
+# Flight new and old -------
+source("map_start_source.R")
+for(i in 1:length(trip_ids)){
+  
+  x <- trip_ids[i]
+  gps.sub <- subset(gps.data, (date_time >= flights.new$start_time[f.n][i]) & date_time <= flights.new$end_time[f.n][i],
+                    select=c(longitude, latitude))
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = col.vec[i], lty = 1, lwd = 2)
+}
+
+source("map_end_source.R")
+dev.off()
+# ?win.metafile
