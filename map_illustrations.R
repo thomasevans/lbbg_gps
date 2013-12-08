@@ -1,7 +1,7 @@
 
-flight.numbers <- f.s
+# flight.numbers <- f.s
 # [1] 29534   428 16683 16341 35108 16014 32821 36693 37708  2918
-
+flight.numbers <- c(29534,428,16683,16341,35108,16014,32821,36693,37708,2918)
 #Get the flight data from the db.
 library(RODBC)
 
@@ -176,3 +176,60 @@ for(i in 1:length(trip_ids)){
 source("map_end_source.R")
 dev.off()
 # ?win.metafile
+
+
+
+
+# Map new - 1st only ----
+win.metafile("map.ex.new.half.wmf",width = 7, height = 7)
+# Flight new and old -------
+source("map_start_source.R")
+for(i in 1:length(trip_ids)){
+  
+  x <- trip_ids[i]
+  gps.sub <- subset(gps.data, (date_time >= flights.new$start_time[f.n][i]) & date_time <= flights.new$end_time[f.n][i],
+                    select=c(longitude, latitude))
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = col.vec[i], lty = 1, lwd = 1)
+}
+# names(flights.new)
+for(i in 1:length(trip_ids)){
+  
+  x <- trip_ids[i]
+  gps.sub <- subset(gps.data, (date_time >= flights.new$start_time[f.n][i]) & date_time <= flights.new$mid_dist_time[f.n][i],
+                    select=c(longitude, latitude))
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = col.vec[i], lty = 1, lwd = 3)
+}
+
+source("map_end_source.R")
+dev.off()
+# ?win.metafile
+
+
+
+
+
+# Map new - 1st only ----
+win.metafile("map.ex.half.wmf",width = 7, height = 7)
+# Flight new and old -------
+source("map_start_source.R")
+
+# names(flights.new)
+for(i in 1:length(trip_ids)){
+  
+  x <- trip_ids[i]
+  gps.sub <- subset(gps.data, (date_time >= flights.new$start_time[f.n][i]) & date_time <= flights.new$mid_dist_time[f.n][i],
+                    select=c(longitude, latitude))
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = col.vec[i], lty = 1, lwd = 3)
+}
+
+source("map_end_source.R")
+dev.off()
