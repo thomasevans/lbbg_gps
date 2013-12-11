@@ -216,7 +216,6 @@ dev.off()
 
 # Map new - 1st only ----
 win.metafile("map.ex.half.wmf",width = 7, height = 7)
-# Flight new and old -------
 source("map_start_source.R")
 
 # names(flights.new)
