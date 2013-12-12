@@ -38,7 +38,7 @@ flights$mid_dist_time <- as.POSIXct(flights$mid_dist_time,
 # flights$mid_dist_time[1]
 
 # for testing
-flights <- flights[1:20,]
+# flights <- flights[1:20,]
 
 # str(flights)
 
@@ -86,7 +86,12 @@ system.time({
 
 # stopCluster(cl)
 
-str(points)
+# str(points)
+# summary(is.na(points))
+# summary(is.na(points2))
+
+# Remove those points that are missing long/ lat
+points <- points[!is.na(points$longitude),]
 
 # Save to file
 save(points, file = "points.com.flights.20131212.RData")
@@ -191,10 +196,34 @@ for (i in 1: length(lst)){
 dz <- dim(z)
 z2 <- z[2:dz[1],]
 weather.data <- as.data.frame(z2)
-names(weather.data) <- c("device_info_serial","date_time","air.2m", "air.2m.sd")
+names(weather.data) <- c("device_info_serial","date_time","air_2m", "air_2m_sd")
 row.names(weather.data) <- NULL
 weather.data  <- weather.data[order(weather.data$device_info_serial, weather.data$date_time),]
 
 
+# Get variables into correct format
 
-# 4. Output to new DB table, flights.com.points.weather ?
+weather.data$device_info_serial <- as.numeric(as.character(weather.data$device_info_serial))
+weather.data$date_time  <- as.POSIXct(as.character(weather.data$date_time),
+                                    tz="GMT",
+                                    format="%Y-%m-%d %H:%M:%S")
+weather.data$air_2m <- as.numeric(as.character(weather.data$air_2m))
+weather.data$air_2m_sd <- as.numeric(as.character(weather.data$air_2m_sd))
+
+
+str(weather.data)
+# 4. Output to new DB table, flights.com.points.weather
+
+odbcClose(gps.db)
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+
+
+#Output weather data to database #####
+#will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
+sqlSave(gps.db, weather.data, tablename = "lund_flights_com_points_weather",
+        append = FALSE, rownames = FALSE, colnames = FALSE,
+        verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
+        test = FALSE, nastring = NULL,
+        varTypes =  c(device_info_serial = "integer",
+                      date_time = "datetime",
+                      air_2m = "double", air_2m_sd = "double"))
