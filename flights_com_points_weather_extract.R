@@ -20,7 +20,22 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 #Get a copy of the flights DB table.
 flights <- sqlQuery(gps.db, query = "SELECT DISTINCT f.*
                     FROM lund_flights_commuting AS f
-                    ORDER BY f.flight_id ASC;")
+                    ORDER BY f.flight_id ASC;", as.is = TRUE)
+
+
+flights$start_time <- as.POSIXct(flights$start_time,
+                            tz="GMT",
+                            format="%Y-%m-%d %H:%M:%S")
+
+flights$end_time <- as.POSIXct(flights$end_time,
+                                 tz="GMT",
+                                 format="%Y-%m-%d %H:%M:%S")
+
+flights$mid_dist_time <- as.POSIXct(flights$mid_dist_time,
+                                 tz="GMT",
+                                 format="%Y-%m-%d %H:%M:%S")
+
+# flights$mid_dist_time[1]
 
 # for testing
 flights <- flights[1:20,]
@@ -36,18 +51,23 @@ flights <- flights[1:20,]
 library(doParallel)
 library(foreach)
 
-cl <- makeCluster(2)
-registerDoParallel(cl)
+# cl <- makeCluster(1)
+# registerDoParallel(cl)
 
-clusterExport(cl, c("flights"))  
+# clusterExport(cl, c("flights"))  
 # ?time
+# str(points)
+str(flights)
+
+# flights$start_time[i]
 
 points <- NULL
 # str(flights.combined)
-# Get points.old for all flights
+# Get points.old for all flights - probably ca. 40 minutes
 system.time({
-  points<- foreach (i = 1:length(flights$device_info_serial), .combine = rbind) %dopar% {
-    
+  points <- foreach (i = 1:length(flights$device_info_serial), .combine = rbind) %do% {
+#     i <- 8
+# ?foreach
     # Get gps_extract function
     source("gps_extract.R")
     x <- NA
@@ -64,7 +84,7 @@ system.time({
 
 # warnings()
 
-stopCluster(cl)
+# stopCluster(cl)
 
 str(points)
 
@@ -107,6 +127,8 @@ lst <- list()
 
 #Use system.time to time how long this takes.
 system.time({lst <- foreach(i = 1:20 ) %dopar%{
+  
+#   i <- 4
   
   # Package to extract weather data from NOAA
   require(RNCEP)
