@@ -30,13 +30,13 @@ flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*, l.trip_flight_n,l.trip_i
                     ORDER BY f.flight_id ASC;")
 
 # First half
-flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*, l.trip_flight_n,l.trip_id, l.trip_flight_type, w.* 
+flights.half <- sqlQuery(gps.db, query="SELECT DISTINCT f.*, l.trip_flight_n,l.trip_id, l.trip_flight_type, w.* 
                     FROM lund_flights_commuting_par AS f, lund_flights as l, lund_flight_com_wind_par_half1 AS w
                     WHERE f.flight_id = l.flight_id
                     AND f.flight_id = w.flight_id
                     ORDER BY f.flight_id ASC;")
 
-# str(flights)
+#  str(flights)
 
 # Hack to set time zone back to UTC rather than system locale.
 # See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
@@ -90,7 +90,7 @@ tm <- NULL
 tm <- as.POSIXlt(flights.weather$start_time)
 #Check how this appears (i.e. time zone)
 # tm[1:10]
-attr(tm,"tzone") <- "UTC"
+attr(tm, "tzone") <- "UTC"
 #Check how appears after change of time-zone - i.e. is the absolute time
 #value unchanged?
 # tm[1:10]
@@ -119,6 +119,7 @@ trips$end_time <- tm
 
 
 #Edited this to reference 'lund_flight_paramaters' rather than 'lund_flight_characteristics' as table name changed.
+# Later to 'lund_flight_com_weather_par'
 flights.characteristics <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
                                     FROM lund_flight_com_weather_par AS f
                                     ORDER BY f.flight_id ASC;")
@@ -264,6 +265,7 @@ names(flights.out) == names(flights.in)
 flights.combined <- rbind(flights.out,flights.in)
 
 flights.combined   <- flights.combined[order(flights.combined$trip_id),]
+
 
 
 
@@ -1938,7 +1940,7 @@ plot(abs(wind.ratio)~flights$alpha_mean, ylim = c(0,2), xlim = c(0,60))
 
 # Make a filter to this effect
 f <- flights.combined$alt_med < 150  &   flights.combined$alt_med > -20
-
+# hist(flights.combined$alt_med)
 
 # Prepare vairables
 device_info_serial <- as.factor(flights.combined$device_info_serial[f])
@@ -1955,9 +1957,14 @@ alt_trans <- log10(flights.combined$alt_med[f]+20)
 side.type <- as.factor(sapply(flights.combined$wind_side_mean[f], if.neg))
 head_tail.type <- as.factor(sapply(flights.combined$wind_head_tail_mean[f], if.neg))
 
-head_tail_abs <- abs(flights.combined$wind_head_tail_mean[f])
-side_abs <- abs(flights.combined$wind_side_mean[f])
+head_tail_abs <- abs(flights.combined$wind_head_tail_mean_10[f])
+side_abs <- abs(flights.combined$wind_side_mean_10[f])
 
+
+head_tail_abs2 <- abs(flights.combined$wind_head_tail_mean[f])
+side_abs2 <- abs(flights.combined$wind_side_mean[f])
+
+distance <- flights.combined$dist_a_b[f]
 
 library(nlme)
 
@@ -1976,8 +1983,12 @@ mod[[2]] <- lme(
   alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type ,
   random = ~1|device_info_serial)
 
+mod[[3]] <- lme(
+  alt_trans ~ flight.type * cloud * side.type * side_abs2 * head_tail_abs2 * head_tail.type ,
+  random = ~1|device_info_serial)
+
 # AIC reduced by removing trip_id, we continue without trip id
-AIC(mod[[1]],mod[[2]])
+AIC(mod[[1]],mod[[2]],mod[[3]])
 
 
 # Temporal autocorrelation structure
@@ -1989,13 +2000,15 @@ for(i in 1:7){
   mod_cor[[i]] <- update(mod[[2]], correlation = corARMA(q = i))
 }
 
-
+aic.val <- NULL
 # Compare AIC of models
 for(i in 1:7){
-  print(AIC(mod_cor[[i]]))
+  aic.val[i] <- (AIC(mod_cor[[i]]))
 }
 AIC(mod[[2]])
 AIC(mod[[1]])
+aic.val
+min(aic.val)
 # AIC lowest for base-model, don't keep autocorrelation structure.
 
 AIC(mod_cor[[5]])
@@ -2007,34 +2020,37 @@ str(cloud)
 str(side.type)
 
 
+
+
+
 # Model simplification
 mod_ML[[1]] <- lme(
   alt_trans ~  flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[2]] <- lme(
   alt_trans ~  flight.type * cloud + side.type * side_abs * head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[3]] <- lme(
   alt_trans ~  flight.type * cloud * side.type + side_abs * head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[4]] <- lme(
   alt_trans ~  flight.type * cloud * side.type * side_abs + head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[5]] <- lme(
   alt_trans ~  flight.type * cloud * side.type * side_abs * head_tail_abs + head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[6]] <- lme(
   alt_trans ~  cloud + flight.type * side.type * side_abs * head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[7]] <- lme(
   alt_trans ~  cloud * flight.type + side.type * side_abs * head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 # Compare AIC of models
 for(i in 1:7){
@@ -2043,35 +2059,35 @@ for(i in 1:7){
 
 mod_ML[[4]] <- lme(
   alt_trans ~  flight.type * cloud * side.type * side_abs + head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[8]] <- lme(
   alt_trans ~  flight.type * cloud * side_abs + head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[9]] <- lme(
   alt_trans ~  flight.type * cloud + side.type * side_abs + head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[10]] <- lme(
   alt_trans ~  flight.type + cloud * side.type * side_abs + head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[11]] <- lme(
   alt_trans ~  flight.type * cloud * side_abs + head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[12]] <- lme(
   alt_trans ~  flight.type * cloud * side.type * side_abs + head_tail_abs + head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[13]] <- lme(
   alt_trans ~  flight.type * cloud * side_abs + head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[14]] <- lme(
   alt_trans ~  flight.type * cloud * side_abs * head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 # Compare AIC of models
 for(i in 8:14){
@@ -2084,35 +2100,37 @@ summary(mod_ML[[4]])
 
 mod_ML[[4]] <- lme(
   alt_trans ~  flight.type * cloud * side.type * side_abs + head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[15]] <- lme(
-  alt_trans ~  flight.type * cloud * side.type * side_abs + cloud *head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  alt_trans ~  flight.type * cloud * side.type * side_abs + head_tail_abs * head_tail.type*distance,
+  random = ~1|device_info_serial  , method = "ML")
 
 AIC(mod_ML[[4]])
 AIC(mod_ML[[15]])
 
-r.squaredGLMM(mod_ML[[15]])
+summary(mod_ML[[4]])
+
+r.squaredGLMM(mod_ML[[4]])
 
 
 mod_ML[[15]] <- lme(
   alt_trans ~  flight.type * cloud * side.type * side_abs + cloud *head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[16]] <- lme(
   alt_trans ~  flight.type * cloud * side_abs + cloud *head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 AIC(mod_ML[[16]])
 
 mod_ML[[17]] <- lme(
   alt_trans ~ flight.type * cloud + cloud * side.type * side_abs + cloud *head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[18]] <- lme(
   alt_trans ~  flight.type * cloud + flight.type *side.type * side_abs + cloud *head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 summary(mod_ML[[15]])
 x <- NULL
@@ -2125,30 +2143,30 @@ x
 
 mod_ML[[15]] <- lme(
   alt_trans ~  flight.type * cloud * side.type * side_abs + cloud *head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 mod_ML[[19]] <- lme(
   alt_trans ~  flight.type * cloud *  side_abs + cloud *head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 AIC(mod_ML[[15]])
 
 mod_ML[[15]] <- lme(
   alt_trans ~  flight.type * cloud * side.type * side_abs + cloud *head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 
 anova(mod_ML[[15]])
 
 mod_ML[[16]] <- lme(
   alt_trans ~  flight.type *side.type + cloud *flight.type*  side_abs + side.type *side_abs+ cloud *head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 AIC(mod_ML[[16]])
 AIC(mod_ML[[15]])
 
 
 mod_ML[[17]] <- lme(
   alt_trans ~  flight.type *side.type + cloud *flight.type*  side_abs + cloud *head_tail_abs * head_tail.type ,
-  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  random = ~1|device_info_serial , method = "ML")
 AIC(mod_ML[[16]])
 AIC(mod_ML[[17]])
 
@@ -2158,7 +2176,7 @@ anova(mod_ML[[16]])
 anova(mod_ML[[17]])
 
 mod_ML[[18]] <- lme(
-  alt_trans ~  flight.type * side.type + cloud * side_abs + flight.type *  side_abs + cloud *head_tail_abs * head_tail.type ,  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  alt_trans ~  flight.type * side.type + cloud * side_abs + flight.type *  side_abs + cloud *head_tail_abs * head_tail.type ,  random = ~1|device_info_serial , method = "ML")
 AIC(mod_ML[[17]])
 AIC(mod_ML[[18]])
 
@@ -2166,19 +2184,19 @@ summary(mod_ML[[18]])
 AIC(mod_ML[[18]])
 anova(mod_ML[[18]])
 mod_ML[[19]] <- lme(
-  alt_trans ~  flight.type * side.type + cloud * side_abs + cloud *head_tail_abs * head_tail.type ,  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  alt_trans ~  flight.type * side.type + cloud * side_abs + cloud *head_tail_abs * head_tail.type ,  random = ~1|device_info_serial , method = "ML")
 
 AIC(mod_ML[[18]])
 AIC(mod_ML[[19]])
 anova(mod_ML[[19]])
 
 mod_ML[[20]] <- lme(
-  alt_trans ~  flight.type + side.type + cloud * side_abs + cloud *head_tail_abs * head_tail.type ,  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  alt_trans ~  flight.type + side.type + cloud * side_abs + cloud *head_tail_abs * head_tail.type ,  random = ~1|device_info_serial , method = "ML")
 AIC(mod_ML[[19]])
 AIC(mod_ML[[20]])
 
 mod_ML[[21]] <- lme(
-  alt_trans ~  flight.type * side.type + cloud * side_abs + cloud *head_tail_abs + cloud * head_tail.type + head_tail.type * head_tail_abs + head_tail.type* cloud ,  random = ~1|device_info_serial, correlation = corARMA(q = 5), method = "ML")
+  alt_trans ~  flight.type * side.type + cloud * side_abs + cloud *head_tail_abs + cloud * head_tail.type + head_tail.type * head_tail_abs + head_tail.type* cloud ,  random = ~1|device_info_serial , method = "ML")
 AIC(mod_ML[[19]])
 AIC(mod_ML[[21]])
 
