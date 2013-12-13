@@ -24,9 +24,11 @@ flights <- sqlQuery(gps.db, query = "SELECT DISTINCT f.*
 # str(flights)
 
 #Get a copy of the lund_flight_points_wind_par DB table.
-points_par <- sqlQuery(gps.db, query = "SELECT DISTINCT f.*
-                    FROM lund_flight_points_wind_par AS f
-                    ORDER BY f.flight_id ASC;")
+points_par <- sqlQuery(gps.db, query = "SELECT DISTINCT f.*, t.air_2m, t.air_2m_sd
+                    FROM lund_flight_points_wind_par AS f, lund_flights_com_points_weather AS t
+                    WHERE f.device_info_serial = t.device_info_serial
+                    AND f.date_time = t.date_time
+                    ORDER BY f.device_info_serial ASC, f.date_time ASC;")
 # str(points_par)
 
 
@@ -113,6 +115,9 @@ get.stats <- function(i, points_par = points_par, flights = flights){
   wind_dir_deg_mean <- if.neg(deg(circ.mean(rad(sub.points$wind_dir_deg))))
   wind_dir_deg_rho <- est.rho(rad(sub.points$wind_dir_deg))
   
+  
+  air_2m_mean <- mean(sub.points$air_2m, na.rm = TRUE)
+  
   flight_id <- flights$flight_id[i]
   
   n <- length(sub.points$wind_dir_deg)
@@ -142,7 +147,8 @@ get.stats <- function(i, points_par = points_par, flights = flights){
                 ground_speed_median,
                 ground_dir_mean,
                 ground_dir_rho,
-                ground_dir_circvar                
+                ground_dir_circvar,
+                air_2m_mean
                 )
   
   return(calc.par)
@@ -201,7 +207,8 @@ names(flights.par) <- c("flight_id", "n_points",
                         "ground_speed_median",
                         "ground_dir_mean",
                         "ground_dir_rho",
-                        "ground_dir_circvar"
+                        "ground_dir_circvar",
+                        "air_2m_mean"
                         )
 
 # head(flights.par)
