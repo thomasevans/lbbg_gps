@@ -1950,8 +1950,9 @@ trip <- as.factor(flights.combined$trip_id[f])
 flight.type <- as.factor(flights.combined$flight.type[f])
 wind.type <- as.factor(flights.combined$wind.type[f])
 cloud <- flights.combined$tcdceatm[f]
-
-# Transformed vairable for further analysis
+temp <- flights.combined$air_2m_mean[f] -273.15  # Convert to deg C
+# hist(temp)
+  # Transformed vairable for further analysis
 alt_trans <- log10(flights.combined$alt_med[f]+20)
 
 side.type <- as.factor(sapply(flights.combined$wind_side_mean[f], if.neg))
@@ -1973,22 +1974,19 @@ mod <- list()
 
 # Full factorial model
 mod[[1]] <- lme(
-  alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type ,
+  alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type*temp*distance ,
   random = ~1|device_info_serial/trip)
-
+# ?lme
 
 
 # Removing nested random effect of foraging trip id
 mod[[2]] <- lme(
-  alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type ,
+  alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type*temp*distance  ,
   random = ~1|device_info_serial)
 
-mod[[3]] <- lme(
-  alt_trans ~ flight.type * cloud * side.type * side_abs2 * head_tail_abs2 * head_tail.type ,
-  random = ~1|device_info_serial)
 
 # AIC reduced by removing trip_id, we continue without trip id
-AIC(mod[[1]],mod[[2]],mod[[3]])
+AIC(mod[[1]],mod[[2]])
 
 
 # Temporal autocorrelation structure
@@ -2011,22 +2009,136 @@ aic.val
 min(aic.val)
 # AIC lowest for base-model, don't keep autocorrelation structure.
 
+
+
 AIC(mod_cor[[5]])
 
 mod_ML <- list()
-# ?lme
-str(flight.type)
-str(cloud)
-str(side.type)
 
 
 
-
+# intervals(mod_ML[[1]])
 
 # Model simplification
 mod_ML[[1]] <- lme(
-  alt_trans ~  flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type ,
+  alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type*temp*distance  ,
   random = ~1|device_info_serial , method = "ML")
+
+mod_ML[[2]] <- lme(
+  alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type*distance+temp*distance  ,
+  random = ~1|device_info_serial , method = "ML")
+
+AIC(mod_ML[[1]])
+AIC(mod_ML[[2]])
+
+mod_ML[[3]] <- lme(
+  alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type*distance+temp*distance   + temp * flight.type * cloud * side.type * side_abs * head_tail_abs,
+  random = ~1|device_info_serial , method = "ML")
+
+AIC(mod_ML[[2]])
+AIC(mod_ML[[3]])
+
+
+mod_ML[[4]] <- lme(
+  alt_trans ~  flight.type * side.type*temp*distance + cloud * side_abs*temp*distance + cloud *head_tail_abs * head_tail.type *temp*distance,  random = ~1|device_info_serial , method = "ML")
+AIC(mod_ML[[2]])
+AIC(mod_ML[[4]])
+
+mod_ML[[5]] <- lme(
+  alt_trans ~  flight.type * side.type*temp+ flight.type * side.type*distance + cloud * side_abs*temp*distance + cloud *head_tail_abs * head_tail.type *temp*distance,  random = ~1|device_info_serial , method = "ML")
+AIC(mod_ML[[5]])
+AIC(mod_ML[[4]])
+
+summary(mod_ML[[4]])
+
+
+
+# ?lme
+# 
+# mod_ML[[2]] <- lme(
+#   alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type,
+#   random = ~1|device_info_serial , method = "ML")
+
+AIC(mod_ML[[1]])
+
+library(MuMIn)
+
+r.squaredGLMM(mod_ML[[4]])
+
+
+
+
+
+# ?dredge
+
+# dd <- dredge(mod_ML[[1]])
+
+require(foreach)
+require(doParallel)
+
+
+#Make cluster of number of devices instances
+cl <- makeCluster(8)
+
+#start the parellel session of R; the 'slaves', which will run the analysis.
+registerDoParallel(cl)  
+
+
+# alt_trans ~  flight.type * cloud * side.type * side_abs + cloud *head_tail_abs * head_tail.type ,
+# random = ~1|device_info_serial
+
+
+# alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type*temp*distance ,
+# random = ~1|device_info_serial , method = "ML")
+
+clusterExport(cl, c("alt_trans", "flight.type", "cloud", "side.type",
+                    "side_abs", "head_tail_abs", "head_tail.type",
+                    "device_info_serial", "temp","distance"))
+
+clusterEvalQ(cl= cl, library("nlme"))
+
+# ?clusterEvalQ
+dd <- pdredge(mod_ML[[5]], cluster = cl)
+
+
+# close cluster
+stopCluster(cl)
+
+dd
+summary(dd)
+
+top.models <- get.models(dd, cumsum(weight) <= .95)
+str(top.models)
+top.models[[1]]
+
+
+#Checking final model assumptions
+plot(mod_final,resid(.,type="p")~fitted(.)|device_info_serial)
+qqnorm(mod_final,~resid(.)|device_info_serial)
+plot(mod_final)
+
+# See how autocorrelation structure looks - ok
+plot( ACF(mod_final, maxLag = 50), alpha = 0.01)
+plot( ACF(mod_final, maxLag = 50, resType = "n"), alpha = 0.01)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 mod_ML[[2]] <- lme(
   alt_trans ~  flight.type * cloud + side.type * side_abs * head_tail_abs * head_tail.type ,
@@ -2106,8 +2218,16 @@ mod_ML[[15]] <- lme(
   alt_trans ~  flight.type * cloud * side.type * side_abs + head_tail_abs * head_tail.type*distance,
   random = ~1|device_info_serial  , method = "ML")
 
+mod_ML[[16]] <- lme(
+  alt_trans ~  flight.type * cloud * side.type * side_abs*temp + head_tail_abs * head_tail.type*distance*temp,
+  random = ~1|device_info_serial  , method = "ML")
+
+AIC(mod_ML[[1]])
 AIC(mod_ML[[4]])
 AIC(mod_ML[[15]])
+AIC(mod_ML[[16]])
+
+summary(mod_ML[[16]])
 
 summary(mod_ML[[4]])
 
@@ -2208,11 +2328,20 @@ r.squaredGLMM(mod_final)
 anova(mod_final)
 summary(mod_final)
 
+# AIC(mod_ML[[1]])
+# AIC(mod_ML[[15]])
+# AIC(mod_ML[[16]])
+# 
+# 
+# AIC(mod_ML[[19]])
+
 
 library(MuMIn)
 # ?dredge
+r.squaredGLMM(mod_final)
 
-dd <- dredge(mod_ML[[15]])
+
+dd <- dredge(mod_ML[[16]])
 
 require(foreach)
 require(doParallel)
@@ -2230,7 +2359,7 @@ registerDoParallel(cl)
 
 clusterExport(cl, c("alt_trans", "flight.type", "cloud", "side.type",
                     "side_abs", "head_tail_abs", "head_tail.type",
-                    "device_info_serial"))
+                    "device_info_serial", "temp"))
 
 clusterEvalQ(cl= cl, library("nlme"))
 
@@ -2366,6 +2495,313 @@ fx(pred)
 
 
 
+
+
+# Air speed and wind components ------
+
+# Make a filter to this effect
+f <- flights.combined$alt_med < 150  &   flights.combined$alt_med > -20
+# hist(flights.combined$alt_med)
+
+# Prepare vairables
+device_info_serial <- as.factor(flights.combined$device_info_serial[f])
+device_info_serial[device_info_serial == 687] <- 596
+device_info_serial <- as.factor(device_info_serial)
+trip <- as.factor(flights.combined$trip_id[f])
+flight.type <- as.factor(flights.combined$flight.type[f])
+wind.type <- as.factor(flights.combined$wind.type[f])
+cloud <- flights.combined$tcdceatm[f]
+temp <- flights.combined$air_2m_mean[f] -273.15  # Convert to deg C
+# hist(temp)
+# Transformed vairable for further analysis
+alt_trans <- log10(flights.combined$alt_med[f]+20)
+
+side.type <- as.factor(sapply(flights.combined$wind_side_mean[f], if.neg))
+head_tail.type <- as.factor(sapply(flights.combined$wind_head_tail_mean[f], if.neg))
+
+head_tail_abs <- abs(flights.combined$wind_head_tail_mean_10[f])
+side_abs <- abs(flights.combined$wind_side_mean_10[f])
+
+
+head_tail_abs2 <- abs(flights.combined$wind_head_tail_mean[f])
+side_abs2 <- abs(flights.combined$wind_side_mean[f])
+
+distance <- flights.combined$dist_a_b[f]
+# str(flights.combined)
+air_speed <- flights.combined$head_speed_mean[f]
+
+library(nlme)
+
+mod <- list()
+
+
+# Full factorial model
+mod[[1]] <- lme(
+  air_speed ~ flight.type * side.type * side_abs * head_tail_abs * head_tail.type*distance ,
+  random = ~1|device_info_serial/trip)
+# ?lme
+
+
+library(MuMIn)
+# ?dredge
+r.squaredGLMM(mod[[1]])
+
+
+# Removing nested random effect of foraging trip id
+mod[[2]] <- lme(
+  air_speed ~ flight.type * side.type * side_abs * head_tail_abs * head_tail.type*distance ,
+  random = ~1|device_info_serial)
+
+
+# AIC reduced by removing trip_id, we continue without trip id
+AIC(mod[[1]],mod[[2]])
+
+
+# Temporal autocorrelation structure
+# ?ACF
+plot(ACF(mod[[2]], maxLag = 100), alpha = 0.05, new = TRUE)
+# Refit model with different correlation lags
+mod_cor <- list()
+for(i in 1:10){
+  mod_cor[[i]] <- update(mod[[2]], correlation = corARMA(q = i))
+}
+
+aic.val <- NULL
+# Compare AIC of models
+for(i in 1:10){
+  aic.val[i] <- (AIC(mod_cor[[i]]))
+}
+
+aic.val
+min(aic.val)
+AIC(mod[[2]])
+AIC(mod[[1]])
+# AIC lowest for base-model, don't keep autocorrelation structure.
+
+
+
+AIC(mod_cor[[2]])
+
+mod_ML <- list()
+
+
+
+# intervals(mod_ML[[1]])
+
+# Model simplification
+mod_ML[[1]] <- lme(
+  air_speed ~ flight.type * side.type * side_abs * head_tail_abs * head_tail.type*distance  ,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+
+summary(mod_ML[[1]])
+
+
+mod_ML[[2]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs + head_tail_abs * head_tail.type+distance    ,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+AIC(mod_ML[[1]])
+AIC(mod_ML[[2]])
+
+summary(mod_ML[[2]])
+
+r.squaredGLMM(mod[[2]])
+
+
+mod_ML[[3]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs * head_tail_abs * head_tail.type+distance    ,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+AIC(mod_ML[[2]])
+AIC(mod_ML[[3]])
+
+mod_ML[[4]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs*distance + head_tail_abs * head_tail.type*distance    ,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+AIC(mod_ML[[2]])
+AIC(mod_ML[[4]])
+
+summary(mod_ML[[4]])
+
+r.squaredGLMM(mod_ML[[4]])
+
+mod_ML[[5]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs + head_tail_abs * head_tail.type*distance    ,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+AIC(mod_ML[[5]])
+AIC(mod_ML[[4]])
+
+
+mod_ML[[6]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs*distance + head_tail_abs * head_tail.type    ,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+AIC(mod_ML[[6]])
+AIC(mod_ML[[4]])
+
+summary(mod_ML[[6]])
+
+r.squaredGLMM(mod_ML[[6]])
+
+mod_ML[[7]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs + head_tail_abs * head_tail.type    ,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+AIC(mod_ML[[7]])
+AIC(mod_ML[[4]])
+
+anova(mod_ML[[4]],mod_ML[[7]])
+
+
+summary(mod_ML[[4]])
+
+
+r.squaredGLMM(mod_ML[[4]])
+r.squaredGLMM(mod_ML[[7]])
+
+
+
+mod_ML[[8]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs2*distance + head_tail_abs2 * head_tail.type*distance    ,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+AIC(mod_ML[[4]])
+AIC(mod_ML[[8]])
+
+summary(mod_ML[[8]])
+
+r.squaredGLMM(mod_ML[[4]])
+r.squaredGLMM(mod_ML[[8]])
+
+
+mod_ML[[9]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs2 + head_tail_abs2 * head_tail.type+distance    ,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+AIC(mod_ML[[4]])
+AIC(mod_ML[[8]])
+AIC(mod_ML[[9]])
+
+mod_ML[[10]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs2 + head_tail_abs2 * head_tail.type*distance    ,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+AIC(mod_ML[[4]])
+AIC(mod_ML[[8]])
+AIC(mod_ML[[10]])
+
+for(i in 1:10){
+  print(AIC(mod_ML[[i]]))
+}
+
+
+
+require(foreach)
+require(doParallel)
+
+
+#Make cluster of number of devices instances
+cl <- makeCluster(8)
+
+#start the parellel session of R; the 'slaves', which will run the analysis.
+registerDoParallel(cl)  
+
+
+# alt_trans ~  flight.type * cloud * side.type * side_abs + cloud *head_tail_abs * head_tail.type ,
+# random = ~1|device_info_serial
+
+clusterExport(cl, c("air_speed", "flight.type",
+                    "side.type",
+                    "side_abs2", "head_tail_abs2",
+                    "head_tail.type", "distance",
+                    "device_info_serial"))
+
+clusterEvalQ(cl= cl, library("nlme"))
+
+# ?clusterEvalQ
+dd <- pdredge(mod_ML[[8]], cluster = cl)
+# # ?pdredge
+# 
+# #close cluster
+stopCluster(cl)
+
+summary(dd)
+
+top.models <- get.models(dd, cumsum(weight) <= .95)
+str(top.models)
+top.models[[1]]
+AIC(top.models[[1]])
+AIC(mod_ML[[8]])
+
+
+mod_ML[[11]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs2 + 
+    head_tail_abs2 * head_tail.type + side.type  *distance +
+    head_tail_abs2*distance,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+AIC(top.models[[1]])
+AIC(mod_ML[[11]])
+r.squaredGLMM(mod_ML[[11]])
+
+mod_final <- update(mod_ML[[11]], method = "REML")
+r.squaredGLMM(mod_final)
+
+
+
+#Checking final model assumptions
+plot(mod_final,resid(.,type="p")~fitted(.)|device_info_serial)
+qqnorm(mod_final,~resid(.)|device_info_serial)
+plot(mod_final)
+
+# See how autocorrelation structure looks - ok
+plot( ACF(mod_final, maxLag = 50), alpha = 0.01)
+plot( ACF(mod_final, maxLag = 50, resType = "n"), alpha = 0.01)
+
+summary(mod_final)
+
+
+
+air_speed ~ flight.type + side.type * side_abs2 + 
+  head_tail_abs2 * head_tail.type + side.type  *distance +
+  head_tail_abs2*distance,
+fit.head <- data.frame(flight.type = "out",
+                       head_tail.type = 0,
+                       side.type = 1,
+                       side_abs2 = rep(1:5, 20),
+                       head_tail_abs2 = rep(1:5, each = 20),
+                       device_info_serial = 519,
+                       distance = mean(distance))
+fit.tail <- data.frame(flight.type = "out",
+                       head_tail.type = 1,
+                       side.type = 1,
+                       side_abs2 = rep(1:5, 20),
+                       head_tail_abs2 = rep(1:5, each = 20),
+                       device_info_serial = 519,
+                       distance = mean(distance))
+
+win.metafile("3D_graph_rho_wind.wmf")
+par(mfrow=c(1,2),mai=c(0,0.1,0.2,0)+.02)
+fit.head$pred <- predict(mod_final, newdata = fit.head)
+# ?persp
+persp(x=1:5,y=1:5,z=matrix((fit.head$pred),nrow=5,ncol=5,byrow=TRUE),
+      xlab="side_abs",ylab="head_tail_abs",zlab="rho - fit",
+      main="Head", 
+      theta = -60, phi = 40,
+      col = "grey", lwd = 1.5,
+      shade = 0.4, axes = TRUE, r = 0.7,
+      ticktype = "detailed", cex = 0.6)
+
+fit.tail$pred <- predict(mod_final, newdata = fit.tail)
+persp(x=1:5,y=1:5,z=matrix((fit.tail$pred),nrow=5,ncol=5,byrow=TRUE),
+      xlab="side_abs",ylab="head_tail_abs",zlab="rho - fit",
+      main="Head", 
+      theta = -60, phi = 40,
+      col = "grey", lwd = 1.5,
+      shade = 0.4, axes = TRUE, r = 0.7,
+      ticktype = "detailed", cex = 0.6)
+dev.off()
+
+
+
+
+
+
+
+
+
 # Drift -------
 names(flights.combined)
 
@@ -2445,6 +2881,12 @@ mod.03 <- glm(flights.combined$head_speed_mean ~ vg.sub.va + cos.alpha.inv+fligh
 summary(mod.03)
 anova(mod.03)
 ?glm
+
+cos.test <- seq(-60,60,1)
+cos.test.a <- cos(rad(cos.test))
+plot(cos.test.a~cos.test, type = "l")
+plot((1/cos.test.a)~cos.test, type = "l")
+
 
 plot(flights.combined$head_speed_mean ~ vg.sub.va,
      ylab = "Va", xlab = "Vg - Va",
