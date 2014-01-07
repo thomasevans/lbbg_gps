@@ -2732,31 +2732,234 @@ mod_ML[[11]] <- lme(
     head_tail_abs2 * head_tail.type + side.type  *distance +
     head_tail_abs2*distance,
   random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+mod_ML[[12]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs + 
+    head_tail_abs * head_tail.type + side.type  *distance +
+    head_tail_abs*distance,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
 AIC(top.models[[1]])
 AIC(mod_ML[[11]])
-r.squaredGLMM(mod_ML[[11]])
+AIC(mod_ML[[12]])
+
+mod_ML[[13]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs2 + 
+    head_tail_abs2 * head_tail.type + side.type  *log(distance) +
+    head_tail_abs2*log(distance),
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+AIC(top.models[[1]])
+AIC(mod_ML[[11]])
+AIC(mod_ML[[13]])
+
+
+mod_ML[[15]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs2 + 
+    head_tail_abs2 * head_tail.type + side.type  *log10(distance/1000) +
+    head_tail_abs2*log10(distance/1000),
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+
+mod_ML[[16]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs2 + 
+    head_tail_abs2 * head_tail.type +
+    head_tail_abs2*log10(distance/1000),
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+
+AIC(top.models[[1]])
+AIC(mod_ML[[11]])
+AIC(mod_ML[[13]])
+AIC(mod_ML[[14]])
+AIC(mod_ML[[15]])
+AIC(mod_ML[[16]])
+
+
+mod_ML[[17]] <- lme(
+  air_speed ~ flight.type +  
+    head_tail_abs2 * head_tail.type +
+    head_tail_abs2*log10(distance/1000),
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+r.squaredGLMM(mod_ML[[15]])
+r.squaredGLMM(mod_ML[[17]])
+
+mod_ML[[18]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs2 + 
+     side.type  *log10(distance/1000) ,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+r.squaredGLMM(mod_ML[[15]])
+r.squaredGLMM(mod_ML[[18]])
+
+mod_ML[[19]] <- lme(
+  air_speed ~ flight.type + side.type * side_abs2 + 
+    head_tail_abs2 * head_tail.type + side.type,
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+r.squaredGLMM(mod_ML[[15]])
+r.squaredGLMM(mod_ML[[19]])
+
+hist(air_speed)
+var(air_speed)
+sd(air_speed)
+mean(air_speed)
+median(air_speed)
+
+mod_ML[[20]] <- lme(
+  air_speed ~ flight.type +  side_abs2 + 
+    head_tail_abs2 * head_tail.type + 
+    head_tail_abs2*log10(distance/1000),
+  random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+# ?log
+r.squaredGLMM(mod_ML[[15]])
+r.squaredGLMM(mod_ML[[20]])
+
 
 mod_final <- update(mod_ML[[11]], method = "REML")
+mod_final <- update(mod_ML[[15]], method = "REML")
+# distance
+library(MuMIn)
+library(nlme)
 r.squaredGLMM(mod_final)
+summary(mod_final)
+VarCorr(mod_final)
 
+
+# fm1 <- lme(distance ~ age, Orthodont, random = ~ age | Subject)
+plot(ranef(mod_final))
+# ?ranef
+
+# install.packages("car")
+# library(car)
+# outlierTest(mod_final)
 
 
 #Checking final model assumptions
-plot(mod_final,resid(.,type="p")~fitted(.)|device_info_serial)
+# Label outlier points
+plot(mod_final,resid(.,type="p")~fitted(.)|device_info_serial, id = .05)
+plot(mod_final,resid(.,type="p")~fitted(.)|device_info_serial, id = .01)
+plot(mod_final,resid(.,type="p")~fitted(.)|device_info_serial, id = .001)
+# ?plot
+
 qqnorm(mod_final,~resid(.)|device_info_serial)
 plot(mod_final)
+plot(mod_final)
+fit.val <- fitted(mod_final)
+par(mfrow=c(1,1))
+par(pty="s")
+plot(fit.val,air_speed, xlim = c(6,20), ylim = c(6,20),
+     xlab = "Airspeed (fitted values)",
+     ylab = "Airspeed (measured)")
+abline(a = 0, b = 1, lwd = 2, lty = 2, col= "red")
+?abline
 
+hist(air_speed)
 # See how autocorrelation structure looks - ok
 plot( ACF(mod_final, maxLag = 50), alpha = 0.01)
 plot( ACF(mod_final, maxLag = 50, resType = "n"), alpha = 0.01)
 
+$ panel.args$ y  
+
+plot(air_speed~side_abs2)
+plot(air_speed~side_abs)
+
+fx <- function(x,y){
+  if(y == 0){
+  out <- x*-1} else out <- x
+  out
+}
+head_tail_abs2 * (2*head_tail.type
+tail <- mapply(fx,head_tail_abs2,head_tail.type)
+plot(air_speed~tail)
+plot(air_speed[head_tail.type == 1]~head_tail_abs2[head_tail.type == 1])
+plot(air_speed[head_tail.type == 0]~head_tail_abs2[head_tail.type == 0])
+
+plot(air_speed~log10(distance/1000))
+                  
+                  
+
+model.fit <- cbind(flight.type, side.type, side_abs2, 
+                     head_tail_abs2 , head_tail.type,  distance,
+                   device_info_serial )                  
+model.fit$pred <- predict(mod_final, newdata = model.fit)
+                  
+
+#                length(device_info_serial)   
+   
+                  
+                  
+                  mod_ML[[15]] <- lme(
+                    air_speed ~ flight.type + side.type * side_abs2 + 
+                      head_tail_abs2 * head_tail.type + side.type  *log10(distance/1000) +
+                      head_tail_abs2*log10(distance/1000),
+                    random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+                  
+                 
+                  mod.type <- lme(
+                    air_speed ~ side.type * side_abs2 + 
+                      head_tail_abs2 * head_tail.type + side.type  *log10(distance/1000) +
+                      head_tail_abs2*log10(distance/1000),
+                    random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")                  
+                  anova(mod.type,mod_ML[[15]])
 summary(mod_final)
 
 
-
-air_speed ~ flight.type + side.type * side_abs2 + 
-  head_tail_abs2 * head_tail.type + side.type  *distance +
-  head_tail_abs2*distance,
+                  mod_side <- lme(
+                    air_speed ~ flight.type + + 
+                      head_tail_abs2 * head_tail.type + 
+                      head_tail_abs2*log10(distance/1000),
+                    random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+                  anova(mod_side,mod_ML[[15]])
+                  
+                  
+                  mod.side_type <- lme(
+                    air_speed ~  side_abs2 + 
+                      head_tail_abs2 * head_tail.type + 
+                      head_tail_abs2*log10(distance/1000),
+                    random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")                  
+                  anova(mod.side_type,mod_ML[[15]])
+                  summary(mod_final)
+                  
+                  mod.side.dist.int <- lme(
+                    air_speed ~ flight.type + side.type * side_abs2 + 
+                      head_tail_abs2 * head_tail.type + 
+                      head_tail_abs2*log10(distance/1000),
+                    random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+                  anova(mod.side.dist.int,mod_ML[[15]])
+                  
+                  
+                  
+                  
+                  
+                  mod_head <- lme(
+                    air_speed ~ flight.type + side.type * side_abs2 + 
+                     side.type  *log10(distance/1000)
+                      ,
+                    random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")                  
+                  anova(mod_head,mod_ML[[15]])
+                  
+                  
+                  
+                  mod_head_int <- lme(
+                    air_speed ~ flight.type + side.type * side_abs2 + 
+                      head_tail_abs2 * head_tail.type + side.type  *log10(distance/1000) 
+                    ,
+                    random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+                  anova(mod_head_int,mod_ML[[15]])
+                  
+                  
+                  
+                  mod_dist <- lme(
+                    air_speed ~ flight.type + side.type * side_abs2 + 
+                      head_tail_abs2 * head_tail.type ,
+                    random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+                  anova(mod_dist,mod_ML[[15]])
+                  
+                  mod_dist_int <- lme(
+                    air_speed ~ flight.type + side.type * side_abs2 + 
+                      head_tail_abs2 * head_tail.type   +log10(distance/1000) ,
+                    random = ~1|device_info_serial , correlation = corARMA(q = 2), method = "ML")
+                  anova(mod_dist_int,mod_ML[[15]])
+                  
+                  
+                  
+# air_speed ~ flight.type + side.type * side_abs2 + 
+#   head_tail_abs2 * head_tail.type + side.type  *distance +
+#   head_tail_abs2*distance,
 fit.head <- data.frame(flight.type = "out",
                        head_tail.type = 0,
                        side.type = 1,
@@ -2764,25 +2967,270 @@ fit.head <- data.frame(flight.type = "out",
                        head_tail_abs2 = rep(1:5, each = 20),
                        device_info_serial = 519,
                        distance = mean(distance))
-fit.tail <- data.frame(flight.type = "out",
+fit.head.right <- data.frame(flight.type = "out",
                        head_tail.type = 1,
                        side.type = 1,
                        side_abs2 = rep(1:5, 20),
-                       head_tail_abs2 = rep(1:5, each = 20),
+                       head_tail_abs2 = mean(head_tail_abs2),
                        device_info_serial = 519,
-                       distance = mean(distance))
+                       distance = rep(seq(10000,50000, 10000), each = 20))
 
-win.metafile("3D_graph_rho_wind.wmf")
+fit.head.left <- data.frame(flight.type = "out",
+                       head_tail.type = 1,
+                       side.type = 0,
+                       side_abs2 = rep(1:5, 20),
+                       head_tail_abs2 = mean(head_tail_abs2),
+                       device_info_serial = 519,
+                       distance = rep(seq(10000,50000, 10000), each = 20))
+
+fit.tail.left <- data.frame(flight.type = "out",
+                            head_tail.type = 1,
+                            side.type = 0,
+                            side_abs2 = mean(side_abs2),
+                            head_tail_abs2 = rep(1:5, 20),
+                            device_info_serial = 519,
+                            distance = rep(seq(10000,50000, 10000), each = 20))
+
+fit.head.left <- data.frame(flight.type = "out",
+                            head_tail.type = 0,
+                            side.type = 0,
+                            side_abs2 = mean(side_abs2),
+                            head_tail_abs2 = rep(1:5, 5),
+                            device_info_serial = 519,
+                            distance = rep(seq(10000,50000, 10000), each = 5))
+
+
+
+win.metafile("RAND_TEST.wmf")
 par(mfrow=c(1,2),mai=c(0,0.1,0.2,0)+.02)
 fit.head$pred <- predict(mod_final, newdata = fit.head)
 # ?persp
-persp(x=1:5,y=1:5,z=matrix((fit.head$pred),nrow=5,ncol=5,byrow=TRUE),
-      xlab="side_abs",ylab="head_tail_abs",zlab="rho - fit",
+persp(x = unique(fit.head$distance)/1000,
+      y = unique(fit.head$side_abs2),
+      z = fit.head$pred,
+      xlab="a",ylab="b",zlab="Va - fit",
       main="Head", 
-      theta = -60, phi = 40,
+      theta = -50, phi = 40,
       col = "grey", lwd = 1.5,
       shade = 0.4, axes = TRUE, r = 0.7,
       ticktype = "detailed", cex = 0.6)
+
+
+fit.head.left$pred <- predict(mod_final, newdata = fit.head.left)
+fit.head.right$pred <- predict(mod_final, newdata = fit.head.right)
+fit.tail.left$pred <- predict(mod_final, newdata = fit.tail.left)
+fit.head.left$pred <- predict(mod_final, newdata = fit.head.left)
+
+
+par(mfrow=c(1,1), mai = c(1,1,1,1)+.02)
+plot(fit.head.left$pred~fit.head.left$distance)
+plot(fit.head.left$pred~fit.head.left$side_abs2)
+# plot(fit.head$pred~fit.head$side_abs2)
+plot(fit.head.right$pred~fit.head.right$distance)
+plot(fit.head.right$pred~fit.head.right$side_abs2)
+# plot(fit.head$pred~fit.head$side_abs2)
+
+plot(fit.tail.left$pred~fit.tail.left$distance)
+plot(fit.tail.left$pred~fit.tail.left$head_tail_abs2)
+
+
+plot(fit.head.left$pred~fit.head.left$distance)
+plot(fit.head.left$pred~fit.head.left$head_tail_abs2)
+
+
+
+
+
+# Data for prediction
+fit.head.left <- data.frame(flight.type = "out",
+                            head_tail.type = 0,
+                            side.type = 0,
+                            side_abs2 = mean(side_abs2),
+                            head_tail_abs2 = rep(1:5, 5),
+                            device_info_serial = 519,
+                            distance = rep(seq(10000,50000, 10000), each = 5))
+
+# Get model predictions:
+fit.head.left$pred <- predict(mod_final, newdata = fit.head.left)
+
+par(mfrow=c(1,2))                  
+# Draw plot
+persp(x = unique(fit.head.left$head_tail_abs2),
+      y = unique(fit.head.left$distance)/1000,
+      z = matrix(fit.head.left$pred, 5,5),
+      xlab= "Head wind speed",
+      ylab= "distance (km)",
+      zlab= "Va - fit",
+      main= "Head - left", 
+      theta = -40, phi = 30,
+      col = "grey", lwd = 1.5,
+      shade = 0.4, axes = TRUE, r = 0.7,
+      ticktype = "detailed", cex = 0.6,
+      cex.axis = 0.6,
+      cex.lab = 0.8,
+      zlim = c(10.5, 15))
+                  
+
+
+
+# Data for prediction
+fit.head.right <- data.frame(flight.type = "out",
+                            head_tail.type = 0,
+                            side.type = 1,
+                            side_abs2 = mean(side_abs2),
+                            head_tail_abs2 = rep(1:5, 5),
+                            device_info_serial = 519,
+                            distance = rep(seq(10000,50000, 10000), each = 5))
+
+# Get model predictions:
+fit.head.right$pred <- predict(mod_final, newdata = fit.head.right)
+
+# Draw plot
+persp(x = unique(fit.head.right$head_tail_abs2),
+      y = unique(fit.head.right$distance)/1000,
+      z = matrix(fit.head.right$pred, 5,5),
+      xlab= "Head wind speed",
+      ylab= "distance (km)",
+      zlab= "Va - fit",
+      main= "Head - right", 
+      theta = -40, phi = 30,
+      col = "grey", lwd = 1.5,
+      shade = 0.4, axes = TRUE, r = 0.7,
+      ticktype = "detailed", cex = 0.6,
+      cex.axis = 0.6,
+      cex.lab = 0.8,
+      zlim = c(10, 14))
+
+
+
+
+
+# Data for prediction
+fit.tail.left <- data.frame(flight.type = "out",
+                            head_tail.type = 1,
+                            side.type = 0,
+                            side_abs2 = mean(side_abs2),
+                            head_tail_abs2 = rep(1:5, 5),
+                            device_info_serial = 519,
+                            distance = rep(seq(10000,50000, 10000), each = 5))
+
+# Get model predictions:
+fit.tail.left$pred <- predict(mod_final, newdata = fit.tail.left)
+
+# Draw plot
+persp(x = unique(fit.tail.left$head_tail_abs2),
+      y = unique(fit.tail.left$distance)/1000,
+      z = matrix(fit.tail.left$pred, 5,5),
+      xlab= "Tail wind speed",
+      ylab= "distance (km)",
+      zlab= "Va - fit",
+      main= "Tail - left", 
+      theta = 40, phi = 30,
+      col = "grey", lwd = 1.5,
+      shade = 0.4, axes = TRUE, r = 0.7,
+      ticktype = "detailed", cex = 0.6,
+      cex.axis = 0.6,
+      cex.lab = 0.8,
+      zlim = c(10.5, 14))
+#                   zlim = c(10.5, 14))
+
+
+# Data for prediction
+fit.tail.right <- data.frame(flight.type = "out",
+                            head_tail.type = 1,
+                            side.type = 1,
+                            side_abs2 = mean(side_abs2),
+                            head_tail_abs2 = rep(1:5, 5),
+                            device_info_serial = 519,
+                            distance = rep(seq(10000,50000, 10000), each = 5))
+
+# Get model predictions:
+fit.tail.right$pred <- predict(mod_final, newdata = fit.tail.right)
+
+# Draw plot
+persp(x = unique(fit.tail.right$head_tail_abs2),
+      y = unique(fit.tail.right$distance)/1000,
+      z = matrix(fit.tail.right$pred, 5,5),
+      xlab= "Tail wind speed",
+      ylab= "distance (km)",
+      zlab= "Va - fit",
+      main= "Tail - right", 
+      theta = 40, phi = 30,
+      col = "grey", lwd = 1.5,
+      shade = 0.4, axes = TRUE, r = 0.7,
+      ticktype = "detailed", cex = 0.6,
+      cex.axis = 0.6,
+      cex.lab = 0.8,
+      zlim = c(10, 14))
+
+
+# Data for prediction
+fit.tail.right.side <- data.frame(flight.type = "out",
+                             head_tail.type = 1,
+                             side.type = 1,
+                             side_abs2 = rep(1:5, 5),
+                             head_tail_abs2 = mean(head_tail_abs2),
+                             device_info_serial = 519,
+                             distance = rep(seq(10000,50000, 10000), each = 5))
+
+# Get model predictions:
+fit.tail.right.side$pred <- predict(mod_final, newdata = fit.tail.right.side)
+
+                  par(mfrow=c(1,2))
+                  
+# Draw plot
+persp(x = unique(fit.tail.right.side$side_abs2),
+      y = unique(fit.tail.right.side$distance)/1000,
+      z = matrix(fit.tail.right.side$pred, 5,5),
+      xlab= "Side wind speed",
+      ylab= "distance (km)",
+      zlab= "Va - fit",
+      main= "Tail - right", 
+      theta = 40, phi = 30,
+      col = "grey", lwd = 1.5,
+      shade = 0.4, axes = TRUE, r = 0.7,
+      ticktype = "detailed", cex = 0.6,
+      cex.axis = 0.6,
+      cex.lab = 0.8,
+      zlim = c(10, 12.5))
+
+
+# Data for prediction
+fit.tail.left.side <- data.frame(flight.type = "out",
+                                  head_tail.type = 1,
+                                  side.type = 0,
+                                  side_abs2 = rep(1:5, 5),
+                                  head_tail_abs2 = mean(head_tail_abs2),
+                                  device_info_serial = 519,
+                                  distance = rep(seq(10000,50000, 10000), each = 5))
+
+# Get model predictions:
+fit.tail.left.side$pred <- predict(mod_final, newdata = fit.tail.left.side)
+
+# Draw plot
+persp(x = unique(fit.tail.left.side$side_abs2),
+      y = unique(fit.tail.left.side$distance)/1000,
+      z = matrix(fit.tail.left.side$pred, 5,5),
+      xlab= "Side wind speed",
+      ylab= "distance (km)",
+      zlab= "Va - fit",
+      main= "Tail - left", 
+      theta = -40, phi = 30,
+      col = "grey", lwd = 1.5,
+      shade = 0.4, axes = TRUE, r = 0.7,
+      ticktype = "detailed", cex = 0.6,
+      cex.axis = 0.6,
+      cex.lab = 0.8,
+      zlim = c(10, 12.5))
+                  
+
+
+
+
+
+test <- matrix(fit.head.left$pred, 10,10)
+length(test)
+length(fit.head.left$pred)
 
 fit.tail$pred <- predict(mod_final, newdata = fit.tail)
 persp(x=1:5,y=1:5,z=matrix((fit.tail$pred),nrow=5,ncol=5,byrow=TRUE),
@@ -2794,8 +3242,9 @@ persp(x=1:5,y=1:5,z=matrix((fit.tail$pred),nrow=5,ncol=5,byrow=TRUE),
       ticktype = "detailed", cex = 0.6)
 dev.off()
 
+summary(mod_final)
 
-
+# hist(air_speed)
 
 
 
