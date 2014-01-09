@@ -42,7 +42,7 @@ gps.wrap <- function(flight_id, flights){
 }
 
 # For testing purposes only analyse first 100 flights
-flights <- flights[1:100,]
+# flights <- flights[1:10,]
 
 # x <- gps.extract(flights$device_info_serial[1], flights$start_time[1], flights$end_time[1], weather = TRUE)
 
@@ -108,10 +108,14 @@ gps.data.par <- cbind(gps.data[,1:3])
 # str(wind.data)
 
 # Add wind paramaters to dataframe
-cbind(gps.data.par, gps.data$wind_u_10m_ecmwf, gps.data$wind_v_10m_ecmwf,
-     gps.data$wind_u_10m_flt_ht_ecmwf, gps.data$wind_v_10m_flt_ht_ecmwf,
-     gps.data$wind_speed_flt_ht_ecmwf, gps.data$wind_dir_ecmwf,
-     gps.data$wind_speed_10m_ecmwf)
+gps.data.par <- cbind(gps.data.par,
+                      gps.data$wind_u_10m_ecmwf,
+                      gps.data$wind_v_10m_ecmwf,
+                      gps.data$wind_u_10m_flt_ht_ecmwf,
+                      gps.data$wind_v_10m_flt_ht_ecmwf,
+                      gps.data$wind_speed_flt_ht_ecmwf,
+                      gps.data$wind_dir_ecmwf,
+                      gps.data$wind_speed_10m_ecmwf)
 
 
 # Direction from which wind is coming from (origin)
@@ -167,6 +171,18 @@ gps.data.par <- cbind(gps.data.par, ground_speed, ground_heading)
 # Values 180 - 360 indicate 'drift' to left.
 # hist((gps.data.par$ground_heading - gps.data.par$head_dir) %% 360)
 
+names(gps.data.par) <- c("flight_id", "device_info_serial",
+                         "date_time", "wind_u_10m_ecmwf",
+                         "wind_v_10m_ecmwf",
+                         "wind_u_10m_flt_ht_ecmwf",
+                         "wind_v_10m_flt_ht_ecmwf",
+                         "wind_speed_flt_ht_ecmwf",
+                         "wind_dir_ecmwf", "wind_speed_10m_ecmwf",
+                         "wind_origin_ecmwf", "head_speed_ecmwf",
+                         "head_dir_ecmwf", "head_u_ecmwf",
+                         "head_v_ecmwf", "ground_speed",
+                         "ground_heading")
+
 
 
 # Flight vectors - relative to track ----------
@@ -181,7 +197,7 @@ head_dir <-  mapply(bear_cor,
                  x = gps.data.par$head_dir_ecmwf,
                  track = gps.data.par$ground_heading)
 
-
+str(gps.data.par)
 wind_dir <-   mapply(bear_cor,
                       x = gps.data.par$wind_dir_ecmwf,
                       track = gps.data.par$ground_heading)
