@@ -16,6 +16,8 @@ gps.extract <- function(i, start.t, end.t, weather = FALSE, ECMWF = FALSE, simpl
   # end.t - final point date_time
   # simple - if TRUE only return device_info_serial, lat, long, date_time
   #Function to extract required GPS data
+  # weather - get weather data too?
+  # ECMWF, in addition to NCEP data also get ECMWF data
   
   require(RODBC)
   
