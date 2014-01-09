@@ -41,6 +41,8 @@ gps.wrap <- function(flight_id, flights){
 #   return(list(n))
 }
 
+# For testing purposes only analyse first 100 flights
+flights <- flights[1:100,]
 
 # x <- gps.extract(flights$device_info_serial[1], flights$start_time[1], flights$end_time[1], weather = TRUE)
 
@@ -58,17 +60,20 @@ save(gps.data.list, file = "gps.data.list.weather.ecmwf.RData")
 
 # load(file = "gps.data.list.weather.RData")
 
-# Determin which flights failed to return data
+# Determine which flights failed to return data
+names(flights)
+fn <- length(flights$flight_id)
 
 x <- NULL
-for(i in 1:4655){
+for(i in 1:fn){
   x[i] <- length(gps.data.list[[i]])
 }
 
 # summary(as.factor(x))
 
-idx <- c(1:4655)
+idx <- c(1:fn)
 
+# Might need to change this
 idx.wrong <- idx[x == 102]
 # gps.data.list[[idx.wrong[1]]]
 # gps.wrap(flights$flight_id[idx.wrong[1]], flights)
@@ -98,88 +103,21 @@ odbcCloseAll()
 
 # Calculations ----
 
-# Calculate wind.speed at flight height for all points
-source("wind_shear.R")
-wind.data <- mapply(wind.shear,
-                    uwind10 = gps.data$uwnd_10m,
-                    vwind10 = gps.data$vwnd_10m,
-                    height = gps.data$altitude)
-wind.data <- t(wind.data)
-wind.data <- as.data.frame(wind.data)
-row.names(wind.data) <- NULL
-names(wind.data) <- c("wind_u", "wind_v", "wind")
-
-# Have a look at these data
-wind_u.rat <- wind.data$wind_u/ gps.data$uwnd_10m
-hist(wind_u.rat)
-
-wind_v.rat <- wind.data$wind_v/ gps.data$vwnd_10m
-hist(wind_v.rat)
-max(wind_v.rat, na.rm = TRUE)
-min(wind_v.rat, na.rm = TRUE)
-
-
-# Remove negative altitude values
-rep.neg.alt <- function(x){
-  if(is.na(x)) return(x) else{
-    if(x < -20) return(NA) else{
-      if(x < 0.1){
-        return(0.1)} else {
-          return(x)}
-    }
-  }
-}
-
-# Remove negative or <0.1 m altitudes with 0.1 value
-alt.new <- sapply(gps.data$altitude, rep.neg.alt)
-hist(alt.new[alt.new < 100])
-sort(gps.data$altitude)[1:1000]
-
-# hist(alt.new[alt.new < 100  & gps.data$positiondop < 2 ])
-# hist(gps.data$positiondop)
-
-
 # Dataframe of calculated paramaters ------------
-gps.data.par <- cbind(gps.data[,1:3], wind.data, alt.new)
+gps.data.par <- cbind(gps.data[,1:3])
 # str(wind.data)
 
-# Calculate wind speed and direction (bearing from gN) ---------
-source("wind_dir_speed.R")
-
-# Calculate wind speed and direction at flight height
-wind.temp <- mapply(FUN = wind.dir.speed,
-                    uwind10 = gps.data.par$wind_u,
-                    vwind10 = gps.data.par$wind_v)
-# Transpose
-wind.temp <- t(wind.temp)
-
-# Add this to data frame
-names.df <- names(gps.data.par)
-gps.data.par <- cbind(gps.data.par,wind.temp)
-names(gps.data.par) <- c(names.df, "wind_sc", "wind_dir_deg")
-
-
-# calculate wind speed at 10 m too
-#*****************************
-uwind10_10m <- gps.data$uwnd_10m
-vwind10_10m <- gps.data$vwnd_10m
-temp <- NULL
-temp <- mapply(FUN = wind.dir.speed,
-          uwind10 = uwind10_10m,
-          vwind10 = vwind10_10m)
-wind10_10m_sc <- temp[1,]
-
-gps.data.par <- cbind(gps.data.par,uwind10_10m,vwind10_10m,wind10_10m_sc)
-
-# Clean up a bit
-rm(wind.temp)
-rm(wind.data)
+# Add wind paramaters to dataframe
+cbind(gps.data.par, gps.data$wind_u_10m_ecmwf, gps.data$wind_v_10m_ecmwf,
+     gps.data$wind_u_10m_flt_ht_ecmwf, gps.data$wind_v_10m_flt_ht_ecmwf,
+     gps.data$wind_speed_flt_ht_ecmwf, gps.data$wind_dir_ecmwf,
+     gps.data$wind_speed_10m_ecmwf)
 
 
 # Direction from which wind is coming from (origin)
-wind_origin <- ((gps.data.par$wind_dir_deg + 180) %% 360)
+wind_origin_ecmwf <- ((gps.data$wind_dir_ecmwf + 180) %% 360)
 # hist(wind_origin)
-gps.data.par <- cbind(gps.data.par,wind_origin)
+gps.data.par <- cbind(gps.data.par,wind_origin_ecmwf)
 
 
 # Flight vector components ------------------------
@@ -194,17 +132,20 @@ gps.data.par <- cbind(gps.data.par,wind_origin)
 # heading vector
 # names(points)
 # names(points.weather)
-head_u <- gps.data$veast  - gps.data.par$wind_u
-head_v <- gps.data$vnorth - gps.data.par$wind_v
+head_u_ecmwf <- gps.data$veast  - gps.data$wind_u_10m_flt_ht_ecmwf
+head_v_ecmwf <- gps.data$vnorth - gps.data$wind_v_10m_flt_ht_ecmwf
 
-head.info <- t(mapply(wind.dir.speed, head_u,
-                      head_v))
+source("wind_dir_speed.R")
+
+
+head.info <- t(mapply(wind.dir.speed, head_u_ecmwf,
+                      head_v_ecmwf))
 # names(points.weather)
 # Make dataframe
-head.info <- as.data.frame(cbind(head.info, head_u, head_v))
+head.info <- as.data.frame(cbind(head.info, head_u_ecmwf, head_v_ecmwf))
 
 # Give names to columns
-names(head.info) <- c("head_speed", "head_dir", "head_u", "head_v")
+names(head.info) <- c("head_speed_ecmwf", "head_dir_ecmwf", "head_u_ecmwf", "head_v_ecmwf")
 
 # Add to main dataframe
 gps.data.par <- cbind(gps.data.par, head.info)
@@ -219,12 +160,12 @@ ground_speed   <- ground_speed[,1]
 gps.data.par <- cbind(gps.data.par, ground_speed, ground_heading)
 
 
-median(ground_speed[ground_speed < 50], na.rm = TRUE)
-median(gps.data.par$head_speed[gps.data.par$head_speed < 50], na.rm = TRUE)
+# median(ground_speed[ground_speed < 50], na.rm = TRUE)
+# median(gps.data.par$head_speed[gps.data.par$head_speed < 50], na.rm = TRUE)
 
 # Heading track vs. ground heading, 0 - 180 indicates 'drift' to right
 # Values 180 - 360 indicate 'drift' to left.
-hist((gps.data.par$ground_heading - gps.data.par$head_dir) %% 360)
+# hist((gps.data.par$ground_heading - gps.data.par$head_dir) %% 360)
 
 
 
@@ -237,17 +178,20 @@ bear_cor <- function(x, track){
 }
 
 head_dir <-  mapply(bear_cor,
-                 x = gps.data.par$head_dir,
+                 x = gps.data.par$head_dir_ecmwf,
                  track = gps.data.par$ground_heading)
 
 
 wind_dir <-   mapply(bear_cor,
-                      x = gps.data.par$wind_dir_deg,
+                      x = gps.data.par$wind_dir_ecmwf,
                       track = gps.data.par$ground_heading)
 
 
 
-par <- cbind(wind_dir,gps.data.par$wind_sc,head_dir, gps.data.par$head_speed,gps.data.par$ground_speed)
+par <- cbind(wind_dir, gps.data.par$wind_speed_flt_ht_ecmwf,
+             head_dir, gps.data.par$head_speed,
+             gps.data.par$ground_speed)
+
 par <- as.data.frame(par)
 names(par) <- c("wind_dir","wind_speed","head_dir","head_speed","track_speed")
 
@@ -271,32 +215,32 @@ par <- cbind(par, alpha, beta)
 # side and head wind components
 wind.comp <- function(beta, wind_speed, wind_dir){
   if(is.na(beta) | is.na(wind_speed) | is.na(wind_dir)){
-    return(c(NA,NA))} else {
-      # Package needed to convert degrees to radians
-      require(CircStats)
-      # If beta angle is more than 90 do these calculations
-      if(beta > 90){
-        beta <- 180 - beta
-        beta.rad <- rad(beta)
-        
-        wind_head_tail <- (cos(beta.rad))*wind_speed
-        # As beta >90 wind must be tails wind, make negative
-        wind_head_tail <- wind_head_tail * -1
-        
-        wind_side <- (sin(beta.rad))*wind_speed
-        # If wind comes from left make negative
-        if(wind_dir < 180)  wind_side <- wind_side * -1
-      } else {
-        beta.rad <- rad(beta)
-        wind_head_tail <- (cos(beta.rad))*wind_speed
-        wind_side <- (sin(beta.rad))*wind_speed
-        if(wind_dir < 180)  wind_side <- wind_side * -1
-      }
-      # For testing, check that calculated side wind and head wind components would add up to original wind vector (i.e. wind speed)
-    #   test_var <- sqrt((wind_side*wind_side) + (wind_head_tail*wind_head_tail))
-    #   return(c(wind_side, wind_head_tail, test_var))
-      return(c(wind_side, wind_head_tail))
-}
+      return(c(NA,NA))} else {
+        # Package needed to convert degrees to radians
+        require(CircStats)
+        # If beta angle is more than 90 do these calculations
+        if(beta > 90){
+          beta <- 180 - beta
+          beta.rad <- rad(beta)
+          
+          wind_head_tail <- (cos(beta.rad))*wind_speed
+          # As beta >90 wind must be tails wind, make negative
+          wind_head_tail <- wind_head_tail * -1
+          
+          wind_side <- (sin(beta.rad))*wind_speed
+          # If wind comes from left make negative
+          if(wind_dir < 180)  wind_side <- wind_side * -1
+        } else {
+          beta.rad <- rad(beta)
+          wind_head_tail <- (cos(beta.rad))*wind_speed
+          wind_side <- (sin(beta.rad))*wind_speed
+          if(wind_dir < 180)  wind_side <- wind_side * -1
+        }
+        # For testing, check that calculated side wind and head wind components would add up to original wind vector (i.e. wind speed)
+      #   test_var <- sqrt((wind_side*wind_side) + (wind_head_tail*wind_head_tail))
+      #   return(c(wind_side, wind_head_tail, test_var))
+        return(c(wind_side, wind_head_tail))
+  }
 }
 
 wind.comp_calc <- mapply(wind.comp,
@@ -306,7 +250,7 @@ wind.comp_calc <- mapply(wind.comp,
 
 wind.comp_calc_10 <- mapply(wind.comp,
                          beta = par$beta,
-                         wind_speed = gps.data.par$wind10_10m_sc,
+                         wind_speed = gps.data.par$wind_speed_10m_ecmwf,
                          wind_dir = par$wind_dir) 
 
 
@@ -332,7 +276,8 @@ alpha.calc <- function(head, track){
   return(theta)  
 }
 
-alpha.new <- mapply(alpha.calc,gps.data.par$head_dir,gps.data.par$ground_heading)
+alpha.new <- mapply(alpha.calc, gps.data.par$head_dir, 
+                    gps.data.par$ground_heading)
 
 # hist(alpha.new)
 # min(alpha.new, na.rm = TRUE)
@@ -366,7 +311,7 @@ names(new.par) <- c("wind_dir_track",
 gps.data.par.out <- cbind(gps.data.par, new.par, temp2)
 head(gps.data.par.out)
 # length(unique(names(gps.data.par.out))) == length(names(gps.data.par.out))
-
+names(gps.data.par.out)
 
 # Save data to database -------
 odbcCloseAll()
@@ -378,7 +323,7 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #Output weather data to database #####
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
-sqlSave(gps.db, gps.data.par.out, tablename = "lund_flight_points_wind_par",
+sqlSave(gps.db, gps.data.par.out, tablename = "lund_flight_points_wind_par_ecmwf",
         append = FALSE, rownames = FALSE, colnames = FALSE,
         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
         test = FALSE, nastring = NULL,
