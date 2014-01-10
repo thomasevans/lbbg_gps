@@ -31,31 +31,67 @@ flights <- sqlQuery(
 # Get GPS point data in two steps
 # First get GPS points and paramaters
 source("gps_extract.R")
+# ?file
+
+
+# c(isOpen(Tfile, "r"), isOpen(Tfile, "w")) # both TRUE
+# cat("abc\ndef\n", file = Tfile)
+# readLines(Tfile)
+# seek(Tfile, 0, rw = "r") # reset to beginning
+# readLines(Tfile)
+# cat("ghi\n", file = Tfile)
+# readLines(Tfile)
+# close(Tfile)
+
 
 # Function to get GPS points for each flight and add a column for flight_id
 gps.wrap <- function(flight_id, flights){
+  cat(paste(flight_id, "\n"), file = Tfile)
   idx <- flights$flight_id == flight_id
-  x <- gps.extract(flights$device_info_serial[idx], flights$start_time[idx], flights$end_time[idx], weather = TRUE, ECMWF = TRUE)
+  if(any(is.na(flights$device_info_serial[idx]),
+         is.na(flights$start_time[idx]),
+         is.na(flights$end_time[idx]))){x = NULL} else{
+    x <- gps.extract(flights$device_info_serial[idx],
+                     flights$start_time[idx],
+                     flights$end_time[idx],
+                     weather = TRUE, ECMWF = TRUE)
+  }
+ 
   if(length(x[,1]) == 0) return(cbind(flight_id,rep(NA,51)))
   else return(cbind(flight_id,x))
 #   return(list(n))
 }
 
+# ?sink
+
 # For testing purposes only analyse first 100 flights
-# flights <- flights[1:10,]
+#  flights <- flights[1:10,]
 
 # x <- gps.extract(flights$device_info_serial[1], flights$start_time[1], flights$end_time[1], weather = TRUE)
 
 # Testing
-#  gps.wrap(flights$flight_id[2], flights)
+#  gps.wrap(12635, flights)
+# flights[flights$flight_id == 12635,]
+# 
+# idx <- flights$flight_id == 12635
+# if(any(is.na(flights$device_info_serial[idx]), is.na(flights$start_time[idx]), is.na(flights$end_time[idx])))
+# x <- gps.extract(flights$device_info_serial[idx], flights$start_time[idx], flights$end_time[idx], weather = TRUE, ECMWF = TRUE)
+# if(length(x[,1]) == 0) return(cbind(flight_id,rep(NA,51)))
+# else return(cbind(flight_id,x))
 
+
+# sink()
+# ?sink
+# 5+2
 # Get the data (took ca. 1 h for <5000 flights - after had
 # 'pooled' driver setting)
+
+Tfile <- file("progress", "w+")
 gps.data.list <- list()
 system.time({
   gps.data.list <- lapply(X = flights$flight_id, gps.wrap, flights = flights)
 })
-
+close(Tfile)
 save(gps.data.list, file = "gps.data.list.weather.ecmwf.RData")
 
 # load(file = "gps.data.list.weather.RData")
@@ -72,6 +108,8 @@ for(i in 1:fn){
 # summary(as.factor(x))
 
 idx <- c(1:fn)
+
+# gps.data.list.ok[[1]]
 
 # Might need to change this
 idx.wrong <- idx[x == 102]
@@ -95,7 +133,7 @@ flights.ok <- flights[(flights$flight_id %in% unique(gps.data$flight_id)),]
 
 # Clearn workspace so we only have the data we want
 flights <- flights.ok
-rm(list = setdiff(ls(), c("flights","gps.data")))
+# rm(list = setdiff(ls(), c("flights","gps.data")))
 
 # Close connection
 odbcCloseAll()
