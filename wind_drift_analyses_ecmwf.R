@@ -85,16 +85,16 @@ gps.wrap <- function(flight_id, flights){
 # 5+2
 # Get the data (took ca. 1 h for <5000 flights - after had
 # 'pooled' driver setting)
+# 
+# Tfile <- file("progress", "w+")
+# gps.data.list <- list()
+# system.time({
+#   gps.data.list <- lapply(X = flights$flight_id, gps.wrap, flights = flights)
+# })
+# close(Tfile)
+# save(gps.data.list, file = "gps.data.list.weather.ecmwf.RData")
 
-Tfile <- file("progress", "w+")
-gps.data.list <- list()
-system.time({
-  gps.data.list <- lapply(X = flights$flight_id, gps.wrap, flights = flights)
-})
-close(Tfile)
-save(gps.data.list, file = "gps.data.list.weather.ecmwf.RData")
-
-# load(file = "gps.data.list.weather.RData")
+load(file = "gps.data.list.weather.ecmwf.RData")
 
 # Determine which flights failed to return data
 names(flights)
@@ -370,7 +370,7 @@ names(gps.data.par.out)
 # Save data to database -------
 odbcCloseAll()
 
-
+# library(RODBC)
 
 gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 # names(gps.data.par)
