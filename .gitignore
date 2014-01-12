@@ -14,3 +14,5 @@ figure/*
 *.pdf
 *.tiff
 *.eps
+progress_old
+progress
