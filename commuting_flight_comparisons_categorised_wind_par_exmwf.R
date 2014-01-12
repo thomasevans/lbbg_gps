@@ -144,7 +144,7 @@ get.stats <- function(i, points_par = points_par, flights = flights){
   sun_shine_duration_day.mean <- mean(sub.points$sun_shine_duration_day, na.rm = TRUE)
   surface_roughness.mean <- mean(sub.points$surface_roughness, na.rm = TRUE) 
   temperature_10m.mean <- mean(sub.points$temperature_10m, na.rm = TRUE) 
-  
+  cloud_cover_low_altitude.mean <- mean(sub.points$cloud_cover_low_altitude, na.rm = TRUE)
 
   
   
@@ -183,7 +183,8 @@ get.stats <- function(i, points_par = points_par, flights = flights){
                 significant_wave_height.mean,
                 sun_shine_duration_day.mean,
                 surface_roughness.mean,
-                temperature_10m.mean
+                temperature_10m.mean,
+                cloud_cover_low_altitude.mean
                 )
   
   return(calc.par)
@@ -248,7 +249,8 @@ names(flights.par) <- c("flight_id", "n_points",
                         "significant_wave_height.mean",
                         "sun_shine_duration_day.mean",
                         "surface_roughness.mean",
-                        "temperature_10m.mean"
+                        "temperature_10m.mean",
+                        "cloud_cover_low_altitude.mean"
                         )
 
 # head(flights.par)
