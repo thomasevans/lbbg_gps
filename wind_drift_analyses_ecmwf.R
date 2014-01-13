@@ -28,7 +28,7 @@ flights <- sqlQuery(
   , as.is = TRUE)
 
 
-flights <- flights[1:10,]
+# flights <- flights[1:10,]
 
 # Get GPS point data in two steps
 # First get GPS points and paramaters
@@ -72,9 +72,9 @@ gps.wrap <- function(flight_id, flights){
 # For testing purposes only analyse first 100 flights
 #  flights <- flights[1:10,]
 
-source("gps_extract.R")
+# source("gps_extract.R")
 
-gps.extract(flights$device_info_serial[1], flights$start_time[1], flights$end_time[1], weather = TRUE, ECMWF = TRUE)
+# gps.extract(flights$device_info_serial[1], flights$start_time[1], flights$end_time[1], weather = TRUE, ECMWF = TRUE)
 
 # Testing
 #  gps.wrap(flights$flight_id[10], flights)
