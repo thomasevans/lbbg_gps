@@ -28,6 +28,8 @@ flights <- sqlQuery(
   , as.is = TRUE)
 
 
+flights <- flights[1:10,]
+
 # Get GPS point data in two steps
 # First get GPS points and paramaters
 source("gps_extract.R")
@@ -43,11 +45,14 @@ source("gps_extract.R")
 # readLines(Tfile)
 # close(Tfile)
 
-
+# flight_id <- flights$flight_id[10]
 # Function to get GPS points for each flight and add a column for flight_id
 gps.wrap <- function(flight_id, flights){
+#   ?readLines
+#   readLines(Tfile)
   cat(paste(flight_id, "\n"), file = Tfile)
   idx <- flights$flight_id == flight_id
+#   summary(idx)
   if(any(is.na(flights$device_info_serial[idx]),
          is.na(flights$start_time[idx]),
          is.na(flights$end_time[idx]))){x = NULL} else{
@@ -67,10 +72,12 @@ gps.wrap <- function(flight_id, flights){
 # For testing purposes only analyse first 100 flights
 #  flights <- flights[1:10,]
 
-# x <- gps.extract(flights$device_info_serial[1], flights$start_time[1], flights$end_time[1], weather = TRUE)
+source("gps_extract.R")
+
+gps.extract(flights$device_info_serial[1], flights$start_time[1], flights$end_time[1], weather = TRUE, ECMWF = TRUE)
 
 # Testing
-#  gps.wrap(12635, flights)
+#  gps.wrap(flights$flight_id[10], flights)
 # flights[flights$flight_id == 12635,]
 # 
 # idx <- flights$flight_id == 12635
@@ -86,15 +93,16 @@ gps.wrap <- function(flight_id, flights){
 # Get the data (took ca. 1 h for <5000 flights - after had
 # 'pooled' driver setting)
 # 
-# Tfile <- file("progress", "w+")
-# gps.data.list <- list()
-# system.time({
-#   gps.data.list <- lapply(X = flights$flight_id, gps.wrap, flights = flights)
-# })
-# close(Tfile)
-# save(gps.data.list, file = "gps.data.list.weather.ecmwf.RData")
+Tfile <- file("progress", "w+")
+# readLines(Tfile)
+gps.data.list <- list()
+system.time({
+  gps.data.list <- lapply(X = flights$flight_id, gps.wrap, flights = flights)
+})
+close(Tfile)
+save(gps.data.list, file = "gps.data.list.weather.ecmwf2.RData")
 
-load(file = "gps.data.list.weather.ecmwf.RData")
+# load(file = "gps.data.list.weather.ecmwf2.RData")
 
 # Determine which flights failed to return data
 names(flights)
