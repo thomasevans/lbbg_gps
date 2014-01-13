@@ -72,7 +72,7 @@ gps.extract <- function(i, start.t, end.t, weather = FALSE, ECMWF = FALSE, simpl
           w.wind_dir_ecmwf, w.wind_speed_10m_ecmwf,
           m.cloud_cover_low_altitude, m.cloud_cover_total,
           m.significant_wave_height, m.sun_shine_duration_day,
-          m.surface_roughness, m.temperature_10m
+          m.surface_roughness, m.temperature_2m
           FROM gps_uva_tracking_speed_3d_limited AS g, lund_gps_parameters AS c, lund_points_weather as lw, lund_points_wind_ECMWF as w, move_bank_variables_all as m
           WHERE g.device_info_serial = c.device_info_serial
           AND g.date_time = c.date_time
