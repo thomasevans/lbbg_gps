@@ -24,7 +24,7 @@ flights <- sqlQuery(gps.db, query = "SELECT DISTINCT f.*
 # str(flights)
 
 #Get a copy of the lund_flight_points_wind_par DB table.
-points_par <- sqlQuery(gps.db, query = "SELECT DISTINCT f.*, t.air_2m, t.air_2m_sd, g.altitude, w.cloud_cover_low_altitude, w.cloud_cover_total, w.significant_wave_height, w.sun_shine_duration_day, w.surface_roughness, w.temperature_10m
+points_par <- sqlQuery(gps.db, query = "SELECT DISTINCT f.*, t.air_2m, t.air_2m_sd, g.altitude, w.cloud_cover_low_altitude, w.cloud_cover_total, w.significant_wave_height, w.sun_shine_duration_day, w.surface_roughness, w.temperature_2m
                     FROM lund_flight_points_wind_par_ecmwf AS f, lund_flights_com_points_weather AS t, gps_uva_tracking_speed_3d_limited AS g, move_bank_variables_all as w
                     WHERE f.device_info_serial = t.device_info_serial
                     AND f.date_time = t.date_time
@@ -143,7 +143,7 @@ get.stats <- function(i, points_par = points_par, flights = flights){
   significant_wave_height.mean <- mean(sub.points$significant_wave_height, na.rm = TRUE)
   sun_shine_duration_day.mean <- mean(sub.points$sun_shine_duration_day, na.rm = TRUE)
   surface_roughness.mean <- mean(sub.points$surface_roughness, na.rm = TRUE) 
-  temperature_10m.mean <- mean(sub.points$temperature_10m, na.rm = TRUE) 
+  temperature_2m.mean <- mean(sub.points$temperature_2m, na.rm = TRUE) 
   cloud_cover_low_altitude.mean <- mean(sub.points$cloud_cover_low_altitude, na.rm = TRUE)
 
   
@@ -183,7 +183,7 @@ get.stats <- function(i, points_par = points_par, flights = flights){
                 significant_wave_height.mean,
                 sun_shine_duration_day.mean,
                 surface_roughness.mean,
-                temperature_10m.mean,
+                temperature_2m.mean,
                 cloud_cover_low_altitude.mean
                 )
   
@@ -249,7 +249,7 @@ names(flights.par) <- c("flight_id", "n_points",
                         "significant_wave_height.mean",
                         "sun_shine_duration_day.mean",
                         "surface_roughness.mean",
-                        "temperature_10m.mean",
+                        "temperature_2m.mean",
                         "cloud_cover_low_altitude.mean"
                         )
 
