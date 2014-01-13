@@ -109,10 +109,4 @@ sqlSave(gps.db, out.table, tablename = "lund_points_wind_ECMWF",
         test = FALSE, nastring = NULL,
         varTypes =  c(date_time = "datetime"))
 
-# 
-# sqlSave(gps.db, weather.data, tablename = "lund_flights_com_points_weather",
-#         append = FALSE, rownames = FALSE, colnames = FALSE,
-#         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
-#         test = FALSE, nastring = NULL,
-#         varTypes =  c(device_info_serial = "integer",
-#                       date_time = "datetime"))
+
