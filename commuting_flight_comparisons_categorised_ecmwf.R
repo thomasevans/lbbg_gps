@@ -1943,7 +1943,7 @@ plot(abs(wind.ratio)~flights$alpha_mean, ylim = c(0,2), xlim = c(0,60))
 # Altitude - with wind components -------
 
 # Make a filter to this effect
-f <- flights.combined$alt_med < 150  &   flights.combined$alt_med > -20
+f <- flights.combined$alt_med < 150  &   flights.combined$alt_med > -20 & !is.na(flights.combined$wind_side_mean)
 # hist(flights.combined$alt_med)
 summary(f)
 
@@ -1957,135 +1957,354 @@ wind.type <- as.factor(flights.combined$wind.type[f])
 cloud <- flights.combined$tcdceatm[f]
 temp <- flights.combined$air_2m_mean[f] -273.15  # Convert to deg C
 
+hist(cloud)
+hist(temp)
 
-temp_10m <- flights.combined$temperature_10mmean[f]  -273.15
-# hist(temp_10m)
+temp_2m <- flights.combined$temperature_2mmean[f]  -273.15
+hist(temp_2m)
 cloud_total <- flights.combined$cloud_cover_totalmean[f]
-cloud__low <- flights.combined$cloud_cover_low_altitudemean[f]
+hist(cloud_total)
+hist(logit(cloud_total))
+cloud_low <- flights.combined$cloud_cover_low_altitudemean[f]
+hist(cloud_low)
+cloud_low_logit <- sapply(cloud_low,logit)
+hist(cloud_low_logit)
+
+plot(cloud_total,cloud)
+plot(temp_2m,temp)
 
 names(flights.combined)
+
+# temp_2m cloud_total cloud_low
+
+names(flights.combined)
+
+plot(flights.combined$wind_side_mean[f],flights.combined$wind_side_mean_10[f])
 
 # hist(temp)
   # Transformed vairable for further analysis
 alt_trans <- log10(flights.combined$alt_med[f]+20)
+hist(alt_trans)
+altitude  <- flights.combined$alt_med[f]
 
-side.type <- as.factor(sapply(flights.combined$wind_side_mean[f], if.neg))
-head_tail.type <- as.factor(sapply(flights.combined$wind_head_tail_mean[f], if.neg))
+side.type <- as.factor(sapply(flights.combined$wind_side_mean_10[f], if.neg))
+head_tail.type <- as.factor(sapply(flights.combined$wind_head_tail_mean_10[f], if.neg))
 
 head_tail_abs <- abs(flights.combined$wind_head_tail_mean_10[f])
 side_abs <- abs(flights.combined$wind_side_mean_10[f])
 
 
-head_tail_abs2 <- abs(flights.combined$wind_head_tail_mean[f])
-side_abs2 <- abs(flights.combined$wind_side_mean[f])
-
 distance <- flights.combined$dist_a_b[f]
+hist(distance)
+hist(log10(distance))
+hist(log(distance))
+distance_log10 <- log10(distance)
+
 
 library(nlme)
-
 mod <- list()
 
 
 # Full factorial model
-mod[[1]] <- lme(
-  alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type*temp*distance ,
-  random = ~1|device_info_serial/trip)
-# ?lme
+mod[[1]] <- lme(alt_trans ~ (flight.type + side.type +
+                  head_tail.type + head_tail_abs + side_abs +
+                  cloud_low_logit + cloud_total +
+                  temp_2m + distance_log10)^3,
+                random = ~1|device_info_serial)
+  
+AIC(mod[[1]])
 
-
-# Removing nested random effect of foraging trip id
-mod[[2]] <- lme(
-  alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type*temp*distance  ,
-  random = ~1|device_info_serial)
-
-
-# AIC reduced by removing trip_id, we continue without trip id
-AIC(mod[[1]],mod[[2]])
+mod[[2]] <- lme(altitude ~ (flight.type + side.type +
+                               head_tail.type + head_tail_abs + side_abs +
+                               cloud_low_logit + cloud_total +
+                               temp_2m + distance_log10)^3,
+                random = ~1|device_info_serial)
+AIC(mod[[1]], mod[[2]])
 
 
 # Temporal autocorrelation structure
-# ?ACF
-plot(ACF(mod[[2]], maxLag = 100), alpha = 0.05, new = TRUE)
+plot(ACF(mod[[1]], maxLag = 100), alpha = 0.05, new = TRUE)
 # Refit model with different correlation lags
 mod_cor <- list()
-for(i in 1:7){
-  mod_cor[[i]] <- update(mod[[2]], correlation = corARMA(q = i))
+for(i in 1:10){
+  mod_cor[[i]] <- update(mod[[1]], correlation = corARMA(q = i))
 }
 
 aic.val <- NULL
 # Compare AIC of models
-for(i in 1:7){
+for(i in 1:10){
   aic.val[i] <- (AIC(mod_cor[[i]]))
 }
-AIC(mod[[2]])
 AIC(mod[[1]])
 aic.val
 min(aic.val)
-# AIC lowest for base-model, don't keep autocorrelation structure.
+# AIC lowest for no autocorrelation structure, keep model 1
 
 
-
-AIC(mod_cor[[5]])
-
-mod_ML <- list()
-
-
-
-# intervals(mod_ML[[1]])
-
-# Model simplification
-mod_ML[[1]] <- lme(
-  alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type*temp*distance  ,
-  random = ~1|device_info_serial , method = "ML")
-
-mod_ML[[2]] <- lme(
-  alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type*distance+temp*distance  ,
-  random = ~1|device_info_serial , method = "ML")
-
-AIC(mod_ML[[1]])
-AIC(mod_ML[[2]])
-
-mod_ML[[3]] <- lme(
-  alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type*distance+temp*distance   + temp * flight.type * cloud * side.type * side_abs * head_tail_abs,
-  random = ~1|device_info_serial , method = "ML")
-
-AIC(mod_ML[[2]])
-AIC(mod_ML[[3]])
-
-
-mod_ML[[4]] <- lme(
-  alt_trans ~  flight.type * side.type*temp*distance + cloud * side_abs*temp*distance + cloud *head_tail_abs * head_tail.type *temp*distance,  random = ~1|device_info_serial , method = "ML")
-AIC(mod_ML[[2]])
-AIC(mod_ML[[4]])
-
-mod_ML[[5]] <- lme(
-  alt_trans ~  flight.type * side.type*temp+ flight.type * side.type*distance + cloud * side_abs*temp*distance + cloud *head_tail_abs * head_tail.type *temp*distance,  random = ~1|device_info_serial , method = "ML")
-AIC(mod_ML[[5]])
-AIC(mod_ML[[4]])
-
-summary(mod_ML[[4]])
-
-
-
-# ?lme
-# 
-# mod_ML[[2]] <- lme(
-#   alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type,
-#   random = ~1|device_info_serial , method = "ML")
-
-AIC(mod_ML[[1]])
+mod[[1]] <- lme(alt_trans ~ (flight.type + side.type +
+                               head_tail.type + head_tail_abs + side_abs +
+                               cloud_low_logit + cloud_total +
+                               temp_2m + distance_log10)^3,
+                random = ~1|device_info_serial)
 
 library(MuMIn)
+# Ca. 50% of variation explained by this model.
+r.squaredGLMM(mod[[1]])
 
-r.squaredGLMM(mod_ML[[4]])
+x <- rep(1,length(alt_trans))
+mod[[3]] <- lme(alt_trans ~ (flight.type + side.type +
+                               head_tail.type + head_tail_abs + side_abs +
+                               cloud_low_logit + cloud_total +
+                               temp_2m + distance_log10)^3,
+                random = ~1|x)
+AIC(mod[[1]], mod[[3]])  # AIC much lower when individual included as radom effect - so keep this.
+
+
+# Fit model by ML instead or REML
+mod[[4]] <- lme(alt_trans ~ (flight.type + side.type +
+                               head_tail.type + head_tail_abs + side_abs +
+                               cloud_low_logit + cloud_total +
+                               temp_2m + distance_log10)^3,
+                random = ~1|device_info_serial, method = "ML")
+AIC(mod[[4]])
+
+# Drop to all 2-way interactions
+mod[[5]] <- lme(alt_trans ~ (flight.type + side.type +
+                               head_tail.type + head_tail_abs + side_abs +
+                               cloud_low_logit + cloud_total +
+                               temp_2m + distance_log10)^2,
+                random = ~1|device_info_serial, method = "ML")
+AIC(mod[[4]], mod[[5]])
+
+# Much lower, try no interactions
+mod[[6]] <- lme(alt_trans ~ (flight.type + side.type +
+                               head_tail.type + head_tail_abs + side_abs +
+                               cloud_low_logit + cloud_total +
+                               temp_2m + distance_log10),
+                random = ~1|device_info_serial, method = "ML")
+AIC(mod[[5]], mod[[6]])
+
+#Higher AIC when no interactions - so need to keep at least some 2-way interactions
+mod[[7]] <- lme(alt_trans ~ (flight.type +
+                               side.type*side_abs +
+                               head_tail.type * head_tail_abs +  +
+                               cloud_low_logit + cloud_total +
+                               temp_2m + distance_log10),
+                random = ~1|device_info_serial, method = "ML")
+AIC(mod[[5]], mod[[7]])
+# If Within wind interactions are included 
+
+mod[[8]] <- lme(alt_trans ~ (flight.type +
+                               side.type*side_abs +
+                               head_tail.type * head_tail_abs +  +
+                               cloud_low_logit + cloud_total +
+                               temp_2m + distance_log10)^2,
+                random = ~1|device_info_serial, method = "ML")
+AIC(mod[[5]], mod[[8]])
+# Better too without 3-way interactions with wind
+
+mod[[9]] <- lme(alt_trans ~ (flight.type +
+                               
+                               head_tail.type * head_tail_abs +  +
+                               cloud_low_logit + cloud_total +
+                               temp_2m + distance_log10)^2 + side.type*side_abs,
+                random = ~1|device_info_serial, method = "ML")
+AIC(mod[[5]], mod[[9]])
+
+mod[[10]] <- lme(alt_trans ~ (flight.type +
+                                side.type*side_abs
+                                +
+                               cloud_low_logit + cloud_total +
+                               temp_2m + distance_log10)^2 + head_tail.type * head_tail_abs,
+                random = ~1|device_info_serial, method = "ML")
+AIC(mod[[5]], mod[[10]])
+
+mod[[11]] <- lme(alt_trans ~ ( side.type +
+                               head_tail.type + head_tail_abs + side_abs +
+                               cloud_low_logit + cloud_total +
+                               temp_2m + distance_log10)^2  + flight.type,
+                random = ~1|device_info_serial, method = "ML")
+
+mod[[12]] <- lme(alt_trans ~ (flight.type + side.type +
+                                head_tail.type + head_tail_abs + side_abs +
+                                 cloud_total +
+                                temp_2m + distance_log10)^2  + cloud_low_logit,
+                 random = ~1|device_info_serial, method = "ML")
+
+mod[[13]] <- lme(alt_trans ~ (flight.type + side.type +
+                                head_tail.type + head_tail_abs + side_abs +
+                                cloud_low_logit + 
+                                temp_2m + distance_log10)^2  +cloud_total,
+                 random = ~1|device_info_serial, method = "ML")
+
+mod[[14]] <- lme(alt_trans ~ (flight.type + side.type +
+                                head_tail.type + head_tail_abs + side_abs +
+                                cloud_low_logit + cloud_total +
+                                 distance_log10)^2  + temp_2m,
+                 random = ~1|device_info_serial, method = "ML")
+
+mod[[15]] <- lme(alt_trans ~ (flight.type + side.type +
+                                head_tail.type + head_tail_abs + side_abs +
+                                cloud_low_logit + cloud_total +
+                                temp_2m)^2  + distance_log10,
+                 random = ~1|device_info_serial, method = "ML")
+
+
+aic.val <- NULL
+# Compare AIC of models
+x <- 1
+for(i in 5:15){
+  aic.val[x] <- (AIC(mod[[i]]))
+  x <- x +1
+}
+AIC(mod[[5]])
+aic.val
+min(aic.val)
+
+# Model 15 lowest AIC
+mod[[15]] <- lme(alt_trans ~ (flight.type + side.type +
+                                head_tail.type + head_tail_abs + side_abs +
+                                cloud_low_logit + cloud_total +
+                                temp_2m)^2  + distance_log10,
+                 random = ~1|device_info_serial, method = "ML")
+
+mod[[16]] <- lme(alt_trans ~ (flight.type + side.type +
+                                head_tail.type + head_tail_abs + side_abs +
+                                cloud_low_logit + cloud_total +
+                                temp_2m)^2,
+                 random = ~1|device_info_serial, method = "ML")
+AIC(mod[[15]], mod[[16]])
 
 
 
 
+library(MuMIn)
+r.squaredGLMM(mod[[3]])
 
-# ?dredge
+# Refit with Maximum Liklihood to simplify main effects
+mod_ML <- list()
+
+# Model simplification
+mod_ML[[1]] <-  update(mod[[3]], method = "ML")
+  
+summary(mod_ML[[1]])
+
+
+
+# Automated model simplification
 
 # dd <- dredge(mod_ML[[1]])
+
+# With mod_ML[[1]] too many predictors (129), maximum allowed 31, so trying with reduction
+# to all 2-way interactions
+mod_ML[[2]] <- lme(alt_trans ~ (flight.type + side.type +
+                               head_tail.type + head_tail_abs + side_abs +
+                               cloud_low_logit + cloud_total +
+                               temp_2m + distance_log10)^3,
+                random = ~1|device_info_serial,
+                correlation = corARMA(q = 1),
+                   method = "ML"
+                   )
+
+anova(mod_ML[[2]])
+
+mod_ML[[3]] <- lme(alt_trans ~ (flight.type + side.type +
+                                  head_tail.type + head_tail_abs + side_abs +
+                                  cloud_low + cloud_total +
+                                  temp_2m + distance_log10)^3,
+                   random = ~1|device_info_serial,
+                   correlation = corARMA(q = 1),
+                   method = "ML"
+)
+
+r.squaredGLMM(mod_ML[[2]])
+r.squaredGLMM(mod_ML[[3]])
+AIC(mod_ML[[2]], mod_ML[[3]])
+
+# Better to use non-transformed cloud_low variable
+
+# Remove one factor at a time
+mod_ML[[4]] <- lme(alt_trans ~ (side.type +
+                                  head_tail.type + head_tail_abs + side_abs +
+                                  cloud_low + cloud_total +
+                                  temp_2m + distance_log10)^3,
+                   random = ~1|device_info_serial,
+                   correlation = corARMA(q = 1),
+                   method = "ML"
+)
+
+mod_ML[[5]] <- lme(alt_trans ~ (flight.type + 
+                                  head_tail.type + head_tail_abs + side_abs +
+                                  cloud_low + cloud_total +
+                                  temp_2m + distance_log10)^3,
+                   random = ~1|device_info_serial,
+                   correlation = corARMA(q = 1),
+                   method = "ML"
+)
+mod_ML[[6]] <- lme(alt_trans ~ (flight.type + side.type +
+                                   head_tail_abs + side_abs +
+                                  cloud_low + cloud_total +
+                                  temp_2m + distance_log10)^3,
+                   random = ~1|device_info_serial,
+                   correlation = corARMA(q = 1),
+                   method = "ML"
+)
+mod_ML[[7]] <- lme(alt_trans ~ (flight.type + side.type +
+                                  head_tail.type +  side_abs +
+                                  cloud_low + cloud_total +
+                                  temp_2m + distance_log10)^3,
+                   random = ~1|device_info_serial,
+                   correlation = corARMA(q = 1),
+                   method = "ML"
+)
+mod_ML[[8]] <- lme(alt_trans ~ (flight.type + side.type +
+                                  head_tail.type + head_tail_abs + 
+                                  cloud_low + cloud_total +
+                                  temp_2m + distance_log10)^3,
+                   random = ~1|device_info_serial,
+                   correlation = corARMA(q = 1),
+                   method = "ML"
+)
+mod_ML[[9]] <- lme(alt_trans ~ (flight.type + side.type +
+                                  head_tail.type + head_tail_abs + side_abs +
+                                  cloud_total +
+                                  temp_2m + distance_log10)^3,
+                   random = ~1|device_info_serial,
+                   correlation = corARMA(q = 1),
+                   method = "ML"
+)
+mod_ML[[10]] <- lme(alt_trans ~ (flight.type + side.type +
+                                  head_tail.type + head_tail_abs + side_abs +
+                                  cloud_low + cloud_total +
+                                  distance_log10)^3,
+                   random = ~1|device_info_serial,
+                   correlation = corARMA(q = 1),
+                   method = "ML"
+)
+mod_ML[[11]] <- lme(alt_trans ~ (flight.type + side.type +
+                                  head_tail.type + head_tail_abs + side_abs +
+                                  cloud_low + cloud_total +
+                                  temp_2m)^3,
+                   random = ~1|device_info_serial,
+                   correlation = corARMA(q = 1),
+                   method = "ML"
+)
+
+aic.val <- NULL
+# Compare AIC of models
+for(i in 4:11){
+  aic.val[i] <- (AIC(mod_ML[[i]]))
+}
+AIC(mod_ML[[3]])
+aic.val
+min(aic.val)
+
+
+mod.base <- 
+
+library(MuMIn)
+# ?dredge
+r.squaredGLMM(mod_ML[[33]])
 
 require(foreach)
 require(doParallel)
@@ -2098,24 +2317,18 @@ cl <- makeCluster(8)
 registerDoParallel(cl)  
 
 
-# alt_trans ~  flight.type * cloud * side.type * side_abs + cloud *head_tail_abs * head_tail.type ,
-# random = ~1|device_info_serial
-
-
-# alt_trans ~ flight.type * cloud * side.type * side_abs * head_tail_abs * head_tail.type*temp*distance ,
-# random = ~1|device_info_serial , method = "ML")
-
-clusterExport(cl, c("alt_trans", "flight.type", "cloud", "side.type",
-                    "side_abs", "head_tail_abs", "head_tail.type",
-                    "device_info_serial", "temp","distance"))
+clusterExport(cl, c("alt_trans", "side.type",
+                    "head_tail.type" , "head_tail_abs" , "side_abs" ,
+                    "cloud_low" , "cloud_total" ,
+                    "distance_log10", "device_info_serial"))
 
 clusterEvalQ(cl= cl, library("nlme"))
 
 # ?clusterEvalQ
-dd <- pdredge(mod_ML[[5]], cluster = cl)
-
-
-# close cluster
+dd <- pdredge(mod_ML[[33]], cluster = cl)
+# # ?pdredge
+# 
+# #close cluster
 stopCluster(cl)
 
 dd
@@ -2124,6 +2337,401 @@ summary(dd)
 top.models <- get.models(dd, cumsum(weight) <= .95)
 str(top.models)
 top.models[[1]]
+
+
+# Model 4 is best, simplify from this (flight type removed)
+anova(mod_ML[[3]], mod_ML[[4]])
+mod_ML[[4]] <- lme(alt_trans ~ (side.type +
+                                  head_tail.type + head_tail_abs + side_abs +
+                                  cloud_low + cloud_total +
+                                  temp_2m + distance_log10)^3,
+                   random = ~1|device_info_serial,
+                   correlation = corARMA(q = 1),
+                   method = "ML"
+)
+mod_ML[[12]] <- lme(alt_trans ~ (
+                                  head_tail.type + head_tail_abs + side_abs +
+                                  cloud_low + cloud_total +
+                                  temp_2m + distance_log10)^3,
+                   random = ~1|device_info_serial,
+                   correlation = corARMA(q = 1),
+                   method = "ML"
+)
+mod_ML[[13]] <- lme(alt_trans ~ (side.type +
+                                    head_tail_abs + side_abs +
+                                   cloud_low + cloud_total +
+                                   temp_2m + distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+mod_ML[[14]] <- lme(alt_trans ~ (side.type +
+                                   head_tail.type +  side_abs +
+                                   cloud_low + cloud_total +
+                                   temp_2m + distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+mod_ML[[15]] <- lme(alt_trans ~ (side.type +
+                                   head_tail.type + head_tail_abs + 
+                                   cloud_low + cloud_total +
+                                   temp_2m + distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+mod_ML[[16]] <- lme(alt_trans ~ (side.type +
+                                   head_tail.type + head_tail_abs + side_abs +
+                                    cloud_total +
+                                   temp_2m + distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+mod_ML[[17]] <- lme(alt_trans ~ (side.type +
+                                   head_tail.type + head_tail_abs + side_abs +
+                                   cloud_low + 
+                                   temp_2m + distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+mod_ML[[18]] <- lme(alt_trans ~ (side.type +
+                                   head_tail.type + head_tail_abs + side_abs +
+                                   cloud_low + cloud_total +
+                                    distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+mod_ML[[19]] <- lme(alt_trans ~ (side.type +
+                                   head_tail.type + head_tail_abs + side_abs +
+                                   cloud_low + cloud_total +
+                                   temp_2m)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+aic.val <- NULL
+x <- 1
+# Compare AIC of models
+for(i in 12:19){
+  aic.val[x] <- (AIC(mod_ML[[i]]))
+  x <- x +1
+}
+AIC(mod_ML[[4]])
+aic.val
+min(aic.val)
+AIC(mod_ML[[18]])
+
+#Continue from model 18 (temperature dropped)
+anova(mod_ML[[4]],mod_ML[[18]])
+mod_ML[[18]] <- lme(alt_trans ~ (side.type +
+                                   head_tail.type + head_tail_abs + side_abs +
+                                   cloud_low + cloud_total +
+                                   distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+mod_ML[[19]] <- lme(alt_trans ~ (
+                                   head_tail.type + head_tail_abs + side_abs +
+                                   cloud_low + cloud_total +
+                                   distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+mod_ML[[20]] <- lme(alt_trans ~ (side.type +
+                                    head_tail_abs + side_abs +
+                                   cloud_low + cloud_total +
+                                   distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+mod_ML[[21]] <- lme(alt_trans ~ (side.type +
+                                   head_tail.type +  side_abs +
+                                   cloud_low + cloud_total +
+                                   distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+mod_ML[[22]] <- lme(alt_trans ~ (side.type +
+                                   head_tail.type + head_tail_abs + 
+                                   cloud_low + cloud_total +
+                                   distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+mod_ML[[23]] <- lme(alt_trans ~ (side.type +
+                                   head_tail.type + head_tail_abs + side_abs +
+                                   cloud_total +
+                                   distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+mod_ML[[24]] <- lme(alt_trans ~ (side.type +
+                                   head_tail.type + head_tail_abs + side_abs +
+                                   cloud_low + 
+                                   distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+mod_ML[[25]] <- lme(alt_trans ~ (side.type +
+                                   head_tail.type + head_tail_abs + side_abs +
+                                   cloud_low + cloud_total
+                                   )^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+aic.val <- NULL
+x <- 1
+# Compare AIC of models
+for(i in 18:25){
+  aic.val[x] <- (AIC(mod_ML[[i]]))
+  x <- x +1
+}
+AIC(mod_ML[[4]])
+aic.val
+min(aic.val)
+AIC(mod_ML[[18]])
+
+#Keep model 18 (temperature and flight type dropped)
+anova(mod_ML[[4]],mod_ML[[18]])
+
+
+mod_ML[[18]] <- lme(alt_trans ~ (side.type +
+                                   head_tail.type + head_tail_abs + side_abs +
+                                   cloud_low + cloud_total +
+                                   distance_log10)^3,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+summary(mod_ML[[18]])
+anova(mod_ML[[18]])
+
+#Reduce to only 3-way interactions including two wind components
+mod_ML[[26]] <- lme(alt_trans ~ (side.type * side_abs +
+                                   head_tail.type * head_tail_abs +  +
+                                   cloud_low + cloud_total +
+                                   distance_log10)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+anova(mod_ML[[18]],mod_ML[[26]])
+
+# Only 2-way interactions
+mod_ML[[27]] <- lme(alt_trans ~ (side.type + side_abs +
+                                   head_tail.type + head_tail_abs +
+                                   cloud_low + cloud_total +
+                                   distance_log10)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+anova(mod_ML[[27]],mod_ML[[26]])
+
+
+mod_ML[[28]] <- lme(alt_trans ~ side.type + (side_abs +
+                                   head_tail.type + head_tail_abs +
+                                   cloud_low + cloud_total +
+                                   distance_log10)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+mod_ML[[29]] <- lme(alt_trans ~ side_abs + (side.type + 
+                                   head_tail.type + head_tail_abs +
+                                   cloud_low + cloud_total +
+                                   distance_log10)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+mod_ML[[30]] <- lme(alt_trans ~ head_tail.type + (side.type + side_abs +
+                                    head_tail_abs +
+                                   cloud_low + cloud_total +
+                                   distance_log10)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+mod_ML[[31]] <- lme(alt_trans ~ cloud_low + (side.type + side_abs +
+                                   head_tail.type + head_tail_abs +
+                                    cloud_total +
+                                   distance_log10)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+mod_ML[[32]] <- lme(alt_trans ~ cloud_total + (side.type + side_abs +
+                                   head_tail.type + head_tail_abs +
+                                   cloud_low + 
+                                   distance_log10)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+mod_ML[[33]] <- lme(alt_trans ~ distance_log10 + (side.type + side_abs +
+                                   head_tail.type + head_tail_abs +
+                                   cloud_low + cloud_total
+                                   )^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+
+aic.val <- NULL
+x <- 1
+# Compare AIC of models
+for(i in 27:33){
+  aic.val[x] <- (AIC(mod_ML[[i]]))
+  x <- x +1
+}
+AIC(mod_ML[[27]])
+aic.val
+min(aic.val)
+AIC(mod_ML[[18]])
+
+
+# Lowest AIC, take out two-way interactions with distance
+mod_ML[[33]] <- lme(alt_trans ~ distance_log10 + (side.type + side_abs +
+                                                    head_tail.type + head_tail_abs +
+                                                    cloud_low + cloud_total
+)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+mod_ML[[34]] <- lme(alt_trans ~ distance_log10 + side.type + ( side_abs +
+                                                    head_tail.type + head_tail_abs +
+                                                    cloud_low + cloud_total
+)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+mod_ML[[35]] <- lme(alt_trans ~ distance_log10 + side_abs + (side.type + 
+                                                    head_tail.type + head_tail_abs +
+                                                    cloud_low + cloud_total
+)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+mod_ML[[36]] <- lme(alt_trans ~ distance_log10 + head_tail.type +
+                      (side.type + side_abs +
+                                                     + head_tail_abs +
+                                                    cloud_low + cloud_total
+)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+mod_ML[[37]] <- lme(alt_trans ~ distance_log10 + head_tail_abs +
+                      (side.type + side_abs +
+                                                    head_tail.type + 
+                                                    cloud_low + cloud_total
+)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+mod_ML[[38]] <- lme(alt_trans ~ distance_log10 + cloud_low + (side.type + side_abs +
+                                                    head_tail.type + head_tail_abs +
+                                                     cloud_total
+)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+mod_ML[[39]] <- lme(alt_trans ~ distance_log10 + cloud_total + (side.type + side_abs +
+                                                    head_tail.type + head_tail_abs +
+                                                    cloud_low 
+)^2,
+                    random = ~1|device_info_serial,
+                    correlation = corARMA(q = 1),
+                    method = "ML"
+)
+
+
+aic.val <- NULL
+x <- 1
+# Compare AIC of models
+for(i in 33:39){
+  aic.val[x] <- (AIC(mod_ML[[i]]))
+  x <- x +1
+}
+AIC(mod_ML[[33]])
+aic.val
+min(aic.val)
+
+# Model 33 still lowest AIC, keep remaining factors with two-way iteractions
+# Next step probably to remove individual two-way interactions - try dredge.
+
+
+library(MuMIn)
+# ?dredge
+r.squaredGLMM(mod_ML[[33]])
+
+require(foreach)
+require(doParallel)
+
+
+#Make cluster of number of devices instances
+cl <- makeCluster(8)
+
+#start the parellel session of R; the 'slaves', which will run the analysis.
+registerDoParallel(cl)  
+
+
+clusterExport(cl, c("alt_trans", "side.type",
+                                   "head_tail.type" , "head_tail_abs" , "side_abs" ,
+                                   "cloud_low" , "cloud_total" ,
+                                   "distance_log10", "device_info_serial"))
+
+clusterEvalQ(cl= cl, library("nlme"))
+
+# ?clusterEvalQ
+dd <- pdredge(mod_ML[[33]], cluster = cl)
+# # ?pdredge
+# 
+# #close cluster
+stopCluster(cl)
+
+dd
+summary(dd)
+
+top.models <- get.models(dd, cumsum(weight) <= .95)
+str(top.models)
+top.models[[1]]
+
+
+
+
 
 
 #Checking final model assumptions
