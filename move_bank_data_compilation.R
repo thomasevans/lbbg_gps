@@ -43,6 +43,10 @@ temperature_10m <- read.table("temperature_10m.csv", sep = ",", colClasses = myc
 wind_u_10m <- read.table("wind_u_10m.csv", sep = ",", colClasses = mycols, skip = 1)
 wind_v_10m <- read.table("wind_v_10m.csv", sep = ",", colClasses = mycols, skip = 1)
 
+
+
+
+
 data.com <- cbind(data.com, cloud_cover_total, significant_wave_height,
                   sun_shine_duration_day, surface_roughness,
                   temperature_10m, wind_u_10m, wind_v_10m)
@@ -76,6 +80,36 @@ write.table(data.com, "move_bank_vairables_all.csv",
 
 
 
+
+
+
+
+# Set up thermal uplift and sea level pressure
+n <- count.fields("uplift_pressure_all.csv", sep = ",")
+head(n)
+col.num <- max(n)
+
+
+mycols <- rep("NULL", col.num)
+mycols[c(3, 9, (col.num -1), col.num)] <- NA
+data.com <- read.table("uplift_pressure_all.csv",
+                       sep = ",", colClasses = mycols,
+                       skip = 1, row.names = NULL)
+
+names(data.com) <- c("datetime","device_info_serial",
+                     "thermal_uplift",
+                     "sea_level_pressure")
+
+# Get datetime to correct format
+data.com$datetime <- as.POSIXct(as.character(data.com$datetime), tz = "UTC")
+
+
+
+row.names(data.com) <- NULL
+
+# ?write.table
+write.table(data.com, "move_bank_vairables_uplift_pressure.csv",
+            sep = ",", row.names = FALSE)
 
 
 
