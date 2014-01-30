@@ -24,7 +24,7 @@ flights <- sqlQuery(gps.db, query = "SELECT DISTINCT f.*
 # str(flights)
 
 #Get a copy of the lund_flight_points_wind_par DB table.
-points_par <- sqlQuery(gps.db, query = "SELECT DISTINCT f.*, t.air_2m, t.air_2m_sd, g.altitude, w.cloud_cover_low_altitude, w.cloud_cover_total, w.significant_wave_height, w.sun_shine_duration_day, w.surface_roughness, w.temperature_2m
+points_par <- sqlQuery(gps.db, query = "SELECT DISTINCT f.*, t.air_2m, t.air_2m_sd, g.altitude, w.cloud_cover_low_altitude, w.cloud_cover_total, w.significant_wave_height, w.sun_shine_duration_day, w.surface_roughness, w.temperature_2m, w.thermal_uplift, w.sea_level_pressure
                     FROM lund_flight_points_wind_par_ecmwf AS f, lund_flights_com_points_weather AS t, gps_uva_tracking_speed_3d_limited AS g, move_bank_variables_all as w
                     WHERE f.device_info_serial = t.device_info_serial
                     AND f.date_time = t.date_time
@@ -145,7 +145,11 @@ get.stats <- function(i, points_par = points_par, flights = flights){
   surface_roughness.mean <- mean(sub.points$surface_roughness, na.rm = TRUE) 
   temperature_2m.mean <- mean(sub.points$temperature_2m, na.rm = TRUE) 
   cloud_cover_low_altitude.mean <- mean(sub.points$cloud_cover_low_altitude, na.rm = TRUE)
-
+  
+  thermal_uplift.mean <-  mean(sub.points$thermal_uplift, na.rm = TRUE)
+  sea_level_pressure.mean <-  mean(sub.points$sea_level_pressure, na.rm = TRUE)
+  
+  
   
   
   flight_id <- flights$flight_id[i]
@@ -184,7 +188,9 @@ get.stats <- function(i, points_par = points_par, flights = flights){
                 sun_shine_duration_day.mean,
                 surface_roughness.mean,
                 temperature_2m.mean,
-                cloud_cover_low_altitude.mean
+                cloud_cover_low_altitude.mean,
+                thermal_uplift.mean,
+                sea_level_pressure.mean
                 )
   
   return(calc.par)
@@ -250,7 +256,9 @@ names(flights.par) <- c("flight_id", "n_points",
                         "sun_shine_duration_day.mean",
                         "surface_roughness.mean",
                         "temperature_2m.mean",
-                        "cloud_cover_low_altitude.mean"
+                        "cloud_cover_low_altitude.mean",
+                        "thermal_uplift.mean",
+                        "sea_level_pressure.mean"
                         )
 
 # head(flights.par)
