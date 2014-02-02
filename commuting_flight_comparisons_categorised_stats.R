@@ -198,7 +198,7 @@ flights.combined   <- flights.combined[order(flights.combined$start_time),]
 
 # Some function definitions --------
 
-# Logit transformation   ####
+# Logit transformation
 logit <- function(x){
   if(x <1.0001 & x > -0.0001){   #Return NAs for values outside of range 0 - 1, with small tollerance either way.
     x.new <- 0.99999999999*x    #Bring all values in slightly, so that values of 1.0 can be processed.
@@ -216,11 +216,41 @@ anti.logit <- function(x){
   return(fx)
 }
 
+# Function to remove negative values - reallocate as zero
 if.neg <- function(x){
   if(x < 0) return(0)
   else return(1)
 }
 
 
+
+# sample sizes ---------
+# install.packages("reshape2")
+library(reshape2)
+
+aggregate(speed_inst_mean ~ device_info_serial,
+          data = flights.combined,
+          FUN = length)
+
+# Statistical analyses ------
+
+# Altitude ------
+
+# Make a filter to this effect
+f <- flights.combined$alt_med < 150  &   flights.combined$alt_med > -20 & !is.na(flights.combined$wind_side_mean)
+# hist(flights.combined$alt_med)
+summary(f)
+
+# Retain only trips where both the outward and inward flight fulfill above conditions
+f2 <- flights.combined$trip_id %in% flights.combined$trip_id[!f]
+f3 <- !f2
+summary(f3)
+
+
+# Prepare variables
+device_info_serial <- flights.combined$device_info_serial[f3]
+device_info_serial[device_info_serial == 687] <- 596
+device_info_serial <- as.factor(device_info_serial)
+summary(device_info_serial)
 
 
