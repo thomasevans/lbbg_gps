@@ -321,6 +321,7 @@ alt_data$head_tail.type   <- as.factor(alt_data$head_tail.type)
 library(nlme)
 
 mod <- list()
+mod_ml <- list()
 
 # full model with all 2-way interactions included
 mod[[1]]  <-  lme(alt_trans ~
@@ -330,10 +331,11 @@ mod[[1]]  <-  lme(alt_trans ~
                   random = ~1|device_info_serial/trip_id,
                   data = alt_data
                   )
+mod_ml[[1]] <- update()
 summary(mod[[1]])
 
 
-modb  <-  lme(alt_trans ~
+mod[[2]]  <-  lme(alt_trans ~
                     (flight.type + temp_2m + cloud_total +
                        cloud_low_logit + head_tail_abs + side_abs +
                        head_tail.type + distance +
@@ -354,3 +356,5 @@ anova(mod[[1]], mod[[2]])
 # Spatio-temporal correlation
 plot(ACF(mod[[2]], maxLag = 10), alpha = 0.01)
 # No signs of strong autocorrelation, probably owing to model overfitting
+
+anova(mod[[2]])
