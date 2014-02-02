@@ -308,7 +308,7 @@ if.neg <- function(x){
 library(reshape2)
 
 aggregate(speed_inst_mean ~ device_info_serial,
-          data = flights.in,
+          data = flights.combined,
           FUN = length)
 
 
@@ -3366,6 +3366,8 @@ summary(mod_ML[[2]])
 
 r.squaredGLMM(mod[[2]])
 
+
+# r.squaredGLMM(modb)
 
 mod_ML[[3]] <- lme(
   air_speed ~ flight.type + side.type * side_abs * head_tail_abs * head_tail.type+distance    ,
