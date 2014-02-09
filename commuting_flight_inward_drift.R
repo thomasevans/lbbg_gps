@@ -158,7 +158,8 @@ date_time <- goal_dist <- start_dist <- bear_goal <- bear_dif <- dist_straight_l
 # For each points calculate a bunch of different things
 # j <- 2
 for(j in 1:n_points){
-  date_time[j] <- flight.points$date_time[j]
+  date_time[j] <- as.character(flight.points$date_time[j])
+
   
   goal_dist[j] <- 1000* deg.dist(flight.points$longitude[j],
                               flight.points$latitude[j],
