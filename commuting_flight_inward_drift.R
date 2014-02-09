@@ -140,7 +140,7 @@ bear_first_to_goal <- earth.bear(flight.points$longitude[1],
                         goal.lat)
 
 
-
+# Function to give wind direction relative to goal direction
 wind_dir_fun <- function(wind, goal){
   x <- wind - goal
   x <- x %% 360
@@ -150,64 +150,91 @@ wind_dir_fun <- function(wind, goal){
 
 
 
+# Variable initiation
+date_time <- goal_dist <- start_dist <- bear_goal <- bear_dif <- dist_straight_line <- dist_drift_prop <- dist_along_staight_line_from_start <- dist_to_goal_straight_line <- dist_prop_to_goal <- time_from_start <- time_from_end <- prop_time <- wind_dir_rel <- side_wind <- time_previous <- full_drift_exp_dist <- act_drift_from_last_point <- drift_prop <- NULL
+
+
 # names(flights)
 # For each points calculate a bunch of different things
 # j <- 2
 for(j in 1:n_points){
-  date_time <- flight.points$date_time[j]
+  date_time[j] <- flight.points$date_time[j]
   
-  goal_dist <- 1000* deg.dist(flight.points$longitude[j],
+  goal_dist[j] <- 1000* deg.dist(flight.points$longitude[j],
                               flight.points$latitude[j],
                               goal.long,
                               goal.lat)
   
-  start_dist <- 1000* deg.dist(flight.points$longitude[j],
+  start_dist[j] <- 1000* deg.dist(flight.points$longitude[j],
                               flight.points$latitude[j],
                                flight.points$longitude[1],
                                flight.points$latitude[1])
   
-  bear_goal <- earth.bear(flight.points$longitude[j],
+  bear_goal[j] <- earth.bear(flight.points$longitude[j],
                               flight.points$latitude[j],
                               goal.long,
                               goal.lat)
   
-  bear_dif <- abs(bear_goal - bear_first_to_goal)
+  bear_dif[j] <- abs(bear_goal[j] - bear_first_to_goal)
   
   # Not sure that this is correct - need to think about it a bit more/ test it on more examples.
-  dist_straight_line <- goal_dist * sin(rad(bear_dif))
+  dist_straight_line[j] <- goal_dist[j] * sin(rad(bear_dif[j]))
   
   # Proportional drift, distance from straight-line distance at current point, and the total distance if the straight-line (as the crow flys) path were taken
-  dist_drift_prop <- dist_straight_line/start_to_goal_dist
+  dist_drift_prop[j] <- dist_straight_line[j]/start_to_goal_dist
   
   # Distance along straight-line route from start - not sure that it gives correct answer
-  dist_along_staight_line_from_start <- sqrt(
-    (start_dist*start_dist) +
-      (dist_straight_line*dist_straight_line))
+  dist_along_staight_line_from_start[j] <- sqrt(
+    (start_dist[j]*start_dist[j]) +
+      (dist_straight_line[j]*dist_straight_line[j]))
   
   # Distance to goal along straghtline, if negative beyond goal (?)
-  dist_to_goal_straight_line <- start_to_goal_dist - 
-    dist_along_staight_line_from_start
+  dist_to_goal_straight_line[j] <- start_to_goal_dist - 
+    dist_along_staight_line_from_start[j]
   
   # Proportion of distance travelled along straight-line path, if >1 beyond goal
-  dist_prop_to_goal <- dist_along_staight_line_from_start/start_to_goal_dist
+  dist_prop_to_goal[j] <- dist_along_staight_line_from_start[j]/start_to_goal_dist
   
   # Time from start
-  time_from_start <- as.numeric(difftime(flight.points$date_time[j],
+  time_from_start[j] <- as.numeric(difftime(flight.points$date_time[j],
                                         flight.points$date_time[1],
                                         units = "secs"))
+
   # Time from end
-  time_from_end <- as.numeric(difftime(flight.points$date_time[n_points],
+  time_from_end[j] <- as.numeric(difftime(flight.points$date_time[n_points],
                                         flight.points$date_time[j],
                                         units = "secs"))
   
   # Proportion of time (time from start over total flight time)
-  prop_time   <-  time_from_start/total_time 
+  prop_time[j]   <-  time_from_start[j]/total_time[j] 
   
+  # Wind direction relative to goal direction
+  wind_dir_rel[j] <- wind_dir_fun(flight.points$wind_dir_ecmwf[j],
+                               bear_first_to_goal)
   
+  # Side wind component at flight-height, negative if to left, positive if to right
+  side_wind[j] <- flight.points$wind_speed_flt_ht_ecmwf[j] * 
+    sin(rad(wind_dir_rel[j]))
   
+  # Time from previous point
+  x <- 1
+  if(j > 1) x <- j - 1
   
+  time_previous <- as.numeric(difftime(flight.points$date_time[j],
+                                       flight.points$date_time[x],
+                                       units = "secs"))
+
+  # Expected drift under no compensation following a fixed heading
+  # Negative indicates drift to left (anticlockwise) of heading
+  full_drift_exp_dist[j] <- side_wind[j]*time_previous
   
-  -20 %% 360
+  # If negative drift is reduced, if positive, increased.
+  act_drift_from_last_point[j] <- abs(dist_straight_line[j]) - abs(dist_straight_line[x])
   
+  # Prop drift
+  drift_prop[j] <- act_drift_from_last_point[j]/full_drift_exp_dist[j]
 }
+
+# Combine data from all points into a single dataframe object to output
+data.var <- cbind(flight_id,device_info_serial,date_time,goal_dist,start_dist,bear_goal,bear_dif,dist_straight_line,dist_drift_prop,dist_along_staight_line_from_start,dist_to_goal_straight_line,dist_prop_to_goal,time_from_start,time_from_end,prop_time,wind_dir_rel,side_wind,time_previous,full_drift_exp_dist,act_drift_from_last_point,drift_prop)
 
