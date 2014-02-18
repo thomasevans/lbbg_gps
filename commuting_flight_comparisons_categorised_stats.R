@@ -459,7 +459,7 @@ r.squaredGLMM(mod[[11]])
 
 # Va -------
 
-f <-  !is.na(flights.combined$wind_side_mean)
+f <-  !is.na(flights.combined$wind_side_mean) & (1/(cos(rad(flights.combined$alpha_mean))) < 2)
 summary(f)
 # names(flights.combined)
 # hist(flights.combined$head_speed_mean)
@@ -519,6 +519,30 @@ sea_level_pressure <- flights.combined$sea_level_pressuremean[f3] - 99000
 # Va
 va <-  flights.combined$head_speed_mean[f3]
 
+
+# Additional variables for analysis according to using alpha etc instead,
+# following formulation from Liechti et al. 1994
+
+# Vg
+vg <-  flights.combined$ground_speed_mean[f3]
+
+# alpha
+alpha  <-  flights.combined$alpha_mean[f3]
+
+library(circular)
+# 1/cos(alpha)
+inv_cos_alpha <- 1/(cos(rad(flights.combined$alpha_mean[f3])))
+hist(inv_cos_alpha[inv_cos_alpha < 2])
+range(inv_cos_alpha)
+
+
+# 1/cos(|alpha|)
+inv_cos_abs_alpha <- 1/(cos(rad(abs(flights.combined$alpha_mean[f3]))))
+
+# Vg - Va
+vg_sub_va <- vg - va
+
+
 # Compile variables into single dataframe
 va_data <- cbind(device_info_serial, trip_id, flight.type,
                   date.time, temp_2m,va , cloud_total,
@@ -526,7 +550,9 @@ va_data <- cbind(device_info_serial, trip_id, flight.type,
                   cloud_low_logit, side_abs,
                    side.type, head_tail.type,
                   head_tail_abs, head_tail_vec, side_vec,
-                  distance, sea_level_pressure)
+                  distance, sea_level_pressure,
+                 vg_sub_va, inv_cos_alpha,
+                 alpha, vg, inv_cos_abs_alpha)
 va_data <- as.data.frame(va_data)
 
 str(va_data)
@@ -542,6 +568,7 @@ library(nlme)
 
 mod <- list()
 mod_ml <- list()
+
 
 # full model with all 2-way interactions included
 mod[[1]]  <-  lme(va ~
@@ -683,7 +710,199 @@ qqnorm(mod[[12]])
 library(MuMIn)
 r.squaredGLMM(mod[[12]])
 
-# Explains 34% of variation in altitude, with 30% down to main effects, other 3% random effects
+# Explains 34% of variation in Va, with 30% down to main effects, other 3% random effects
+
+mod <- list()
+mod_ml <- list()
+# Va - continued (alpha etc) -----
+# full model with all 2-way interactions included
+mod[[1]]  <-  lme(va ~
+                    (vg_sub_va + inv_cos_alpha +
+                    flight.type +
+                    distance + 
+                    temp_2m +
+                    sea_level_pressure)^2,
+                  random = ~1|device_info_serial/trip_id,
+                  data = va_data
+)
+mod_ml[[1]] <- update(mod[[1]], method = "ML")
+summary(mod[[1]])
+
+anova(mod[[1]])
+
+mod[[2]] <-  update(mod[[1]], random = ~1|device_info_serial)
+anova(mod[[1]], mod[[2]])
+
+mod_ml[[2]] <- update(mod[[2]], method = "ML")
+summary(mod[[2]])
+  
+
+# Better not to include trip id in random effects
+
+
+
+# May be worth looking at correlation structure later
+plot(ACF(mod[[2]], maxLag = 10), alpha = 0.01)
+
+
+
+# Now simplify - only retain significant terms
+
+anova(mod_ml[[2]])
+
+mod[[3]]    <-  update(mod[[2]], .~. -flight.type:sea_level_pressure)
+
+mod_ml[[3]]  <- update(mod[[3]], method = "ML")
+
+anova(mod_ml[[2]], mod_ml[[3]])
+anova(mod[[3]])
+
+
+mod[[4]]    <-  update(mod[[3]], .~. -distance:temp_2m)
+
+mod_ml[[4]]  <- update(mod[[4]], method = "ML")
+
+anova(mod_ml[[3]], mod_ml[[4]])
+anova(mod[[4]])
+
+
+mod[[5]]    <-  update(mod[[4]], .~. -vg_sub_va:sea_level_pressure)
+
+mod_ml[[5]]  <- update(mod[[5]], method = "ML")
+
+anova(mod_ml[[4]], mod_ml[[5]])
+anova(mod[[5]])
+
+
+
+mod[[6]]    <-  update(mod[[5]], .~. -flight.type:temp_2m)
+
+mod_ml[[6]]  <- update(mod[[6]], method = "ML")
+
+anova(mod_ml[[5]], mod_ml[[6]])
+anova(mod[[6]])
+
+
+mod[[7]]    <-  update(mod[[6]], .~. -inv_cos_alpha:sea_level_pressure)
+
+mod_ml[[7]]  <- update(mod[[7]], method = "ML")
+
+anova(mod_ml[[6]], mod_ml[[7]])
+anova(mod[[7]])
+
+
+mod[[8]]    <-  update(mod[[7]], .~. -flight.type:distance)
+
+mod_ml[[8]]  <- update(mod[[8]], method = "ML")
+
+anova(mod_ml[[7]], mod_ml[[8]])
+anova(mod[[8]])
+
+
+mod[[9]]    <-  update(mod[[8]], .~. -inv_cos_alpha:distance)
+
+mod_ml[[9]]  <- update(mod[[9]], method = "ML")
+
+anova(mod_ml[[8]], mod_ml[[9]])
+anova(mod[[9]])
+
+
+mod[[10]]    <-  update(mod[[9]], .~. -inv_cos_alpha:temp_2m)
+
+mod_ml[[10]]  <- update(mod[[10]], method = "ML")
+
+anova(mod_ml[[9]], mod_ml[[10]])
+anova(mod[[10]])
+
+
+mod[[11]]    <-  update(mod[[10]], .~. -distance:sea_level_pressure)
+
+mod_ml[[11]]  <- update(mod[[11]], method = "ML")
+
+anova(mod_ml[[10]], mod_ml[[11]])
+anova(mod[[11]])
+
+
+mod[[12]]    <-  update(mod[[10]], .~. -vg_sub_va:temp_2m - temp_2m - sea_level_pressure:temp_2m)
+
+mod_ml[[12]]  <- update(mod[[12]], method = "ML")
+
+anova(mod_ml[[10]], mod_ml[[12]])
+anova(mod[[12]])
+
+anova(mod[[10]])
+
+mod[[13]]    <-  update(mod[[10]], .~. -distance:sea_level_pressure)
+
+mod_ml[[13]]  <- update(mod[[13]], method = "ML")
+
+anova(mod_ml[[10]], mod_ml[[13]])
+
+
+anova(mod[[10]])
+
+mod[[14]]    <-  update(mod[[10]], .~. -vg_sub_va:inv_cos_alpha)
+
+mod_ml[[14]]  <- update(mod[[14]], method = "ML")
+
+anova(mod_ml[[10]], mod_ml[[14]])
+
+anova(mod[[14]])
+
+
+
+mod[[15]]    <-  update(mod[[14]], .~. -distance:sea_level_pressure)
+
+mod_ml[[15]]  <- update(mod[[15]], method = "ML")
+
+anova(mod_ml[[14]], mod_ml[[15]])
+
+
+anova(mod[[14]])
+
+
+mod[[16]]    <-  update(mod[[14]], .~. -vg_sub_va:distance)
+
+mod_ml[[16]]  <- update(mod[[16]], method = "ML")
+
+anova(mod_ml[[14]], mod_ml[[16]])
+
+
+
+mod[[17]]    <-  update(mod[[14]], .~. -inv_cos_alpha:flight.type - inv_cos_alpha)
+
+mod_ml[[17]]  <- update(mod[[17]], method = "ML")
+
+anova(mod_ml[[14]], mod_ml[[17]])
+
+
+# assumptions
+plot(mod[[14]], flight.type ~ resid(.), abline = 0)
+
+plot(mod[[14]], resid(., type = "p") ~ fitted(.) | device_info_serial, id = 0.05, adj = -0.3)
+
+plot(mod[[14]], va ~ fitted(.), id = 0.05, adj = -0.3)
+
+qqnorm(mod[[14]], ~resid(.)| flight.type)
+qqnorm(mod[[14]], ~resid(.)| device_info_serial)
+
+
+plot(mod[[14]])
+qqnorm(mod[[14]])
+
+
+library(MuMIn)
+r.squaredGLMM(mod[[14]])
+r.squaredGLMM(mod[[17]])
+
+
+intervals(mod[[14]])
+anova(mod[[14]])
+
+summary(mod[[14]])
+
+
+
 
 
 
