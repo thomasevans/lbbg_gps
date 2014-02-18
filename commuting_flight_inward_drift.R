@@ -69,11 +69,14 @@ flights$end_time <- tm
 str(flights)
 
 
+# For testing take only a subset of the flights table.
+# flights <- flights[1:10,]
+
 
 # Initial test with one flight
-i <- 1
+# i <- 1
 
-
+# Wrap statistics into a function
 flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
     
     # Get GPS data function
@@ -244,7 +247,7 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
       full_drift_exp_dist[j] <- side_wind[j]*time_previous[j]
       
       # If negative drift is reduced, if positive, increased.
-      act_drift_from_last_point[j] <- abs(dist_straight_line[j]) - abs(dist_straight_line[x])
+      act_drift_from_last_point[j] <- (dist_straight_line[j]) - (dist_straight_line[x])
       
       # Prop drift
       drift_prop[j] <- act_drift_from_last_point[j]/full_drift_exp_dist[j]
@@ -266,7 +269,39 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
 }
 
 
-flight.drift.fun(i = 6)
+# Check that it gives sensible output
+# flight.drift.fun(i = 6)
+# flight.drift.fun(i = 50)
 
-flight.drift.fun(i = 50)
 
+
+# Now run the function in parallel for all flights
+
+# Require packages
+library(foreach)
+library(doParallel)
+
+#Make cluster of number of devices instances
+cl <- makeCluster(detectCores())
+
+#start the parellel session of R; the 'slaves', which will run the analysis.
+registerDoParallel(cl)  
+
+#export needed data
+clusterExport(cl, c("flights","nest_loc","flight.drift.fun"))  
+
+
+#make a list object to recieve the data
+lst <- list()
+f <- length(flights$flight_id)
+system.time({lst <- foreach(i = 1:f ) %dopar%{
+  flight.drift.fun(i = i)
+} #end of foreach functions
+}) #end of things being timed by system.time
+
+#close cluster
+stopCluster(cl)
+
+
+flights.par <- do.call(rbind , lst)
+flights.par <- as.data.frame(flights.par)
