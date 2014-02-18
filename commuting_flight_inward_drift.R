@@ -293,6 +293,8 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
 }
 
 
+
+
 # Check that it gives sensible output
 # flight.drift.fun(i = 6)
 # flight.drift.fun(i = 50)
