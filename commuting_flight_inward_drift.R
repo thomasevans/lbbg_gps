@@ -80,8 +80,9 @@ str(flights)
 flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
   
   # Get GPS data function
-  source("gps_extract.R")
-  
+#   source("gps_extract.R")
+  # Connect to database
+  require(RODBC)
   require("fossil")
   
   # Nest location
@@ -114,6 +115,16 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
   
   
   gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+  
+  if(!inherits(gps.db,"RODBC")){
+    for(i in 1:4){
+      gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+      if(inherits(gps.db,"RODBC")) break
+    }
+  }
+  
+  
+  
   
   flight.points <- sqlQuery(gps.db,
                             query = gsub("\n", " ", paste("SELECT DISTINCT
@@ -299,7 +310,7 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
 # flight.drift.fun(i = 6)
 # flight.drift.fun(i = 50)
 # flight.drift.fun(i = 278)
-
+# test.data <- flight.drift.fun(i = 50)
 
 
 # Now run the function in parallel for all flights
@@ -332,3 +343,4 @@ stopCluster(cl)
 
 flights.par <- do.call(rbind , lst)
 flights.par <- as.data.frame(flights.par)
+save(flights.par, file = "commuting_flight_inward_drift_data_out.RData")
