@@ -18,14 +18,21 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 sqlTables(gps.db)
 
 
+# Get flight drift data + weather data (point level)
+sql...
+
+
+# Get commuting flight summary data
+sql...
 
 
 
+# Filter flights ------
+# Only include inward flights - use same filter as in stats analysis (for consistency etc)
+# Filter flights table
 
-# Read in the drift data + commuting flight table
+# Then use above filter %in% ... to filter the points table too.
 
-
-# First filter to only include flights fulfilling certain criteria (i.e. not on Gotland etc.)
 
 
 # Plot some example flights for drift by distance etc, perhaps 10 in different colours (same for each graph...)
