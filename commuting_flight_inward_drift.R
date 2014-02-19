@@ -332,9 +332,13 @@ registerDoParallel(cl)
 clusterExport(cl, c("flights","nest_loc","flight.drift.fun"))  
 
 
+# str(lst)
+
 #make a list object to recieve the data
 lst <- list()
 f <- length(flights$flight_id)
+
+# Doesn't take long  - ca. 40 s
 system.time({lst <- foreach(i = 1:f ) %dopar%{
   flight.drift.fun(i = i)
 } #end of foreach functions
@@ -343,7 +347,104 @@ system.time({lst <- foreach(i = 1:f ) %dopar%{
 #close cluster
 stopCluster(cl)
 
-
+# Combine info for all flights into a single matrix - quite slow
 flights.par <- do.call(rbind , lst)
+# Matrix to data.frame conversion
 flights.par <- as.data.frame(flights.par)
+# Make a backup - save the data to R binnary file
 save(flights.par, file = "commuting_flight_inward_drift_data_out.RData")
+
+
+
+
+# Save to a new Database table
+# Save data to database -------
+odbcCloseAll()
+
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+# names(gps.data.par)
+
+str(flights.par)
+
+# getSqlTypeInfo("ACCESS")
+
+
+# Correct structure in flights.par table
+str(flights.par)
+
+as.num.fun <- function(x){
+  x <- as.character(x)
+  as.numeric(x)
+}
+
+as.int.fun <- function(x){
+  x <- as.character(x)
+  as.integer(x)
+}
+
+flights.par$flight_id <- as.int.fun(flights.par$flight_id)
+flights.par$device_info_serial <- as.int.fun(flights.par$device_info_serial)
+  
+tm <- as.character(flights.par$date_time)
+tm <- as.POSIXlt(tm)
+attr(tm, "tzone") <- "UTC"
+flights.par$date_time <- tm
+
+flights.par$goal_dist <- as.num.fun(flights.par$goal_dist)
+flights.par$start_dist <- as.num.fun(flights.par$start_dist)
+flights.par$bear_goal <- as.num.fun(flights.par$bear_goal)
+flights.par$bear_dif <- as.num.fun(flights.par$bear_dif)
+flights.par$dist_straight_line <- as.num.fun(flights.par$dist_straight_line)
+flights.par$dist_drift_prop <- as.num.fun(flights.par$dist_drift_prop)
+flights.par$dist_along_staight_line_from_start <- as.num.fun(flights.par$dist_along_staight_line_from_start)
+flights.par$dist_to_goal_straight_line <- as.num.fun(flights.par$dist_to_goal_straight_line)
+flights.par$dist_prop_to_goal <- as.num.fun(flights.par$dist_prop_to_goal)
+flights.par$time_from_start <- as.num.fun(flights.par$time_from_start)
+flights.par$time_from_end <- as.num.fun(flights.par$time_from_end)
+flights.par$prop_time <- as.num.fun(flights.par$prop_time)
+flights.par$wind_dir_rel <- as.num.fun(flights.par$wind_dir_rel)
+flights.par$side_wind <- as.num.fun(flights.par$side_wind)
+flights.par$time_previous <- as.num.fun(flights.par$time_previous)
+flights.par$full_drift_exp_dist <- as.num.fun(flights.par$full_drift_exp_dist)
+flights.par$act_drift_from_last_point <- as.num.fun(flights.par$act_drift_from_last_point)
+flights.par$drift_prop <- as.num.fun(flights.par$drift_prop)
+
+
+str(flights.par)
+
+#Output flight wind par data to database #####
+#will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
+sqlSave(gps.db, flights.par, tablename = "lund_flight_com_in_drift_points",
+        append = FALSE, rownames = FALSE, colnames = FALSE,
+        verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
+        test = FALSE, nastring = NULL,
+        varTypes =  c(device_info_serial = "integer",
+                      date_time = "datetime",
+                      flight_id = "integer",
+                      goal_dist = "double",
+                      start_dist = "double",
+                      bear_goal = "double",
+                      bear_dif = "double",
+                      dist_straight_line = "double",
+                      dist_drift_prop = "double",
+                      dist_along_staight_line_from_start = "double",
+                      dist_to_goal_straight_line = "double",
+                      dist_prop_to_goal = "double",
+                      time_from_start = "double",
+                      time_from_end = "double",
+                      prop_time = "double",
+                      wind_dir_rel = "double",
+                      side_wind = "double",
+                      time_previous = "double",
+                      full_drift_exp_dist = "double",
+                      act_drift_from_last_point = "double",
+                      drift_prop = "double"
+                      )
+        )
+
+
+# ?sqlSave
+odbcCloseAll()
+# names(flights.par)
+
+
