@@ -76,6 +76,9 @@ str(flights)
 # Initial test with one flight
 # i <- 901
 # i <- 50
+
+# Drift calculation function -----
+
 # Wrap statistics into a function
 flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
   
@@ -316,7 +319,7 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
 # test.data <- flight.drift.fun(i = 50)
 
 
-# Now run the function in parallel for all flights
+# Now run the function in parallel for all flights ----
 
 # Require packages
 library(foreach)
@@ -347,7 +350,7 @@ system.time({lst <- foreach(i = 1:f ) %dopar%{
 #close cluster
 stopCluster(cl)
 
-# Combine info for all flights into a single matrix - quite slow
+# Combine info for all flights into a single matrix - quite slow ----
 flights.par <- do.call(rbind , lst)
 # Matrix to data.frame conversion
 flights.par <- as.data.frame(flights.par)
@@ -412,7 +415,7 @@ flights.par$drift_prop <- as.num.fun(flights.par$drift_prop)
 
 str(flights.par)
 
-#Output flight wind par data to database #####
+#Output flight wind par data to database
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
 sqlSave(gps.db, flights.par, tablename = "lund_flight_com_in_drift_points",
         append = FALSE, rownames = FALSE, colnames = FALSE,
