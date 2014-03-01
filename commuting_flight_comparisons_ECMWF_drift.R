@@ -144,3 +144,269 @@ summary(outward)
 
 
 
+
+# Re-arrange the data for paired data comparison ----
+
+flights.out <- cbind(flights.whole[outward,],flights.characteristics[outward,],flights.weather[outward,])
+flights.in <- cbind(flights.whole[inward,],flights.characteristics[inward,],flights.weather[inward,])
+
+# Re-order these by trip_id
+flights.out  <- flights.out[order(flights.out$trip_id),]
+flights.in   <- flights.in[order(flights.in$trip_id),]
+
+#Find and index those flights for which there is a corresponding outward or inward flight for same trip.
+x <- NA
+for( i in seq(along = flights.out$trip_id)){
+  if(any(flights.out$trip_id[i] == flights.in$trip_id)) x[i] = TRUE else{x[i] = FALSE}
+}
+
+y <- NA
+for( i in seq(along = flights.in$trip_id)){
+  if(any(flights.in$trip_id[i] == flights.out$trip_id)) y[i] = TRUE else{y[i] = FALSE}
+}
+
+# Check that this has worked
+all.equal(flights.in$trip_id[y] , flights.out$trip_id[x])
+
+flights.in <- flights.in[y,]
+flights.out <- flights.out[x,]
+
+length(flights.in$flight_id)
+
+length(unique(flights.in$device_info_serial))
+
+#Rearrange data for comparision
+flights.out$flight.type <- "out"
+flights.in$flight.type <- "in"
+
+
+# For first half
+# Re-arrange the data for paired data comparison
+
+flights.half.1.out <- cbind(flights.half.1[outward,],flights.characteristics[outward,],flights.weather[outward,])
+flights.half.1.in <- cbind(flights.half.1[inward,],flights.characteristics[inward,],flights.weather[inward,])
+
+# Re-order these by trip_id
+flights.half.1.out  <- flights.half.1.out[order(flights.half.1.out$trip_id),]
+flights.half.1.in   <- flights.half.1.in[order(flights.half.1.in$trip_id),]
+
+#Find and index those flights for which there is a corresponding outward or inward flight for same trip.
+x <- NA
+for( i in seq(along = flights.half.1.out$trip_id)){
+  if(any(flights.half.1.out$trip_id[i] == flights.half.1.in$trip_id)) x[i] = TRUE else{x[i] = FALSE}
+}
+
+y <- NA
+for( i in seq(along = flights.half.1.in$trip_id)){
+  if(any(flights.half.1.in$trip_id[i] == flights.half.1.out$trip_id)) y[i] = TRUE else{y[i] = FALSE}
+}
+
+# Check that this has worked
+all.equal(flights.half.1.in$trip_id[y] , flights.half.1.out$trip_id[x])
+
+flights.half.1.in <- flights.half.1.in[y,]
+flights.half.1.out <- flights.half.1.out[x,]
+
+
+
+
+# For second half
+# Re-arrange the data for paired data comparison ----
+
+flights.half.2.out <- cbind(flights.half.2[outward,],flights.characteristics[outward,],flights.weather[outward,])
+flights.half.2.in <- cbind(flights.half.2[inward,],flights.characteristics[inward,],flights.weather[inward,])
+
+# Re-order these by trip_id
+flights.half.2.out  <- flights.half.2.out[order(flights.half.2.out$trip_id),]
+flights.half.2.in   <- flights.half.2.in[order(flights.half.2.in$trip_id),]
+
+#Find and index those flights for which there is a corresponding outward or inward flight for same trip.
+x <- NA
+for( i in seq(along = flights.half.2.out$trip_id)){
+  if(any(flights.half.2.out$trip_id[i] == flights.half.2.in$trip_id)) x[i] = TRUE else{x[i] = FALSE}
+}
+
+y <- NA
+for( i in seq(along = flights.half.2.in$trip_id)){
+  if(any(flights.half.2.in$trip_id[i] == flights.half.2.out$trip_id)) y[i] = TRUE else{y[i] = FALSE}
+}
+
+# Check that this has worked
+all.equal(flights.half.2.in$trip_id[y] , flights.half.2.out$trip_id[x])
+
+flights.half.2.in <- flights.half.2.in[y,]
+flights.half.2.out <- flights.half.2.out[x,]
+
+
+
+
+# Combining flight data tables
+flights.combined <- rbind(flights.out,flights.in)
+flights.combined   <- flights.combined[order(flights.combined$trip_id),]
+
+
+
+# sample sizes ---------
+# install.packages("reshape2")
+library(reshape2)
+
+aggregate(speed_inst_mean ~ device_info_serial,
+          data = flights.combined,
+          FUN = length)
+
+
+
+# Alpha values -----
+range(flights.combined$alpha_mean)
+mean(flights.combined$alpha_mean)
+hist(flights.combined$alpha_mean)
+
+
+# Recalculate alpha according to track - heading
+track_head <- flights.combined$ground_dir_mean - flights.combined$head_dir_mean
+# Note when either heading or track close to 0/360 can get 'wrong' values
+hist(track_head)
+range(track_head)
+
+# See uncorrected values
+plot(flights.combined$ground_dir_mean ~ track_head,
+     xlab = "Track - Heading", ylab = "Track")
+abline(lm(flights.combined$ground_dir_mean ~ track_head),
+       lwd = 2, lty = 3, col = "red")
+lm(flights.combined$ground_dir_mean ~ track_head)
+
+
+# Function to correct values when near 360
+track_head_fun <- function(ground, head){
+  x <- ground - head
+  if(x < -180){
+    x <- ((ground - 180) %% 360) - ((head - 180) %% 360)
+  } else if(x > 180){
+    x <- ((ground + 180) %% 360) - ((head + 180) %% 360)
+  }
+  return(x)
+}
+
+
+
+# Function to correct normalized ground (track) direction when !<-180 or !<180
+ground_fun <- function(ground, ground.mean){
+  x <- ground - ground.mean
+  if(x < -180){
+    x <- x + 360
+  } else if(x > 180){
+    x <- 360 - x
+  }
+  return(x)
+}
+
+# # Correct values
+# track_head_new <- mapply(track_head_fun, x = track_head,
+#                          track = flights.combined$ground_dir_mean,
+#                          head = flights.combined$head_dir_mean)
+# 
+# # View corrected values
+# hist(track_head_new)
+# hist(track_head)
+# 
+# # Plot these corrected values alpha vs ground direction
+# plot(flights.combined$ground_dir_mean ~ track_head_new,
+#      xlab = "Track - Heading", ylab = "Track")
+# abline(lm(flights.combined$ground_dir_mean ~ track_head_new),
+#        lwd = 2, lty = 3, col = "red")
+# lm(flights.combined$ground_dir_mean ~ track_head_new)
+
+
+
+
+track_head_all   <-  mapply(track_head_fun,
+                            flights.combined$ground_dir_mean,
+                            flights.combined$head_dir_mean)
+# hist(track_head_all)
+track_head_all_out   <-  mapply(track_head_fun,
+                                flights.out$ground_dir_mean,
+                                flights.out$head_dir_mean)
+track_head_all_in   <-  mapply(track_head_fun,
+                               flights.in$ground_dir_mean,
+                               flights.in$head_dir_mean)
+track_head_1_out   <-  mapply(track_head_fun,
+                              flights.half.1.out$ground_dir_mean,
+                              flights.half.1.out$head_dir_mean)
+# hist(track_head_1_out)
+track_head_1_in   <-  mapply(track_head_fun,
+                             flights.half.1.in$ground_dir_mean,
+                             flights.half.1.in$head_dir_mean)
+track_head_2_out   <-  mapply(track_head_fun,
+                              flights.half.2.out$ground_dir_mean,
+                              flights.half.2.out$head_dir_mean)
+track_head_2_in   <-  mapply(track_head_fun,
+                             flights.half.2.in$ground_dir_mean,
+                             flights.half.2.in$head_dir_mean)
+
+
+# Inspect some of these
+hist(track_head_1_in)
+hist(track_head_2_in)
+range(track_head_2_in)
+range(track_head_1_out)
+# Still some large values, but none now >180 or <-180
+# Probably real values, though do seem like quite extreme outliers
+# Would only really be possible where wind speeds similar to airspeeds and the bird is flying nearly directly against the wind.
+sort(track_head_1_out, decreasing = TRUE)[1:50]
+sort(track_head_1_out)[1:50]
+
+library("circular")
+?mean.circular
+
+
+circ.mean   <- function(x){
+  as.numeric(deg(mean.circular(rad(x))))
+}
+
+str(mean.circular(rad(
+  flights.combined$ground_dir_mean))[1])
+
+track_ground_normalized_all   <-  mapply(ground_fun,
+                                    circ.mean(                                  
+                                      flights.combined$ground_dir_mean),
+                                    flights.combined$ground_dir_mean)
+# hist(track_ground_normalized_all)
+track_ground_normalized_all_out   <-  mapply(ground_fun,
+                                             circ.mean(flights.out$ground_dir_mean),
+                                             flights.out$ground_dir_mean)
+track_ground_normalized_all_in   <-  mapply(ground_fun,
+                                            circ.mean(flights.in$ground_dir_mean),
+                                            flights.in$ground_dir_mean)
+# hist(track_ground_normalized_all_out)
+# hist(track_ground_normalized_all_in)
+
+track_ground_normalized_1_out   <-  mapply(ground_fun,
+                                           circ.mean(flights.half.1.out$ground_dir_mean),
+                                           flights.half.1.out$ground_dir_mean)
+track_ground_normalized_1_in   <-  mapply(ground_fun,
+                                          circ.mean(flights.half.1.in$ground_dir_mean),
+                                          flights.half.1.in$ground_dir_mean)
+track_ground_normalized_2_out   <-  mapply(ground_fun,
+                                           circ.mean(flights.half.2.out$ground_dir_mean),
+                                           flights.half.2.out$ground_dir_mean)
+track_ground_normalized_2_in   <-  mapply(ground_fun,
+                                          circ.mean(flights.half.2.in$ground_dir_mean),
+                                          flights.half.2.in$ground_dir_mean)
+
+
+hist(track_ground_normalized_1_out)
+hist(track_ground_normalized_2_out)
+
+
+
+# Plot of track vs. track - heading
+# all data
+plot(flights.combined$ground_dir_mean ~ track_head_all)
+plot(track_ground_normalized_all ~ track_head_all)
+
+plot(track_ground_normalized_all ~ flights.combined$ground_dir_mean)
+
+
+
+
+
