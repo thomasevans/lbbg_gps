@@ -297,6 +297,7 @@ ground_fun <- function(ground, ground.mean){
   } else if(x > 180){
     x <- 360 - x
   }
+  x <- x*-1
   return(x)
 }
 
@@ -356,15 +357,15 @@ sort(track_head_1_out, decreasing = TRUE)[1:50]
 sort(track_head_1_out)[1:50]
 
 library("circular")
-?mean.circular
+# ?mean.circular
 
 
 circ.mean   <- function(x){
   as.numeric(deg(mean.circular(rad(x))))
 }
 
-str(mean.circular(rad(
-  flights.combined$ground_dir_mean))[1])
+# str(mean.circular(rad(
+#   flights.combined$ground_dir_mean))[1])
 
 track_ground_normalized_all   <-  mapply(ground_fun,
                                     circ.mean(                                  
@@ -403,10 +404,63 @@ hist(track_ground_normalized_2_out)
 # all data
 plot(flights.combined$ground_dir_mean ~ track_head_all)
 plot(track_ground_normalized_all ~ track_head_all)
-
 plot(track_ground_normalized_all ~ flights.combined$ground_dir_mean)
 
 
+# all out
+plot(flights.out$ground_dir_mean ~ track_head_all_out)
+plot(track_ground_normalized_all_out ~ flights.out$ground_dir_mean)
+plot(track_ground_normalized_all_out ~ track_head_all_out)
+abline(lm(track_ground_normalized_all_out ~ track_head_all_out))
+
+# all in
+plot(flights.in$ground_dir_mean ~ track_head_all_in)
+plot(track_ground_normalized_all_in ~ flights.in$ground_dir_mean)
+plot(track_ground_normalized_all_in ~ track_head_all_in)
+abline(lm(track_ground_normalized_all_in ~ track_head_all_in))
+
+# all out - first half
+plot(flights.half.1.out$ground_dir_mean ~ track_head_1_out)
+plot(track_ground_normalized_1_out ~ flights.half.1.out$ground_dir_mean)
+plot(track_ground_normalized_1_out ~ track_head_1_out)
+abline(lm(track_ground_normalized_1_out ~ track_head_1_out))
+
+
+# all out - second half
+plot(flights.half.2.out$ground_dir_mean ~ track_head_2_out)
+plot(track_ground_normalized_2_out ~ flights.half.2.out$ground_dir_mean)
+plot(track_ground_normalized_2_out ~ track_head_2_out)
+abline(lm(track_ground_normalized_2_out ~ track_head_2_out))
+
+plot(track_ground_normalized_2_out ~ track_head_2_out, xlim = c(-90,90),
+     ylim = c(-90,90))
+abline(a = 0, b = 1)
+points(track_ground_normalized_1_out ~ track_head_1_out, col = "red")
 
 
 
+
+# In start vs. end
+plot(track_ground_normalized_2_in ~ track_head_2_in, xlim = c(-90,90),
+     ylim = c(-90,90))
+abline(a = 0, b = 1)
+abline(v = 0)
+arrows(track_head_1_in,track_ground_normalized_1_in,
+         track_head_2_in,track_ground_normalized_2_in,
+         col = "light grey")
+points(track_ground_normalized_1_in ~ track_head_1_in, col = "red")
+lm(track_ground_normalized_1_in ~ track_head_1_in)
+lm(track_ground_normalized_2_in ~ track_head_2_in)
+
+
+# Out start vs. end
+plot(track_ground_normalized_2_out ~ track_head_2_out, xlim = c(-90,90),
+     ylim = c(-90,90))
+abline(a = 0, b = 1)
+abline(v = 0)
+arrows(track_head_1_out,track_ground_normalized_1_out,
+       track_head_2_out,track_ground_normalized_2_out,
+       col = "light grey")
+points(track_ground_normalized_1_out ~ track_head_1_out, col = "red")
+lm(track_ground_normalized_1_out ~ track_head_1_out)
+lm(track_ground_normalized_2_out ~ track_head_2_out)
