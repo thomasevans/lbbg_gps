@@ -28,14 +28,14 @@ flights.whole <- sqlQuery(gps.db, query="SELECT DISTINCT f.*, l.trip_flight_n,l.
 
 # First half
 flights.half.1 <- sqlQuery(gps.db, query="SELECT DISTINCT f.*, l.trip_flight_n,l.trip_id, l.trip_flight_type, w.* 
-                    FROM lund_flights_commuting_par AS f, lund_flights as l, lund_flight_com_wind_par_half1 AS w
+                    FROM lund_flights_commuting_par AS f, lund_flights as l, lund_flight_com_wind_par_ecmwf_half_1 AS w
                     WHERE f.flight_id = l.flight_id
                     AND f.flight_id = w.flight_id
                     ORDER BY f.flight_id ASC;")
 
 # Second half
 flights.half.2 <- sqlQuery(gps.db, query="SELECT DISTINCT f.*, l.trip_flight_n,l.trip_id, l.trip_flight_type, w.* 
-                    FROM lund_flights_commuting_par AS f, lund_flights as l, lund_flight_com_wind_par_half2 AS w
+                    FROM lund_flights_commuting_par AS f, lund_flights as l, lund_flight_com_wind_par_ecmwf_half_2 AS w
                     WHERE f.flight_id = l.flight_id
                     AND f.flight_id = w.flight_id
                     ORDER BY f.flight_id ASC;")
@@ -301,25 +301,8 @@ ground_fun <- function(ground, ground.mean){
   return(x)
 }
 
-# # Correct values
-# track_head_new <- mapply(track_head_fun, x = track_head,
-#                          track = flights.combined$ground_dir_mean,
-#                          head = flights.combined$head_dir_mean)
-# 
-# # View corrected values
-# hist(track_head_new)
-# hist(track_head)
-# 
-# # Plot these corrected values alpha vs ground direction
-# plot(flights.combined$ground_dir_mean ~ track_head_new,
-#      xlab = "Track - Heading", ylab = "Track")
-# abline(lm(flights.combined$ground_dir_mean ~ track_head_new),
-#        lwd = 2, lty = 3, col = "red")
-# lm(flights.combined$ground_dir_mean ~ track_head_new)
 
-
-
-
+# Calculate alpha (T - H)  ----
 track_head_all   <-  mapply(track_head_fun,
                             flights.combined$ground_dir_mean,
                             flights.combined$head_dir_mean)
@@ -355,6 +338,10 @@ range(track_head_1_out)
 # Would only really be possible where wind speeds similar to airspeeds and the bird is flying nearly directly against the wind.
 sort(track_head_1_out, decreasing = TRUE)[1:50]
 sort(track_head_1_out)[1:50]
+
+
+
+# Calculate normalised track ----
 
 library("circular")
 # ?mean.circular
@@ -400,6 +387,43 @@ hist(track_ground_normalized_2_out)
 
 
 
+# Calculate normalised heading -----
+heading_normalized_all   <-  mapply(ground_fun,
+                                         circ.mean(                                  
+                                           flights.combined$head_dir_mean),
+                                         flights.combined$head_dir_mean)
+# hist(heading_normalized_all)
+heading_normalized_all_out   <-  mapply(ground_fun,
+                                             circ.mean(flights.out$head_dir_mean),
+                                             flights.out$head_dir_mean)
+heading_normalized_all_in   <-  mapply(ground_fun,
+                                            circ.mean(flights.in$head_dir_mean),
+                                            flights.in$head_dir_mean)
+# hist(heading_normalized_all_out)
+# hist(heading_normalized_all_in)
+
+heading_normalized_1_out   <-  mapply(ground_fun,
+                                           circ.mean(flights.half.1.out$head_dir_mean),
+                                           flights.half.1.out$head_dir_mean)
+heading_normalized_1_in   <-  mapply(ground_fun,
+                                          circ.mean(flights.half.1.in$head_dir_mean),
+                                          flights.half.1.in$head_dir_mean)
+heading_normalized_2_out   <-  mapply(ground_fun,
+                                           circ.mean(flights.half.2.out$head_dir_mean),
+                                           flights.half.2.out$head_dir_mean)
+heading_normalized_2_in   <-  mapply(ground_fun,
+                                          circ.mean(flights.half.2.in$head_dir_mean),
+                                          flights.half.2.in$head_dir_mean)
+
+
+
+
+
+
+
+# Plots of T or H vs. T - H     -------
+
+
 # Plot of track vs. track - heading
 # all data
 plot(flights.combined$ground_dir_mean ~ track_head_all)
@@ -412,6 +436,8 @@ plot(flights.out$ground_dir_mean ~ track_head_all_out)
 plot(track_ground_normalized_all_out ~ flights.out$ground_dir_mean)
 plot(track_ground_normalized_all_out ~ track_head_all_out)
 abline(lm(track_ground_normalized_all_out ~ track_head_all_out))
+plot(track_ground_normalized_all_out ~ track_head_all_out,
+     xlim = c(-70,70), ylim = c(-70,70))
 
 # all in
 plot(flights.in$ground_dir_mean ~ track_head_all_in)
@@ -425,6 +451,14 @@ plot(track_ground_normalized_1_out ~ flights.half.1.out$ground_dir_mean)
 plot(track_ground_normalized_1_out ~ track_head_1_out)
 abline(lm(track_ground_normalized_1_out ~ track_head_1_out))
 
+# Indicating wind speeds, high (dark red) to low (light blue)
+maxColorValue <- 200
+palette <- colorRampPalette(c("light blue","dark red"))(maxColorValue)
+plot(track_ground_normalized_1_out ~ track_head_1_out,
+     col = palette[cut(flights.half.1.out$windspeed, maxColorValue)])
+
+
+
 
 # all out - second half
 plot(flights.half.2.out$ground_dir_mean ~ track_head_2_out)
@@ -437,7 +471,31 @@ plot(track_ground_normalized_2_out ~ track_head_2_out, xlim = c(-90,90),
 abline(a = 0, b = 1)
 points(track_ground_normalized_1_out ~ track_head_1_out, col = "red")
 
+maxColorValue <- 200
+palette <- colorRampPalette(c("light blue","dark red"))(maxColorValue)
+plot(track_ground_normalized_1_in ~ track_head_1_in,
+     col = palette[cut(flights.half.1.in$windspeed, maxColorValue)])
+abline(lm(track_ground_normalized_1_in ~ track_head_1_in))
+f <- track_ground_normalized_1_in > -100 & 
+  track_ground_normalized_1_in < 100 &
+  track_head_1_in > -60 &
+  track_head_1_in < 60
+abline(lm(track_ground_normalized_1_in[f] ~ track_head_1_in[f]),
+       lwd = 2, lty = 2)
 
+
+
+maxColorValue <- 200
+palette <- colorRampPalette(c("light blue","dark red"))(maxColorValue)
+plot(track_ground_normalized_2_in ~ track_head_2_in,
+     col = palette[cut(flights.half.1.in$windspeed, maxColorValue)])
+abline(lm(track_ground_normalized_2_in ~ track_head_2_in))
+f <- track_ground_normalized_2_in > -100 & 
+  track_ground_normalized_2_in < 100 &
+  track_head_2_in > -60 &
+  track_head_2_in < 60
+abline(lm(track_ground_normalized_2_in[f] ~ track_head_2_in[f]),
+       lwd = 2, lty = 2)
 
 
 # In start vs. end
@@ -464,3 +522,113 @@ arrows(track_head_1_out,track_ground_normalized_1_out,
 points(track_ground_normalized_1_out ~ track_head_1_out, col = "red")
 lm(track_ground_normalized_1_out ~ track_head_1_out)
 lm(track_ground_normalized_2_out ~ track_head_2_out)
+
+
+
+
+plot(flights.in$ground_dir_mean ~ track_head_all_in,
+  xlim = c(-100, 100), ylim = c(0,360),
+  col = "dark blue")
+points(flights.out$ground_dir_mean ~ track_head_all_out,
+      col = "dark red")
+
+plot(track_ground_normalized_all_in ~ track_head_all_in,
+     xlim = c(-100, 100), ylim = c(-180,180),
+     col = "blue")
+points(track_ground_normalized_all_out ~ track_head_all_out,
+       col = "red")
+abline(lm(track_ground_normalized_all_in ~ track_head_all_in),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(track_ground_normalized_all_out ~ track_head_all_out),
+       col = "red", lwd = 2, lty = 2)
+
+
+
+
+# plot(track_ground_normalized_all_in ~ flights.in$alpha_mean,
+#      xlim = c(-100, 100), ylim = c(-180,180),
+#      col = "blue")
+# points(track_ground_normalized_all_out ~ flights.out$alpha_mean,
+#        col = "red")
+# abline(lm(track_ground_normalized_all_in ~ flights.in$alpha_mean),
+#        col = "blue", lwd = 2, lty = 2)
+# abline(lm(track_ground_normalized_all_out ~ flights.out$alpha_mean),
+#        col = "red", lwd = 2, lty = 2)
+# 
+# 
+# plot(flights.in$alpha_mean~track_head_all_in)
+
+
+
+# Plots for inward vs outward flights
+plot(track_ground_normalized_all_in ~ track_head_all_in,
+     xlim = c(-100, 100), ylim = c(-180,180),
+     col = "blue")
+points(track_ground_normalized_all_out ~ track_head_all_out,
+       col = "red")
+abline(lm(track_ground_normalized_all_in ~ track_head_all_in),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(track_ground_normalized_all_out ~ track_head_all_out),
+       col = "red", lwd = 2, lty = 2)
+
+
+# Plots for inward flights only for track and heading
+plot(track_ground_normalized_all_in ~ track_head_all_in,
+     xlim = c(-100, 100), ylim = c(-180,180),
+     col = "blue")
+abline(lm(track_ground_normalized_all_in ~ track_head_all_in),
+       col = "blue", lwd = 2, lty = 2)
+points(heading_normalized_all_in ~ track_head_all_in,
+       col = "red")
+abline(lm(heading_normalized_all_in ~ track_head_all_in),
+       col = "red", lwd = 2, lty = 2)
+
+# Plots for inward flights only track and heading
+f <- track_ground_normalized_all_in > 0 &  track_head_all_in < 50
+f2 <- track_ground_normalized_all_in < 0 &  track_head_all_in < 50
+plot(track_ground_normalized_all_in ~ track_head_all_in,
+     xlim = c(-100, 100), ylim = c(-180,180),
+     col = "blue")
+points(heading_normalized_all_in ~ track_head_all_in,
+       col = "red")
+abline(lm(track_ground_normalized_all_in[f] ~ track_head_all_in[f]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_all_in[f] ~ track_head_all_in[f]),
+       col = "red", lwd = 2, lty = 2)
+abline(lm(track_ground_normalized_all_in[f2] ~ track_head_all_in[f2]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_all_in[f2] ~ track_head_all_in[f2]),
+       col = "red", lwd = 2, lty = 2)
+
+
+
+
+# Plots for outward flights track and heading
+plot(track_ground_normalized_all_out ~ track_head_all_out,
+     xlim = c(-100, 100), ylim = c(-180,180),
+     col = "blue")
+points(heading_normalized_all_out ~ track_head_all_out,
+       col = "red")
+abline(lm(track_ground_normalized_all_out ~ track_head_all_out),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_all_out ~ track_head_all_out),
+       col = "red", lwd = 2, lty = 2)
+
+
+# Plots for inward flights only track and heading
+f <- track_ground_normalized_all_out > 0 &  track_head_all_out < 50
+f2 <- track_ground_normalized_all_out < 0 &  track_head_all_out < 50
+plot(track_ground_normalized_all_out ~ track_head_all_out,
+     xlim = c(-100, 100), ylim = c(-180,180),
+     col = "blue")
+points(heading_normalized_all_out ~ track_head_all_out,
+       col = "red")
+abline(lm(track_ground_normalized_all_out[f] ~ track_head_all_out[f]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_all_out[f] ~ track_head_all_out[f]),
+       col = "red", lwd = 2, lty = 2)
+abline(lm(track_ground_normalized_all_out[f2] ~ track_head_all_out[f2]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_all_out[f2] ~ track_head_all_out[f2]),
+       col = "red", lwd = 2, lty = 2)
+
