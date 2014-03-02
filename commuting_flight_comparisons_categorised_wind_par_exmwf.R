@@ -47,8 +47,8 @@ get.stats <- function(i, points_par = points_par, flights = flights){
   require(CircStats)
   sub.points <- subset(points_par,
                        device_info_serial == flights$device_info_serial[i] &
-                       date_time >= flights$start_time[i] &
-                       date_time <= flights$mid_dist_time[i] &
+                       date_time >= flights$mid_dist_time[i] &
+                       date_time <= flights$end_time[i] &
                        head_speed_ecmwf > 5 &
                         ground_speed > 2   
                          )
@@ -272,7 +272,7 @@ gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
 #Output flight wind par data to database #####
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
-sqlSave(gps.db, flights.par, tablename = "lund_flight_com_wind_par_ecmwf_half_1",
+sqlSave(gps.db, flights.par, tablename = "lund_flight_com_wind_par_ecmwf_half_2",
         append = FALSE, rownames = FALSE, colnames = FALSE,
         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
         test = FALSE, nastring = NULL)
