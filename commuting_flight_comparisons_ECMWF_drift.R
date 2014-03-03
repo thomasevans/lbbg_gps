@@ -651,12 +651,91 @@ abline(lm(heading_normalized_all_out ~ track_head_all_out),
        col = "red", lwd = 2, lty = 2)
 
 
-# Plots for inward flights only track and heading
+
+
+# Figures for report  2014-03-03 -----
+
+par(mfrow = c(1,2))
+plot(flights.out$ground_dir_mean ~ track_head_all_out,
+     xlab = "T - H (alpha)",
+     ylab = "Track",
+     las = 1,
+     main = "Outward")
+plot(flights.in$ground_dir_mean ~ track_head_all_in,
+     xlab = "T - H (alpha)",
+     ylab = "Track",
+     las = 1,
+     main = "Inward")
+
+
+
+
+par(mfrow = c(1,2))
+plot(track_ground_normalized_all_out ~ track_head_all_out,
+     xlab = "T - H (alpha)",
+     ylab = "Track (normalized)",
+     las = 1,
+     main = "Outward")
+plot(track_ground_normalized_all_in ~ track_head_all_in,
+     xlab = "T - H (alpha)",
+     ylab = "Track (normalized)",
+     las = 1,
+     main = "Inward")
+
+
+
+
+
+
+# Plots for inward flights only for track and heading
+par(mfrow = c(1,2))
+plot(track_ground_normalized_all_out ~ track_head_all_out,
+     xlim = c(-100, 100), ylim = c(-180,180),
+     col = "blue",
+     xlab = "T - H (alpha)",
+     ylab = "Track or heading (normalized)",
+     las = 1,
+     main = "Outward") 
+abline(lm(track_ground_normalized_all_out ~ track_head_all_out),
+       col = "blue", lwd = 2, lty = 2)
+points(heading_normalized_all_out ~ track_head_all_out,
+       col = "red")
+abline(lm(heading_normalized_all_out ~ track_head_all_out),
+       col = "red", lwd = 2, lty = 2)
+
+plot(track_ground_normalized_all_in ~ track_head_all_in,
+     xlim = c(-100, 100), ylim = c(-180,180),
+     col = "blue",
+     xlab = "T - H (alpha)",
+     ylab = "Track or heading (normalized)",
+     las = 1,
+     main = "Inward") 
+abline(lm(track_ground_normalized_all_in ~ track_head_all_in),
+       col = "blue", lwd = 2, lty = 2)
+points(heading_normalized_all_in ~ track_head_all_in,
+       col = "red")
+abline(lm(heading_normalized_all_in ~ track_head_all_in),
+       col = "red", lwd = 2, lty = 2)
+
+
+
+
+
+
+
+
+
+# Plots for inward and outward flights with slopes for both > and < 0 track values
+par(mfrow = c(1,2))
 f <- track_ground_normalized_all_out > 0 &  track_head_all_out < 50
 f2 <- track_ground_normalized_all_out < 0 &  track_head_all_out < 50
 plot(track_ground_normalized_all_out ~ track_head_all_out,
      xlim = c(-100, 100), ylim = c(-180,180),
-     col = "blue")
+     col = "blue",
+     xlab = "T - H (alpha)",
+     ylab = "Track or heading (normalized)",
+     las = 1,
+     main = "Outward")
 points(heading_normalized_all_out ~ track_head_all_out,
        col = "red")
 abline(lm(track_ground_normalized_all_out[f] ~ track_head_all_out[f]),
@@ -668,3 +747,68 @@ abline(lm(track_ground_normalized_all_out[f2] ~ track_head_all_out[f2]),
 abline(lm(heading_normalized_all_out[f2] ~ track_head_all_out[f2]),
        col = "red", lwd = 2, lty = 2)
 
+
+
+f <- track_ground_normalized_all_in > 0 &  track_head_all_in < 50
+f2 <- track_ground_normalized_all_in < 0 &  track_head_all_in < 50
+plot(track_ground_normalized_all_in ~ track_head_all_in,
+     xlim = c(-100, 100), ylim = c(-180,180),
+     col = "blue",
+     xlab = "T - H (alpha)",
+     ylab = "Track or heading (normalized)",
+     las = 1,
+     main = "Inward")
+points(heading_normalized_all_in ~ track_head_all_in,
+       col = "red")
+abline(lm(track_ground_normalized_all_in[f] ~ track_head_all_in[f]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_all_in[f] ~ track_head_all_in[f]),
+       col = "red", lwd = 2, lty = 2)
+abline(lm(track_ground_normalized_all_in[f2] ~ track_head_all_in[f2]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_all_in[f2] ~ track_head_all_in[f2]),
+       col = "red", lwd = 2, lty = 2)
+
+
+
+# Plots for inward 1 and inward 2 flights
+f <- track_ground_normalized_1_in > 0 &  track_head_1_in < 50
+f2 <- track_ground_normalized_1_in < 0 &  track_head_1_in < 50
+plot(track_ground_normalized_1_in ~ track_head_1_in,
+     xlim = c(-100, 100), ylim = c(-180,180),
+     col = "blue",
+     xlab = "T - H (alpha)",
+     ylab = "Track or heading (normalized)",
+     las = 1,
+     main = "Inward - first half")
+points(heading_normalized_1_in ~ track_head_1_in,
+       col = "red")
+abline(lm(track_ground_normalized_1_in[f] ~ track_head_1_in[f]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_1_in[f] ~ track_head_1_in[f]),
+       col = "red", lwd = 2, lty = 2)
+abline(lm(track_ground_normalized_1_in[f2] ~ track_head_1_in[f2]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_1_in[f2] ~ track_head_1_in[f2]),
+       col = "red", lwd = 2, lty = 2)
+
+
+f <- track_ground_normalized_2_in > 0 &  track_head_2_in < 50
+f2 <- track_ground_normalized_2_in < 0 &  track_head_2_in < 50
+plot(track_ground_normalized_2_in ~ track_head_2_in,
+     xlim = c(-100, 100), ylim = c(-180,180),
+     col = "blue",
+     xlab = "T - H (alpha)",
+     ylab = "Track or heading (normalized)",
+     las = 1,
+     main = "Inward - second half")
+points(heading_normalized_2_in ~ track_head_2_in,
+       col = "red")
+abline(lm(track_ground_normalized_2_in[f] ~ track_head_2_in[f]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_2_in[f] ~ track_head_2_in[f]),
+       col = "red", lwd = 2, lty = 2)
+abline(lm(track_ground_normalized_2_in[f2] ~ track_head_2_in[f2]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_2_in[f2] ~ track_head_2_in[f2]),
+       col = "red", lwd = 2, lty = 2)
