@@ -812,3 +812,182 @@ abline(lm(track_ground_normalized_2_in[f2] ~ track_head_2_in[f2]),
        col = "blue", lwd = 2, lty = 2)
 abline(lm(heading_normalized_2_in[f2] ~ track_head_2_in[f2]),
        col = "red", lwd = 2, lty = 2)
+
+
+
+
+
+
+# Additional figures - 2014-03-05 ----
+
+# Enlargement of figure above (inward flights first and second half)
+par(mfrow = c(1,2))
+# Plots for inward 1 and inward 2 flights
+f <- track_ground_normalized_1_in > 0 &  track_head_1_in < 50
+f2 <- track_ground_normalized_1_in < 0 &  track_head_1_in < 50
+plot(track_ground_normalized_1_in ~ track_head_1_in,
+     xlim = c(-60, 50), ylim = c(-120,130),
+     col = "blue",
+     xlab = "T - H (alpha)",
+     ylab = "Track or heading (normalized)",
+     las = 1,
+     main = "Inward - first half")
+points(heading_normalized_1_in ~ track_head_1_in,
+       col = "red")
+abline(lm(track_ground_normalized_1_in[f] ~ track_head_1_in[f]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_1_in[f] ~ track_head_1_in[f]),
+       col = "red", lwd = 2, lty = 2)
+abline(lm(track_ground_normalized_1_in[f2] ~ track_head_1_in[f2]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_1_in[f2] ~ track_head_1_in[f2]),
+       col = "red", lwd = 2, lty = 2)
+
+
+f <- track_ground_normalized_2_in > 0 &  track_head_2_in < 50
+f2 <- track_ground_normalized_2_in < 0 &  track_head_2_in < 50
+plot(track_ground_normalized_2_in ~ track_head_2_in,
+     xlim = c(-60, 50), ylim = c(-120,130),
+     col = "blue",
+     xlab = "T - H (alpha)",
+     ylab = "Track or heading (normalized)",
+     las = 1,
+     main = "Inward - second half")
+points(heading_normalized_2_in ~ track_head_2_in,
+       col = "red")
+abline(lm(track_ground_normalized_2_in[f] ~ track_head_2_in[f]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_2_in[f] ~ track_head_2_in[f]),
+       col = "red", lwd = 2, lty = 2)
+abline(lm(track_ground_normalized_2_in[f2] ~ track_head_2_in[f2]),
+       col = "blue", lwd = 2, lty = 2)
+abline(lm(heading_normalized_2_in[f2] ~ track_head_2_in[f2]),
+       col = "red", lwd = 2, lty = 2)
+
+
+
+
+
+
+# Figures for Seabird Oxford 2014 poster -----
+
+# Flight altitude vs. wind ----
+names(flights.in)
+# Basic plot - altitude vs. wind speed
+plot(flights.in$alt_mean ~ flights.in$wind_head_tail_mean_10,
+     log = "y")
+
+plot(flights.in$alt_mean ~ flights.in$wind_head_tail_mean_10)
+
+plot(flights.in$alt_mean ~ flights.in$wind_head_tail_mean_10,
+     ylim = c(-10,100))
+
+# install.packages("ggplot2")
+source("visually_weighted_plotting.R")
+
+vwReg(alt_mean ~ wind_head_tail_mean_10,
+      df, span = 1, data = flights.in)
+
+vwReg(alt_mean ~ wind_head_tail_mean_10,
+      df, family = "symmetric", data = flights.in,
+      show.CI = TRUE)
+
+vwReg(alt_mean ~ wind_head_tail_mean_10,
+      df, quantize = "SD", data = flights.in,
+      ylim = c(-10,100),
+      show.CI = TRUE)
+
+?ggplot
+
+side.wind <- abs(flights.in$wind_side_mean_10)
+flights.in <- cbind(flights.in, side.wind)
+
+vwReg(alt_mean ~ side.wind,
+      df, family = "symmetric", data = flights.in,
+      ylim = c(-10,100),
+      shape = 10)
+
+
+
+vwReg(head_speed_mean ~ side.wind,
+      df, family = "symmetric", data = flights.in,
+#       ylim = c(-10,100),
+      shape = 10)
+
+vwReg(head_speed_mean ~ wind_head_tail_mean_10,
+      df, family = "symmetric", data = flights.in,
+      #       ylim = c(-10,100),
+      shape = 1,
+      point.size = 2,
+      span = 0.8)
+
+
+vwReg(head_speed_mean ~ wind_head_tail_mean_10,
+      df, family = "symmetric", data = flights.in,
+      #       ylim = c(-10,100),
+      shape = 1,
+      point.size = 2,
+      point.col = "dark red",
+      span = 0.8,
+      shade.alpha = 0,
+      palette = colorRampPalette(c("black","grey40","white"),
+      bias = 4)(40))
+
+
+vwReg(head_speed_mean ~ wind_head_tail_mean_10,
+      df, family = "symmetric", data = flights.in,
+      #       ylim = c(-10,100),
+      shape = 1,
+      point.size = 2,
+      point.col = "white",
+      span = 0.8,
+      slices = 400,
+      shade.alpha = 0,
+      palette = colorRampPalette(c("dark gray","green","yellow","red"),
+                                 bias = 5)(40))
+
+
+
+vwReg(head_speed_mean ~ wind_head_tail_mean_10,
+      data = flights.in,
+      point.size = 2,
+      shape = 1,
+      point.col = "blue",
+      palette = colorRampPalette(c("dark gray","yellow","red"),
+                                 bias = 5)(40))
+
+
+qplot(wind_head_tail_mean_10, head_speed_mean, 
+      data = flights.in,
+      geom = c("point", "smooth"),
+      span = 0.8,
+      ylim = c(5, max(flights.in$head_speed_mean, na.rm = TRUE)),
+      alpha = I(1 / 2),
+      
+      ) + labs(x = expression(paste("Wind speed: head-tail component (ms",""^{-1}, ")")), y = expression(paste("Flight airspeed (ms",""^{-1}, ")")))
+
+
+
+side.wind <- abs(flights.in$wind_side_mean_10)
+flights.in <- cbind(flights.in, side.wind)
+
+# install.packages("ggthemes")
+library(ggthemes)
+pdf(file = "test3.pdf", width = 6,
+    height = 4, colormodel = "cmyk")
+# ?pdf
+qplot(side.wind, head_speed_mean, 
+      data = flights.in,
+      geom = c("point", "smooth"),
+      span = 1,
+#       ylim = c(5, max(flights.in$head_speed_mean, na.rm = TRUE)),
+      ylim = c(8,16),
+      alpha = I(1 / 2),
+      
+) + labs(x = expression(paste("Wind speed: side component (ms",""^{-1}, ")")), y = expression(paste("Flight airspeed (ms",""^{-1}, ")"))) +
+#   theme_solarized_2(light = FALSE)
+#   theme_solarized_2()
+#   theme_solarized(light = FALSE)
+  theme_igray()
+#   theme_wsj()
+dev.off()
