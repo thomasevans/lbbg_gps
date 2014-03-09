@@ -973,8 +973,9 @@ flights.in <- cbind(flights.in, side.wind)
 
 # install.packages("ggthemes")
 library(ggthemes)
-pdf(file = "test3.pdf", width = 6,
+pdf(file = "test4.pdf", width = 6.472136,
     height = 4, colormodel = "cmyk")
+# Golden ratio dimensions!
 # ?pdf
 qplot(side.wind, head_speed_mean, 
       data = flights.in,
@@ -984,10 +985,123 @@ qplot(side.wind, head_speed_mean,
       ylim = c(8,16),
       alpha = I(1 / 2),
       
-) + labs(x = expression(paste("Wind speed: side component (ms",""^{-1}, ")")), y = expression(paste("Flight airspeed (ms",""^{-1}, ")"))) +
+) + labs(x = expression(paste("Wind speed: side component (ms",""^{-1}, ")")), y = expression(paste("Flight airspeed (ms",""^{-1}, ")")))  +
 #   theme_solarized_2(light = FALSE)
 #   theme_solarized_2()
 #   theme_solarized(light = FALSE)
-  theme_igray()
+   theme_igray() 
+#   + geom_point(colour = "red")
+#   theme_wsj()
+dev.off()
+
+# ?geom_point
+# 4*1.6180339887498948482
+
+
+
+
+
+
+# Final poster figures -----
+
+# Altitude vs. wind: head-tail ----
+pdf(file = "BLAM_2014_altitude_wind_head.pdf", width = 6.472136,
+    height = 4, colormodel = "cmyk")
+# Golden ratio dimensions!
+# ?pdf
+qplot(wind_head_tail_mean_10, alt_mean, 
+      data = flights.in,
+      geom = c("point", "smooth"),
+      span = 0.6,
+      ylim = c(-10, 100),
+      xlim = c(-7,7),
+      alpha = I(1 / 2),
+      
+) + labs(x = expression(paste("Wind speed: head-tail component (ms",""^{-1}, ")")), y = paste("Flight altitude (m)"))  +
+  #   theme_solarized_2(light = FALSE)
+  #   theme_solarized_2()
+  #   theme_solarized(light = FALSE)
+  theme_igray() 
+#   + geom_point(colour = "red")
+#   theme_wsj()
+dev.off()
+
+
+
+
+
+# Altitude vs. wind: side ----
+side.wind <- abs(flights.in$wind_side_mean_10)
+flights.in <- cbind(flights.in, side.wind)
+
+pdf(file = "BLAM_2014_altitude_wind_side.pdf", width = 6.472136,
+    height = 4, colormodel = "cmyk")
+# Golden ratio dimensions!
+# ?pdf
+qplot(side.wind, alt_mean, 
+      data = flights.in,
+      geom = c("point", "smooth"),
+      span = 1,
+      ylim = c(-10, 100),
+      xlim = c(0,7),
+      alpha = I(1 / 2),
+      
+) + labs(x = expression(paste("Wind speed: side component (ms",""^{-1}, ")")), y = paste("Flight altitude (m)"))  +
+  #   theme_solarized_2(light = FALSE)
+  #   theme_solarized_2()
+  #   theme_solarized(light = FALSE)
+  theme_igray() 
+#   + geom_point(colour = "red")
+#   theme_wsj()
+dev.off()
+
+
+
+
+# Va vs. wind: head-tail ----
+pdf(file = "BLAM_2014_Va_wind_head.pdf", width = 6.472136,
+    height = 4, colormodel = "cmyk")
+# Golden ratio dimensions!
+# ?pdf
+qplot(wind_head_tail_mean_10, head_speed_mean, 
+      data = flights.in,
+      geom = c("point", "smooth"),
+      span = 0.7,
+      ylim = c(8,16),
+      xlim = c(-7,7),
+      alpha = I(1 / 2),
+      
+) + labs(x = expression(paste("Wind speed: head-tail component (ms",""^{-1}, ")")), y = expression(paste("Flight airspeed (ms",""^{-1}, ")")))  +
+  #   theme_solarized_2(light = FALSE)
+  #   theme_solarized_2()
+  #   theme_solarized(light = FALSE)
+  theme_igray() 
+#   + geom_point(colour = "red")
+#   theme_wsj()
+dev.off()
+
+
+
+
+
+# Va vs. wind: side ----
+pdf(file = "BLAM_2014_Va_wind_side.pdf", width = 6.472136,
+    height = 4, colormodel = "cmyk")
+# Golden ratio dimensions!
+# ?pdf
+qplot(side.wind, head_speed_mean, 
+      data = flights.in,
+      geom = c("point", "smooth"),
+      span = 1,
+      ylim = c(8,16),
+      xlim = c(0,7),
+      alpha = I(1 / 2),
+      
+) + labs(x = expression(paste("Wind speed: side component (ms",""^{-1}, ")")), y = expression(paste("Flight airspeed (ms",""^{-1}, ")")))  +
+  #   theme_solarized_2(light = FALSE)
+  #   theme_solarized_2()
+  #   theme_solarized(light = FALSE)
+  theme_igray() 
+#   + geom_point(colour = "red")
 #   theme_wsj()
 dev.off()
