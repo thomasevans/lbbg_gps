@@ -159,9 +159,15 @@ source("map_end_source.R")
 dev.off()
 
 # Map new only ----
-win.metafile("map.ex.new.wmf",width = 7, height = 7)
+win.metafile("map.ex.new3.wmf",width = 7, height = 7)
+svg("map.ex.new2.svg", width = 7, height = 7)
+cairo_pdf("map.ex.new3.pdf", width = 7, height = 7)
+pdf("map.ex.new4.pdf", width = 7, height = 7)
+
 # Flight new and old -------
 source("map_start_source.R")
+source("map_start_source2.R")
+
 for(i in 1:length(trip_ids)){
   
   x <- trip_ids[i]
@@ -172,7 +178,7 @@ for(i in 1:length(trip_ids)){
            gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
            col = col.vec[i], lty = 1, lwd = 2)
 }
-
+source("map_end_source2.R")
 source("map_end_source.R")
 dev.off()
 # ?win.metafile
