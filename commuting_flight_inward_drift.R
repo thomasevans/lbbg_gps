@@ -79,6 +79,8 @@ str(flights)
 
 # Drift calculation function -----
 
+
+
 # Wrap statistics into a function
 flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
   
@@ -297,7 +299,6 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
         
         # Prop drift
         drift_prop[j] <- act_drift_from_last_point[j]/full_drift_exp_dist[j]
-      }
       
       
       
@@ -360,6 +361,7 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
 # 
 #     ***** Do graphs....
 
+      }
 
 
 
