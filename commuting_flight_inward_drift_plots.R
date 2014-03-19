@@ -86,9 +86,34 @@ summary(f)
 flight.points.f <- flight.points[f,]
 
 # Plot some example flights for drift by distance etc, perhaps 10 in different colours (same for each graph...)
-plot(flight.points.f$drift_prop, flight.points.f$dist_prop_to_goal,
-     xlim = c(-1,1), ylim = c(0,1))
+plot(flight.points.f$drift_prop ~ flight.points.f$dist_prop_to_goal,
+     ylim = c(-1,1), xlim = c(0,1))
+abline(lm(flight.points.f$drift_prop[flight.points.f$drift_prop < 2 &
+                                       flight.points.f$drift_prop > -2] ~
+            flight.points.f$dist_prop_to_goal[flight.points.f$drift_prop < 2 &
+                                                flight.points.f$drift_prop > -2]),
+       col = "red",
+       lwd = 2)
 
+abline(h = 0,
+       col = "blue",
+       lwd = 2,
+       lty = 2)
+
+
+plot(flight.points.f$drift_prop ~ flight.points.f$dist_prop_to_goal,
+     ylim = c(-1000,1000), xlim = c(0,1))
+abline(lm(flight.points.f$drift_prop[flight.points.f$drift_prop < 2 &
+                                       flight.points.f$drift_prop > -2] ~
+            flight.points.f$dist_prop_to_goal[flight.points.f$drift_prop < 2 &
+                                                flight.points.f$drift_prop > -2]),
+       col = "red",
+       lwd = 2)
+
+abline(h = 0,
+       col = "blue",
+       lwd = 2,
+       lty = 2)
 
 hist(flight.points.f$drift_prop, xlim = c(-10,10), breaks = 10000)
 
