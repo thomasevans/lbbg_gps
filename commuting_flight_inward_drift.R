@@ -119,6 +119,7 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
   
   gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
   
+  # Somtimes above fails for some reason - if it fails try again some more times
   if(!inherits(gps.db,"RODBC")){
     for(i in 1:4){
       gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
@@ -130,20 +131,25 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
   
   
   flight.points <- sqlQuery(gps.db,
-                            query = gsub("\n", " ", paste("SELECT DISTINCT
-                                                          g.device_info_serial, g.date_time,
-                                                          g.longitude, g.latitude,
-                                                          w.wind_speed_flt_ht_ecmwf,
-                                                          w.wind_dir_ecmwf
-                                                          FROM gps_uva_tracking_speed_3d_limited AS g,
-                                                          lund_points_wind_ECMWF as w
-                                                          WHERE g.device_info_serial = w.device_info_serial
-                                                          AND g.date_time = w.date_time
-                                                          AND ",
-                                                          paste(" g.device_info_serial = ", flights.$device_info_serial[i], " AND ",
-                                                                "g.date_time >= #", time.s, 
-                                                                "# AND g.date_time <= #", time.e, "# ", sep = ""), " ORDER BY g.device_info_serial ASC, g.date_time ASC ;", sep=""))
+                            query = gsub("\n", " ",
+                              paste("SELECT DISTINCT
+                                g.device_info_serial, g.date_time,
+                                g.longitude, g.latitude,
+                                w.wind_speed_flt_ht_ecmwf,
+                                w.wind_dir_ecmwf
+                                FROM gps_uva_tracking_speed_3d_limited AS g,
+                                lund_points_wind_ECMWF as w
+                                WHERE g.device_info_serial = w.device_info_serial
+                                AND g.date_time = w.date_time
+                                AND ",
+                                paste(" g.device_info_serial = ",
+                                      flights.$device_info_serial[i], " AND ",
+                                      "g.date_time >= #", time.s, 
+                                      "# AND g.date_time <= #", time.e,
+                                      "# ", sep = ""),
+                                " ORDER BY g.device_info_serial ASC, g.date_time ASC ;", sep=""))
                             ,as.is=TRUE)
+  
 #   flight.points
   if(is.data.frame(flight.points)){
     if(length(flight.points$device_info_serial) > 2){
@@ -161,10 +167,10 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
       
       
       # Distance in metres from first point to goal point
-      start_to_goal_dist <- 1000* deg.dist(flight.points$longitude[1],
-                                           flight.points$latitude[1],
-                                           goal.long,
-                                           goal.lat)
+      start_to_goal_dist <- 1000 * deg.dist(flight.points$longitude[1],
+                                             flight.points$latitude[1],
+                                             goal.long,
+                                             goal.lat)
       
       # number of points
       n_points   <- length(flight.points$device_info_serial)
@@ -289,6 +295,39 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
         # Prop drift
         drift_prop[j] <- act_drift_from_last_point[j]/full_drift_exp_dist[j]
       }
+      
+      
+      
+      
+      ###### Drift from last point, based on new goal direction at each point
+      
+      # Distance to goal from current point
+      # calculated above:
+      goal_dist[j]
+      
+      # wind at previous point:
+      flight.points$wind_speed_flt_ht_ecmwf[x]
+      
+      # wind at current point:
+      flight.points$wind_speed_flt_ht_ecmwf[j]
+      
+      # average wind over flight segment
+      wind_mean_segment[j]  <- (flight.points$wind_speed_flt_ht_ecmwf[x] +
+                          flight.points$wind_speed_flt_ht_ecmwf[j])/ 2
+      
+      # Wind side wind component
+          # Direction relative to goal at previous point:
+          wind_dir_rel[x]
+          
+          # Side component
+          side_wind_segment[j] <-  wind_mean_segment[j] * 
+            sin(rad(wind_dir_rel[x]))
+      
+      # Drift from last point
+      goal_dist[j]*sin
+      
+      drfit_dist_segment[j] <- goal_dist[j] * sin(rad(bear_dif[j]))
+      
       
       # Combine data from all points into a single dataframe object to output
       data.var <- cbind(flight_id,device_info_serial,date_time,goal_dist,
