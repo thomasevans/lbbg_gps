@@ -110,10 +110,10 @@ flights.characteristics <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
 
 
 # Trip type and duration ----
-trip_type <- 0
+trip_type     <- 0
 trip_duration <- 0
-trip_gotland <- 0
-trip_distmax <- 0
+trip_gotland  <- 0
+trip_distmax  <- 0
 
 # Go through all flights.whole, and assign trip duration etc.
 for(i in seq(along = flights.whole$trip_id)){
@@ -175,22 +175,27 @@ length(flights.in$flight_id)
 
 length(unique(flights.in$device_info_serial))
 
-#Rearrange data for comparision
+# Rearrange data for comparision
 flights.out$flight.type <- "out"
-flights.in$flight.type <- "in"
+flights.in$flight.type  <- "in"
 
 
 # For first half
 # Re-arrange the data for paired data comparison
+flights.half.1.out <- cbind(flights.half.1[outward,],
+                            flights.characteristics[outward,],
+                            flights.weather[outward,])
 
-flights.half.1.out <- cbind(flights.half.1[outward,],flights.characteristics[outward,],flights.weather[outward,])
-flights.half.1.in <- cbind(flights.half.1[inward,],flights.characteristics[inward,],flights.weather[inward,])
+flights.half.1.in  <- cbind(flights.half.1[inward,],
+                           flights.characteristics[inward,],
+                           flights.weather[inward,])
 
 # Re-order these by trip_id
 flights.half.1.out  <- flights.half.1.out[order(flights.half.1.out$trip_id),]
 flights.half.1.in   <- flights.half.1.in[order(flights.half.1.in$trip_id),]
 
-#Find and index those flights for which there is a corresponding outward or inward flight for same trip.
+# Find and index those flights for which there is a corresponding outward
+# or inward flight for same trip.
 x <- NA
 for( i in seq(along = flights.half.1.out$trip_id)){
   if(any(flights.half.1.out$trip_id[i] == flights.half.1.in$trip_id)) x[i] = TRUE else{x[i] = FALSE}
@@ -204,7 +209,7 @@ for( i in seq(along = flights.half.1.in$trip_id)){
 # Check that this has worked
 all.equal(flights.half.1.in$trip_id[y] , flights.half.1.out$trip_id[x])
 
-flights.half.1.in <- flights.half.1.in[y,]
+flights.half.1.in  <- flights.half.1.in[y,]
 flights.half.1.out <- flights.half.1.out[x,]
 
 
@@ -213,14 +218,20 @@ flights.half.1.out <- flights.half.1.out[x,]
 # For second half
 # Re-arrange the data for paired data comparison ----
 
-flights.half.2.out <- cbind(flights.half.2[outward,],flights.characteristics[outward,],flights.weather[outward,])
-flights.half.2.in <- cbind(flights.half.2[inward,],flights.characteristics[inward,],flights.weather[inward,])
+flights.half.2.out <- cbind(flights.half.2[outward,],
+                            flights.characteristics[outward,],
+                            flights.weather[outward,])
+
+flights.half.2.in <- cbind(flights.half.2[inward,],
+                           flights.characteristics[inward,],
+                           flights.weather[inward,])
 
 # Re-order these by trip_id
 flights.half.2.out  <- flights.half.2.out[order(flights.half.2.out$trip_id),]
 flights.half.2.in   <- flights.half.2.in[order(flights.half.2.in$trip_id),]
 
-#Find and index those flights for which there is a corresponding outward or inward flight for same trip.
+# Find and index those flights for which there is a corresponding
+# outward or inward flight for same trip.
 x <- NA
 for( i in seq(along = flights.half.2.out$trip_id)){
   if(any(flights.half.2.out$trip_id[i] == flights.half.2.in$trip_id)) x[i] = TRUE else{x[i] = FALSE}
@@ -241,7 +252,7 @@ flights.half.2.out <- flights.half.2.out[x,]
 
 
 # Combining flight data tables
-flights.combined <- rbind(flights.out,flights.in)
+flights.combined   <- rbind(flights.out, flights.in)
 flights.combined   <- flights.combined[order(flights.combined$trip_id),]
 
 
@@ -289,7 +300,7 @@ track_head_fun <- function(ground, head){
 
 
 
-# Function to correct normalized ground (track) direction when !<-180 or !<180
+# Function to correct normalized ground (track) direction when !< -180 or !<180
 ground_fun <- function(ground, ground.mean){
   x <- ground - ground.mean
   if(x < -180){
