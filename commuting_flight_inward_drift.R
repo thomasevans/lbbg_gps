@@ -208,7 +208,10 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
         time_from_start <- time_from_end <- prop_time <-
         wind_dir_rel <- side_wind <- time_previous <-
         full_drift_exp_dist <- act_drift_from_last_point <- 
-        drift_prop <- NULL
+        drift_prop <- wind_mean_segment <-  wind_dir_rel_seg <-
+        side_wind_segment <-  bear_dif_seg <-
+        drift_dist_segment <-  expected_drift_segment <-
+        drift_relative_segment  <- NULL
       
       
       # cicurlar package for functions such as 'rad', convert degrees to radians
@@ -303,13 +306,13 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
       
       # Distance to goal from current point
       # calculated above:
-      goal_dist[j]
+#       goal_dist[j]
       
       # wind at previous point:
-      flight.points$wind_speed_flt_ht_ecmwf[x]
+#       flight.points$wind_speed_flt_ht_ecmwf[x]
       
       # wind at current point:
-      flight.points$wind_speed_flt_ht_ecmwf[j]
+#       flight.points$wind_speed_flt_ht_ecmwf[j]
       
       # average wind over flight segment
       wind_mean_segment[j]  <- (flight.points$wind_speed_flt_ht_ecmwf[x] +
@@ -317,18 +320,50 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
       
       # Wind side wind component
           # Direction relative to goal at previous point:
-          wind_dir_rel[x]
-          
+          wind_dir_rel_seg[j] <- wind_dir_fun(
+            flight.points$wind_dir_ecmwf[j],
+            bear_goal[j])
+      
+      
           # Side component
           side_wind_segment[j] <-  wind_mean_segment[j] * 
-            sin(rad(wind_dir_rel[x]))
+            sin(rad(wind_dir_rel_seg[x]))
       
       # Drift from last point
-      goal_dist[j]*sin
+#       goal_dist[j]*sin
+      bear_dif_seg[j] <- abs(bear_goal[j] - bear_goal[x])
+
+
+      drift_dist_segment[j] <- goal_dist[j] * sin(rad(bear_dif[j]))
+
       
-      drfit_dist_segment[j] <- goal_dist[j] * sin(rad(bear_dif[j]))
+      # expected drift per segment (i.e. from last point)
+        # Time from last point
+#         time_previous[j]
+
+        # Expected drift
+        expected_drift_segment[j] <-
+            time_previous[j] * side_wind_segment[j]
+
       
-      
+
+      # Relative drift per segment
+      drift_relative_segment[j] <- 
+            drift_dist_segment[j]/expected_drift_segment[j]
+
+
+
+#     *****Add vairables to output
+#     *****Comment out lines that don't do an opperation
+#     ***** E.g. those lines that just call previously made variable
+#     ***** Then run the code to generate the data values
+# 
+#     ***** Do graphs....
+
+
+
+
+
       # Combine data from all points into a single dataframe object to output
       data.var <- cbind(flight_id,device_info_serial,date_time,goal_dist,
                         start_dist,bear_goal,bear_dif,dist_straight_line,
@@ -337,7 +372,10 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
                         time_from_start,time_from_end,prop_time,
                         wind_dir_rel,side_wind,time_previous,
                         full_drift_exp_dist,act_drift_from_last_point,
-                        drift_prop)
+                        drift_prop, wind_mean_segment ,  wind_dir_rel_seg ,
+                        side_wind_segment ,  bear_dif_seg ,
+                        drift_dist_segment ,  expected_drift_segment ,
+                        drift_relative_segment)
       
       data.var <- as.data.frame(data.var)
       
@@ -451,6 +489,13 @@ flights.par$full_drift_exp_dist <- as.num.fun(flights.par$full_drift_exp_dist)
 flights.par$act_drift_from_last_point <- as.num.fun(flights.par$act_drift_from_last_point)
 flights.par$drift_prop <- as.num.fun(flights.par$drift_prop)
 
+
+
+flights.par$side_wind_segment <- as.num.fun(flights.par$side_wind_segment)
+flights.par$bear_dif_seg <- as.num.fun(flights.par$bear_dif_seg)
+flights.par$drift_dist_segment <- as.num.fun(flights.par$drift_dist_segment)
+flights.par$expected_drift_segment <- as.num.fun(flights.par$expected_drift_segment)
+flights.par$drift_relative_segment <- as.num.fun(flights.par$drift_relative_segment)
 
 str(flights.par)
 
