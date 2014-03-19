@@ -224,7 +224,7 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
       # j <- 2
       for(j in 1:n_points){
         date_time[j] <- as.character(flight.points$date_time[j])
-        
+#         ?deg.dist
         
         goal_dist[j] <- 1000* deg.dist(flight.points$longitude[j],
                                        flight.points$latitude[j],
@@ -334,8 +334,9 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
 #       goal_dist[j]*sin
       bear_dif_seg[j] <- abs(bear_goal[j] - bear_goal[x])
 
-
-      drift_dist_segment[j] <- goal_dist[j] * sin(rad(bear_dif[j]))
+# rad(-5)
+# sin(rad(90))
+      drift_dist_segment[j] <- goal_dist[j] * sin(rad(bear_dif_seg[j]))
 
       
       # expected drift per segment (i.e. from last point)
@@ -420,7 +421,7 @@ clusterExport(cl, c("flights","nest_loc","flight.drift.fun"))
 lst <- list()
 f <- length(flights$flight_id)
 
-# Doesn't take long  - ca. 40 s
+# Doesn't take long  - ca. 48 s
 system.time({lst <- foreach(i = 1:f ) %dopar%{
   flight.drift.fun(i = i)
 } #end of foreach functions
@@ -431,13 +432,20 @@ stopCluster(cl)
 
 # Combine info for all flights into a single matrix - quite slow ----
 flights.par <- do.call(rbind , lst)
+
+# # Following would be faster, though needs extra package
+# library(data.table)
+# flights.par <- rbindlist(lst)
+
 # Matrix to data.frame conversion
 flights.par <- as.data.frame(flights.par)
 # Make a backup - save the data to R binnary file
 save(flights.par, file = "commuting_flight_inward_drift_data_out.RData")
 
 
-
+# hist(as.numeric(as.character(flights.par$side_wind_segment)))
+hist(as.numeric(as.character(flights.par$drift_dist_segment)), xlim = c(-10000,10000), breaks = 200)
+hist(as.numeric(as.character(flights.par$expected_drift_segment)), xlim = c(-10000,10000), breaks = 1000)
 
 # Save to a new Database table
 # Save data to database -------
