@@ -431,11 +431,12 @@ system.time({lst <- foreach(i = 1:f ) %dopar%{
 stopCluster(cl)
 
 # Combine info for all flights into a single matrix - quite slow ----
-flights.par <- do.call(rbind , lst)
+# flights.par <- do.call(rbind , lst)
 
 # # Following would be faster, though needs extra package
-# library(data.table)
-# flights.par <- rbindlist(lst)
+# install.packages("data.table")
+library(data.table)
+flights.par <- rbindlist(lst)
 
 # Matrix to data.frame conversion
 flights.par <- as.data.frame(flights.par)
@@ -444,8 +445,17 @@ save(flights.par, file = "commuting_flight_inward_drift_data_out.RData")
 
 
 # hist(as.numeric(as.character(flights.par$side_wind_segment)))
-hist(as.numeric(as.character(flights.par$drift_dist_segment)), xlim = c(-10000,10000), breaks = 200)
-hist(as.numeric(as.character(flights.par$expected_drift_segment)), xlim = c(-10000,10000), breaks = 1000)
+# hist(as.numeric(as.character(flights.par$drift_dist_segment)), xlim = c(-10000,10000), breaks = 200)
+# hist(as.numeric(as.character(flights.par$expected_drift_segment)), xlim = c(-10000,10000), breaks = 1000)
+# hist(as.numeric(as.character(flights.par$drift_relative_segment[
+#   flights.par$drift_relative_segment > -100 &
+#     flights.par$drift_relative_segment < 100])))
+# 
+# plot(sort(as.numeric(as.character(flights.par$drift_relative_segment))))
+# 
+# sort(as.numeric(as.character(flights.par$drift_relative_segment)))[500:600]
+# 
+
 
 # Save to a new Database table
 # Save data to database -------
@@ -499,6 +509,8 @@ flights.par$full_drift_exp_dist <- as.num.fun(flights.par$full_drift_exp_dist)
 flights.par$act_drift_from_last_point <- as.num.fun(flights.par$act_drift_from_last_point)
 flights.par$drift_prop <- as.num.fun(flights.par$drift_prop)
 
+flights.par$wind_mean_segment <- as.num.fun(flights.par$wind_mean_segment)
+flights.par$wind_dir_rel_seg <- as.num.fun(flights.par$wind_dir_rel_seg)
 
 
 flights.par$side_wind_segment <- as.num.fun(flights.par$side_wind_segment)
@@ -535,7 +547,14 @@ sqlSave(gps.db, flights.par, tablename = "lund_flight_com_in_drift_points",
                       time_previous = "double",
                       full_drift_exp_dist = "double",
                       act_drift_from_last_point = "double",
-                      drift_prop = "double"
+                      drift_prop = "double",
+                      wind_mean_segment = "double",
+                      wind_dir_rel_seg = "double",
+                      side_wind_segment = "double",
+                      bear_dif_seg = "double",
+                      drift_dist_segment = "double",
+                      expected_drift_segment = "double",
+                      drift_relative_segment= "double"
                       )
         )
 
