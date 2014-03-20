@@ -332,7 +332,8 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
       
       # Drift from last point
 #       goal_dist[j]*sin
-      bear_dif_seg[j] <- abs(bear_goal[j] - bear_goal[x])
+#       bear_dif_seg[j] <- abs(bear_goal[j] - bear_goal[x])
+      bear_dif_seg[j] <- (bear_goal[j] - bear_goal[x])
 
 # rad(-5)
 # sin(rad(90))
@@ -523,7 +524,7 @@ str(flights.par)
 
 #Output flight wind par data to database
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
-sqlSave(gps.db, flights.par, tablename = "lund_flight_com_in_drift_points",
+sqlSave(gps.db, flights.par, tablename = "lund_flight_com_in_drift_points_02",
         append = FALSE, rownames = FALSE, colnames = FALSE,
         verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
         test = FALSE, nastring = NULL,
