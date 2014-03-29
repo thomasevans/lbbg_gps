@@ -402,15 +402,22 @@ boxplot(drifts~flight.part, ylim = c(-5,5))
 plot(drifts~as.factor(flight.part), ylim = c(-2,2))
 abline(h = 0, lwd = 2, lty = 2, col = "blue")
 
-?boxplot
+# ?boxplot
 
 
 
 
 
 # Figures for Seabird group poster -------
+library("ggplot2")
+library(ggthemes)
+
+
 pdf(file = "Seabird_2014_drift_dist_goal.pdf", width = 4,
     height = 4, colormodel = "cmyk")
+png(file = "BTO_2014_drift_dist_goal2.png")
+# tiff(file = "BTO_2014_drift_dist_goal.tiff")
+# ?tiff
 qplot(dist_prop_to_goal, drift_relative_segment, 
       data = flight.points.f,
       geom = c("point"),
@@ -422,6 +429,51 @@ qplot(dist_prop_to_goal, drift_relative_segment,
       size=I(.5)
       
 ) + labs(x = "Distance from start of flight (normalized)", y = "Drift") +
+  geom_hline(yintercept = 0, colour = "red", lwd = 2, alpha = I(2 / 3)) +
+  geom_hline(yintercept = 1, colour = "grey80", alpha = I(2 / 3)) +
+  geom_smooth( fullrange = TRUE, lwd = 2) +
+  #   theme_solarized_2(light = FALSE)
+  #   theme_solarized_2()
+  #   theme_solarized(light = FALSE)
+  theme_igray(base_size = 20)
+# ?geom_smooth
+dev.off()
+
+# ?theme_igray
+
+pdf(file = "Seabird_2014_drift_flights_hist.pdf", width = 4,
+    height = 4, colormodel = "cmyk")
+
+png(file = "BTO_2014_drift_flights_hist.png")
+
+qplot(mean.drift.whole[mean.drift.whole > -3 & 
+                         mean.drift.whole < 3], geom="histogram",
+            binwidth = 0.1) +
+  theme_igray(base_size = 20)+
+  geom_vline(xintercept = 1, colour = "grey80", alpha = I(1 / 3))  +
+  geom_vline(xintercept = 0, colour = "grey80", alpha = I(1 / 3)) +
+  labs(x = "Drift (proportion)", y = paste("N flights in 0.1 intervals of drift"))
+dev.off()
+
+
+
+
+
+pdf(file = "Seabird_2014_drift_wind.pdf", width = 4,
+    height = 4, colormodel = "cmyk")
+png(file = "BTO_2014__drift_wind.png")
+
+qplot(mean.side_wind.whole.abs, mean.drift.whole, 
+      data = flight.drift,
+      geom = c("point"),
+      #       size = 0.1,
+      span = 0.05,
+      ylim = c(-2, 2),
+      xlim = c(0,8),
+      alpha = I(1 / 2),
+      size=I(1)
+      
+) + labs(x = expression(paste("Wind speed: side component (ms",""^{-1}, ")")), y = "Drift") +
   geom_hline(yintercept = 0, colour = "grey80", alpha = I(2 / 3)) +
   geom_hline(yintercept = 1, colour = "grey80", alpha = I(2 / 3)) +
   geom_smooth( fullrange = TRUE) +
@@ -431,19 +483,4 @@ qplot(dist_prop_to_goal, drift_relative_segment,
   theme_igray() 
 # ?geom_smooth
 dev.off()
-
-
-
-pdf(file = "Seabird_2014_drift_flights_hist.pdf", width = 4,
-    height = 4, colormodel = "cmyk")
-qplot(mean.drift.whole[mean.drift.whole > -3 & 
-                         mean.drift.whole < 3], geom="histogram",
-            binwidth = 0.1) +
-  theme_igray() +
-  geom_vline(xintercept = 1, colour = "grey80", alpha = I(1 / 3))  +
-  geom_vline(xintercept = 0, colour = "grey80", alpha = I(1 / 3)) +
-  labs(x = "Drift (proportion)", y = paste("N flights in 0.1 intervals of drift"))
-dev.off()
-
-
 
