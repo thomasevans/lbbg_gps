@@ -1018,6 +1018,9 @@ dev.off()
 # Altitude vs. wind: head-tail ----
 pdf(file = "BLAM_2014_altitude_wind_head.pdf", width = 6.472136,
     height = 4, colormodel = "cmyk")
+
+png(file = "BLAM_2014_altitude_wind_head.png")
+    
 # Golden ratio dimensions!
 # ?pdf
 qplot(wind_head_tail_mean_10, alt_mean, 
@@ -1032,7 +1035,7 @@ qplot(wind_head_tail_mean_10, alt_mean,
   #   theme_solarized_2(light = FALSE)
   #   theme_solarized_2()
   #   theme_solarized(light = FALSE)
-  theme_igray() 
+  theme_igray(base_size = 20) 
 #   + geom_point(colour = "red")
 #   theme_wsj()
 dev.off()
@@ -1049,6 +1052,10 @@ pdf(file = "BLAM_2014_altitude_wind_side.pdf", width = 6.472136,
     height = 4, colormodel = "cmyk")
 # Golden ratio dimensions!
 # ?pdf
+
+
+png(file = "BLAM_2014_altitude_wind_side.png")
+
 qplot(side.wind, alt_mean, 
       data = flights.in,
       geom = c("point", "smooth"),
@@ -1061,7 +1068,7 @@ qplot(side.wind, alt_mean,
   #   theme_solarized_2(light = FALSE)
   #   theme_solarized_2()
   #   theme_solarized(light = FALSE)
-  theme_igray() 
+  theme_igray(base_size = 20) 
 #   + geom_point(colour = "red")
 #   theme_wsj()
 dev.off()
@@ -1073,6 +1080,10 @@ dev.off()
 pdf(file = "BLAM_2014_Va_wind_head.pdf", width = 6.472136,
     height = 4, colormodel = "cmyk")
 # Golden ratio dimensions!
+
+png(file = "BLAM_2014_Va_wind_head.png")
+
+
 # ?pdf
 qplot(wind_head_tail_mean_10, head_speed_mean, 
       data = flights.in,
@@ -1086,7 +1097,7 @@ qplot(wind_head_tail_mean_10, head_speed_mean,
   #   theme_solarized_2(light = FALSE)
   #   theme_solarized_2()
   #   theme_solarized(light = FALSE)
-  theme_igray() 
+  theme_igray(base_size = 20) 
 #   + geom_point(colour = "red")
 #   theme_wsj()
 dev.off()
@@ -1099,6 +1110,9 @@ dev.off()
 pdf(file = "BLAM_2014_Va_wind_side.pdf", width = 6.472136,
     height = 4, colormodel = "cmyk")
 # Golden ratio dimensions!
+
+
+png(file = "BLAM_2014_Va_wind_side.png")
 # ?pdf
 qplot(side.wind, head_speed_mean, 
       data = flights.in,
@@ -1112,7 +1126,7 @@ qplot(side.wind, head_speed_mean,
   #   theme_solarized_2(light = FALSE)
   #   theme_solarized_2()
   #   theme_solarized(light = FALSE)
-  theme_igray() 
+  theme_igray(base_size = 20) 
 #   + geom_point(colour = "red")
 #   theme_wsj()
 dev.off()
