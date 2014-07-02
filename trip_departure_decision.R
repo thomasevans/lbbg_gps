@@ -55,15 +55,29 @@ summary(trip_details$trip_id %in% weather$trip_id)
 
 
 # Match up device_info_serial with bird_id (ring number)
-
+# For now just use device numbers - can replace with ring numbers later - no devices used for > 1 individual.
 
 # Date_time_local
 # Convert date time from UTC to local (solar) time
 # add 1h 10 min to get aprox solar time
 
 # Extract date components
-x <- as.yearmon(trip_details$start_time)
 # Year
-year <- format(x,"%Y")
+year <- format(trip_details$start_time,"%Y")
 # Month
-month <- format(x,"%m")
+month <- format(trip_details$start_time,"%m")
+
+
+
+
+
+# Combine weather and trip_details into a single dataframe
+
+
+
+# Replace device numbers with ring numbers
+
+
+# Add sexes for each bird
+
+# Output table (DB and csv)
