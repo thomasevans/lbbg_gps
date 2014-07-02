@@ -16,3 +16,4 @@ figure/*
 *.eps
 progress_old
 progress
+trip_details_list.R

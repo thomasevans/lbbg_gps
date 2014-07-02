@@ -7,7 +7,7 @@
 #********************************
 #This script extracts data from the database, then for each trip, produces a summary, for example, greatest distance, trip duration, start time, end time, number of points, gps interval
 
-
+# install.packages("RODBC")
 #To link to database
 library(RODBC)
 
@@ -81,10 +81,10 @@ trip.info <- function(t, gps = gps){
   library(sp)  
   #Number of GPS fixes from within the Gotland polygon
   on_gotland <- 
-    sum(point.in.polygon(sub01$longitude,
+    point.in.polygon(sub01$longitude,
                          sub01$latitude,
                          gotland_long ,
-                         gotland_lat))
+                         gotland_lat)
   
   gotland <- sum(on_gotland)
   #Define as a Gotland trip if at least 2 points are within Gotland polygon.
@@ -115,9 +115,9 @@ trip.info <- function(t, gps = gps){
 }
 #**********End of this function: trip.info
 
-
-require(foreach)
-require(doParallel)
+# install.packages(c("foreach","doParallel"))
+library(foreach)
+library(doParallel)
 cl <- makeCluster(parallel::detectCores())     #use x cores, general solution for any windows machine.
 
 registerDoParallel(cl)   #start the parellel session of R; the 'slaves', which will run the analysis.
@@ -133,6 +133,7 @@ lst <- list()
 
 #get paramaters for each trip
 #Use system.time to time how long this takes.
+# On 2014-07-02 took: 818 s
 system.time({lst <- foreach(i = seq(along = trip_id )) %dopar%{
   #calculate the trip numbers for the device i. i.e. the function which we wish to run for each device.     
   x <- trip.info(trip_id[i],gps)
@@ -141,8 +142,12 @@ system.time({lst <- foreach(i = seq(along = trip_id )) %dopar%{
 } #end of foreach functions
 }) #end of things being timed by system.time
 
+# Back-up the new list object
+save(lst, file = "trip_details_list.R")
+
 #close cluster
 stopCluster(cl)
+
 
 #names for the dataframe
 names.trips <- c("trip_id","device_info_serial",
