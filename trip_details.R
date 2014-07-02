@@ -86,7 +86,11 @@ trip.info <- function(t, gps = gps){
                          gotland_long ,
                          gotland_lat)
   
-  gotland <- sum(on_gotland)
+  gotland <- sum(on_gotland == 1)
+
+#  v <- c(0,0,1,4,2,1,1)
+#   sum(v == TRUE)
+
   #Define as a Gotland trip if at least 2 points are within Gotland polygon.
 
 # install.packages("sp")
@@ -96,7 +100,7 @@ trip.info <- function(t, gps = gps){
   gotland_points <- gotland
   gotland_points_prop <- gotland/n
 
-  gotland_time <- sum(sub01$time_interval_s[on_gotland])
+  gotland_time <- sum(sub01$time_interval_s[on_gotland == 1])
   gotland_time_prop <- gotland_time/duration
 
   gotland <- if(gotland > 2){TRUE}  else{FALSE}
