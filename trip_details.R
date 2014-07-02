@@ -79,14 +79,26 @@ trip.info <- function(t, gps = gps){
   gotland_lat    <-  c(57.94159, 57.89255, 57.85448, 57.84177, 57.83054, 57.82949, 57.65937, 57.61784, 57.54344, 57.4375, 57.38398, 57.318, 57.28085, 57.26383, 57.23233, 57.18662, 57.16356, 57.13989, 57.12689, 57.05876, 57.06099, 57.09378, 57.04784, 57.03813, 57.02055, 56.98026, 56.91038, 56.89589, 56.92512, 56.97002, 56.98702, 57.01864, 57.05858, 57.09776, 57.11539, 57.11611, 57.1273, 57.13386, 57.12617, 57.22258, 57.26402, 57.29327, 57.38018, 57.40429, 57.43351, 57.45097, 57.45049, 57.60669, 57.66888, 57.73525, 57.88962, 57.94424, 57.97617, 57.99029, 57.99399, 57.93041, 57.92847, 57.87778, 57.92259, 57.94159)
   
   library(sp)  
-  #Number of GPS fixes from withing the Gotland polygon
-  gotland <- 
+  #Number of GPS fixes from within the Gotland polygon
+  on_gotland <- 
     sum(point.in.polygon(sub01$longitude,
                          sub01$latitude,
                          gotland_long ,
                          gotland_lat))
   
+  gotland <- sum(on_gotland)
   #Define as a Gotland trip if at least 2 points are within Gotland polygon.
+
+# install.packages("sp")
+# ?point.in.polygon
+
+
+  gotland_points <- gotland
+  gotland_points_prop <- gotland/n
+
+  gotland_time <- sum(sub01$time_interval_s[on_gotland])
+  gotland_time_prop <- gotland_time/duration
+
   gotland <- if(gotland > 2){TRUE}  else{FALSE}
   
   #make a vector containing all this data
@@ -95,7 +107,9 @@ trip.info <- function(t, gps = gps){
                 end_time, duration,
                 dist_max, dist_total,
                 interval_mean, interval_min,
-                gotland)  
+                gotland, gotland_points,
+                gotland_points_prop, gotland_time,
+                gotland_time_prop)  
   
   return(data.out)            #output a vector for the bird of trip id
 }
