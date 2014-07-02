@@ -42,47 +42,6 @@ track_session <- sqlQuery(gps.db, query="SELECT DISTINCT g.*
                      ORDER BY device_info_serial ASC;")
 
 
-# For each trip querry DB to get weather details for
-# first point (i.e. start time)
-# 
-# # Function to querry database and extract required data
-# extract.weather <- function(device, date_time){
-#   
-#   q1a <- "SELECT DISTINCT m.*, w.*
-#   FROM move_bank_variables_all AS m, lund_points_wind_ECMWF AS w
-#     WHERE m.device_info_serial = w.device_info_serial
-#     AND m.date_time = w.date_time
-#     AND "
-# 
-# 
-#   q1b <-  " ORDER BY m.device_info_serial ASC, m.date_time ASC ;"
-# 
-# 
-#   q1c <- paste(" w.device_info_serial = ",
-#                device, " AND ",
-#              "w.date_time = #", date_time, 
-#              "#", sep = "")
-# 
-#   x <- sqlQuery(gps.db,
-#               query = gsub("\n", " ", paste(q1a, q1c, q1b, sep=""))
-#               ,as.is = TRUE)
-#   
-#   return(x)
-#   
-# }
-# 
-# 
-# # Run function for all trips
-# # Super slow! Not an efficient way to do it!
-# wind.info <- t(mapply(extract.weather,
-#                       trip_details$device_info_serial,
-#                       trip_details$start_time))
-# 
-# # Make output into a data.frame
-# wind.info <- as.data.frame(wind.info)
-# 
-# # save(wind.info, file = "wind.info.backup.Rdata")
-
 weather <- sqlQuery(gps.db,
          query =
   "SELECT DISTINCT move_bank_variables_all.*, lund_points_wind_ECMWF.*, lund_trips.trip_id
@@ -94,7 +53,8 @@ names(weather)
 # some are missing weather data, only a small fraction though, so will just exclude these
 summary(trip_details$trip_id %in% weather$trip_id)
 
-# Match up device_info_serials with bird_id (ring number)
+
+# Match up device_info_serial with bird_id (ring number)
 
 
 # Date_time_local
