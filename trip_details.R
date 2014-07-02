@@ -71,7 +71,7 @@ trip.info <- function(t, gps = gps){
   trip_type <- ifelse(min(sub01$latitude) < 50, 1, 0) #label trips, zero if non-migratory, and 1 if migratory.
   device_info_serial <- sub01$device_info_serial[1]  #get device_info_serial
 
-  dir_max_dist <- sub01$nest_gc_dir[sub01$nest_gc_dist == dist_max]
+  dir_max_dist <- sub01$nest_bear[sub01$nest_gc_dist == dist_max]
 
   #' Aproximately define a polygon for Gotland, then determine
   #' if trip includes points within this area.
@@ -118,7 +118,7 @@ trip.info <- function(t, gps = gps){
                 gotland_time_prop,
                 dir_max_dist)  
   
-  return(data.out)            #output a vector for the bird of trip id
+  return(data.out)        #output a vector for the bird of trip id
 }
 #**********End of this function: trip.info
 
@@ -156,6 +156,8 @@ save(lst, file = "trip_details_list.R")
 stopCluster(cl)
 
 
+# x <- trip.info(trip_id[5],gps)
+# x
 #names for the dataframe
 names.trips <- c("trip_id","device_info_serial",
                  "trip_type","fix_n",
