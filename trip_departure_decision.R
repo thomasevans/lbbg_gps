@@ -75,10 +75,22 @@ year <- format(trip_details$start_time,"%Y")
 month <- format(trip_details$start_time,"%m")
 
 
-?difftime
 
 
 # Combine weather and trip_details into a single dataframe
+# Order trip_details by trip_id (probably already, but just to be certain!)
+trip_details <- trip_details[order(trip_details$trip_id),]
+
+# Order weather data via trip_id (as above for trip_details)
+weather <- weather[order(weather$trip_id),]
+
+
+# Combine two tables
+# First filter so only have trips where we have both trip info
+# and weather details
+filter_trips <- trip_details$trip_id %in% weather$trip_id
+summary(filter_trips)
+all.equal(trip_details$trip_id[filter_trips],weather$trip_id)
 
 
 
