@@ -42,6 +42,8 @@ track_session <- sqlQuery(gps.db, query="SELECT DISTINCT g.*
                      ORDER BY device_info_serial ASC;")
 
 
+# Weather details, using start time of trips to make
+# join with wind data etc.
 weather <- sqlQuery(gps.db,
          query =
   "SELECT DISTINCT move_bank_variables_all.*, lund_points_wind_ECMWF.*, lund_trips.trip_id
@@ -51,15 +53,20 @@ ORDER BY lund_trips.trip_id;", as.is = TRUE)
 names(weather)
 
 # some are missing weather data, only a small fraction though, so will just exclude these
+# False - trips missing weather data for first point
 summary(trip_details$trip_id %in% weather$trip_id)
 
 
-# Match up device_info_serial with bird_id (ring number)
-# For now just use device numbers - can replace with ring numbers later - no devices used for > 1 individual.
 
 # Date_time_local
 # Convert date time from UTC to local (solar) time
 # add 1h 10 min to get aprox solar time
+t <- 60*70
+time_local <- trip_details$start_time + t
+
+# Inspect this to check that it looks sensible
+head(time_local)
+head(trip_details$start_time)
 
 # Extract date components
 # Year
@@ -68,7 +75,7 @@ year <- format(trip_details$start_time,"%Y")
 month <- format(trip_details$start_time,"%m")
 
 
-
+?difftime
 
 
 # Combine weather and trip_details into a single dataframe
