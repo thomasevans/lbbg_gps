@@ -92,11 +92,18 @@ filter_trips <- trip_details$trip_id %in% weather$trip_id
 summary(filter_trips)
 all.equal(trip_details$trip_id[filter_trips],weather$trip_id)
 
+trip_info <- cbind(trip_details,weather)
 
+# Drops
+# Drop some duplicate columns etc...
+***********
 
 # Replace device numbers with ring numbers
 
 
 # Add sexes for each bird
+  
+
+# Add sunrise times, and calculate difference from these
 
 # Output table (DB and csv)
