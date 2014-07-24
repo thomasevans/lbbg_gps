@@ -142,7 +142,8 @@ out.tab2$sunrise_dif_s <- as.numeric.factor(
   out.tab2$sunrise_dif_s)
 out.tab2$sunset_dif_s <- as.numeric.factor(
   out.tab2$sunset_dif_s)
-
+out.tab2$device_info_serial <- as.numeric.factor(
+  out.tab2$device_info_serial)
 
 str(out.tab2)
 
