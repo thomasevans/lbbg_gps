@@ -81,7 +81,7 @@ s1 <- sign(sunrise_dif_s)
 s2 <- sign(sunset_dif_s) + 3
 
 s3 <- s1 + s2
-hist(s3)
+# hist(s3)
 #
 
 t.fun <- function(x){
