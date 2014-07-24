@@ -44,11 +44,18 @@ track_session <- sqlQuery(gps.db, query="SELECT DISTINCT g.*
 
 # Weather details, using start time of trips to make
 # join with wind data etc.
+# Querry built in Access
 weather <- sqlQuery(gps.db,
          query =
-  "SELECT DISTINCT move_bank_variables_all.*, lund_points_wind_ECMWF.*, lund_trips.trip_id
-FROM (lund_trips INNER JOIN move_bank_variables_all ON (lund_trips.device_info_serial = move_bank_variables_all.device_info_serial) AND (lund_trips.start_time = move_bank_variables_all.date_time)) INNER JOIN lund_points_wind_ECMWF ON (move_bank_variables_all.date_time = lund_points_wind_ECMWF.date_time) AND (move_bank_variables_all.device_info_serial = lund_points_wind_ECMWF.device_info_serial)
-ORDER BY lund_trips.trip_id;", as.is = TRUE)
+           "SELECT DISTINCT move_bank_variables_all.date_time, move_bank_variables_all.device_info_serial, move_bank_variables_all.cloud_cover_low_altitude, move_bank_variables_all.cloud_cover_total, move_bank_variables_all.significant_wave_height, move_bank_variables_all.sun_shine_duration_day, move_bank_variables_all.surface_roughness, move_bank_variables_all.temperature_2m, move_bank_variables_all.wind_u_10m, move_bank_variables_all.wind_v_10m, move_bank_variables_all.thermal_uplift, move_bank_variables_all.sea_level_pressure, move_bank_ppt_dew_ECMWF.ecwf_ppt, move_bank_ppt_dew_ECMWF.ecwf_dew_point, lund_points_sun.time_of_day, lund_points_sun.sunrise_date_time, lund_points_sun.sunset_date_time, lund_points_sun.sunrise_dif_s, lund_points_sun.sunset_dif_s, lund_trips.trip_id
+FROM lund_trips INNER JOIN (move_bank_variables_all INNER JOIN (move_bank_ppt_dew_ECMWF INNER JOIN lund_points_sun ON (move_bank_ppt_dew_ECMWF.date_time = lund_points_sun.date_time) AND (move_bank_ppt_dew_ECMWF.device_info_serial = lund_points_sun.device_info_serial)) ON (move_bank_variables_all.device_info_serial = move_bank_ppt_dew_ECMWF.device_info_serial) AND (move_bank_variables_all.date_time = move_bank_ppt_dew_ECMWF.date_time)) ON (lund_trips.start_time = move_bank_variables_all.date_time) AND (lund_trips.device_info_serial = move_bank_variables_all.device_info_serial)
+ORDER BY trip_id ASC;
+")
+
+
+
+# track_session
+# weather
 
 names(weather)
 
