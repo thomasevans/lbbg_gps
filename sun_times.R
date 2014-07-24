@@ -148,54 +148,11 @@ str(out.tab2)
 
 
 # Now ouput to database
-
-#
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Sunrise/ set test script
-
-install.packages("maptools")
-
-library("maptools")
-
-
-?sunriset
-
-sunriset(as.POSIXct(Sys.time(), "GMT"),
-         matrix((c(17.972088, 57.284804)), nrow = 1),
-         direction = "sunrise", POSIXct.out = TRUE)
-
-
-date_start <- as.POSIXct("2011-01-01", tz="UTC")
-date_seq <- seq(from = date_start,
-                length.out = 365*4, by = "days")
-
-pos <- matrix(c(17.972088, 57.284804), nrow = 1)
-pos.sp <- SpatialPoints(pos,
-                        proj4string = 
-                          CRS("+proj=longlat +datum=WGS84"))
-
-
-
-up <- sunriset(pos.sp, date_seq,
-               direction = "sunrise", POSIXct.out = TRUE)
-
-down <- sunriset(pos.sp, date_seq,
-               direction = "sunset", POSIXct.out = TRUE)
-
-str(up)
+sqlSave(gps.db, out.tab2, tablename = "lund_points_sun",
+        append = FALSE,
+        rownames = FALSE, colnames = FALSE, verbose = FALSE,
+        safer = TRUE, addPK = FALSE,
+        fast = TRUE, test = FALSE, nastring = NULL,
+        varTypes = c(date_time = "Date",
+                     sunrise_date_time = "Date",
+                     sunset_date_time = "Date"))
