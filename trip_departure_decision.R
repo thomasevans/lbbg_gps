@@ -9,6 +9,8 @@
 # such as weather components.
 # All is then ouput to a new table in the database for later use.
 
+# Slight hack to make sure we are using UTC time zone
+Sys.setenv(TZ='UTC')
 
 
 # Get data from database
@@ -64,26 +66,6 @@ names(weather)
 summary(trip_details$trip_id %in% weather$trip_id)
 
 
-
-# Date_time_local
-# Convert date time from UTC to local (solar) time
-# add 1h 10 min to get aprox solar time
-t <- 60*70
-time_local <- trip_details$start_time + t
-
-# Inspect this to check that it looks sensible
-head(time_local)
-head(trip_details$start_time)
-
-# Extract date components
-# Year
-year <- format(trip_details$start_time,"%Y")
-# Month
-month <- format(trip_details$start_time,"%m")
-
-
-
-
 # Combine weather and trip_details into a single dataframe
 # Order trip_details by trip_id (probably already, but just to be certain!)
 trip_details <- trip_details[order(trip_details$trip_id),]
@@ -99,18 +81,83 @@ filter_trips <- trip_details$trip_id %in% weather$trip_id
 summary(filter_trips)
 all.equal(trip_details$trip_id[filter_trips],weather$trip_id)
 
-trip_info <- cbind(trip_details,weather)
+trip_info <- cbind(trip_details[filter_trips,],weather)
+
+str(trip_info)
+
 
 # Drops
 # Drop some duplicate columns etc...
+trip_info <- trip_info[,-38]
+
+drops <- c("device_info_serial.1","date_time")
+trip_info <- trip_info[,!(names(trip_info) %in% drops)]
+
+str(trip_info)
+
+
+
+# New time data columns ----
+# Date_time_local
+# Convert date time from UTC to local (solar) time
+# add 1h 10 min to get aprox solar time
+t <- 60*70
+time_local <- trip_info$start_time + t
+
+# Inspect this to check that it looks sensible
+head(time_local)
+head(trip_info$start_time)
+
+# Extract date components
+# Year
+year <- format(trip_info$start_time,"%Y")
+# Month
+month <- format(trip_info$start_time,"%m")
+
+# Time only
+time_utc <- format(trip_info$start_time,"%H:%M:%S")
+date_utc <- format(trip_info$start_time,"%Y-%m-%d")
+head(time_utc)
+head(date_utc)
+
+# Add these new vairables to trip_info table
+trip_info <- cbind(trip_info,time_local,year,month,time_utc,date_utc)
+
+str(trip_info)
+
+
+# dew ----
+# Calculate difference between ambient tempreture (at 2m)
+# dew point tempreture. If positive suggest dew, if negative,
+# no dew. Rough indication at least
+dew_dif <- trip_info$ecwf_dew_point -   trip_info$temperature_2m 
+
+trip_info <- cbind(trip_info, dew_dif)
+
+
+# Wind speed and direction ----
+# Source file with wind direction and speed function
+source("wind_dir_speed.R")
+
+winds <- wind.dir.speed(trip_info$wind_u_10m,
+                        trip_info$wind_v_10m)
+
+wind_speed <- winds[,1]
+wind_dir   <- winds[,2]
+
+trip_info <- cbind(trip_info, wind_speed, wind_dir)
+
+
 ***********
+
+  
+
+
 
 # Replace device numbers with ring numbers
 
 
 # Add sexes for each bird
   
-
-# Add sunrise times, and calculate difference from these
 
 # Output table (DB and csv)
