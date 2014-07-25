@@ -144,7 +144,8 @@ winds <- wind.dir.speed(trip_info$wind_u_10m,
 
 wind_speed <- winds[,1]
 wind_dir   <- winds[,2]
-
+# hist(wind_speed)
+# hist(wind_dir)
 trip_info <- cbind(trip_info, wind_speed, wind_dir)
 
 
@@ -159,9 +160,33 @@ birds <- sqlQuery(gps.db, query="SELECT DISTINCT b.device_info_serial, b.ring_nu
 
 
 # Combine with trip_info table
-merge(x = trip_info, y = birds, by = "device_info_serial",
-      all = FALSE, sort = TRUE)
-# ?merge
+out.table <- merge(x = trip_info, y = birds,
+                    by = "device_info_serial",
+                    all = FALSE, sort = TRUE)
+
+# Sort table by ring number then by date_time (start time)
+sort.tab <- order(out.table$ring_number, out.table$start_time)
+out.table <- out.table[sort.tab,]
+
+
+# Output to DB
+sqlSave(gps.db, out.table, tablename = "lund_trips_depart",
+        append = FALSE, rownames = FALSE,
+        colnames = FALSE, verbose = FALSE,
+        safer = TRUE, addPK = FALSE, fast = TRUE,
+        test = FALSE, nastring = NULL,
+        varTypes =  c(start_time = "datetime",
+                      end_time = "datetime",
+                      sunrise_date_time = "datetime",
+                      sunset_date_time = "datetime",
+                      time_local = "datetime",
+                      time_utc = "datetime",
+                      date_utc = "datetime"
+                      ))
+# ?sqlSave
+# sqlTypeInfo(gps.db)
+
+# hist(out.table$gotland_time_prop)
 
 ***********
 
