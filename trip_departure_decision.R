@@ -139,8 +139,15 @@ trip_info <- cbind(trip_info, dew_dif)
 # Source file with wind direction and speed function
 source("wind_dir_speed.R")
 
-winds <- wind.dir.speed(trip_info$wind_u_10m,
-                        trip_info$wind_v_10m)
+# winds <- wind.dir.speed(trip_info$wind_u_10m,
+#                         trip_info$wind_v_10m)
+# Use matrix apply
+winds <- mapply(wind.dir.speed,
+                trip_info$wind_u_10m,
+                vwind10 = trip_info$wind_v_10m)
+winds <- t(winds)
+# ?mapply
+# head(winds)
 
 wind_speed <- winds[,1]
 wind_dir   <- winds[,2]
@@ -199,3 +206,8 @@ save(trips, file = "foraging_trip_info.RData")
 
 # Output to a csv file
 write.csv(trips, file = "foraging_trip_info.csv")
+
+
+
+hist(trips$cloud_cover_low_altitude)
+# hist(trips$wind_dir)
