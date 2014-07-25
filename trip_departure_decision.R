@@ -148,6 +148,21 @@ wind_dir   <- winds[,2]
 trip_info <- cbind(trip_info, wind_speed, wind_dir)
 
 
+
+# Sex and bird ID -----
+# Get Sex and bird ID table from DB
+birds <- sqlQuery(gps.db, query="SELECT DISTINCT b.device_info_serial, b.ring_number, b.sex_tentative
+                     FROM lund_birds_morph as b
+                     ORDER BY device_info_serial ASC;")
+
+
+
+
+# Combine with trip_info table
+merge(x = trip_info, y = birds, by = "device_info_serial",
+      all = FALSE, sort = TRUE)
+# ?merge
+
 ***********
 
   
