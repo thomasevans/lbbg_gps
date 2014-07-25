@@ -194,3 +194,8 @@ sqlSave(gps.db, out.table,
 )
 
 
+trips <- out.table
+save(trips, file = "foraging_trip_info.RData")
+# ?save
+
+
