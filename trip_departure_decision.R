@@ -193,10 +193,9 @@ sqlSave(gps.db, out.table,
                       )
 )
 
-
+# Output to an R binnary file
 trips <- out.table
 save(trips, file = "foraging_trip_info.RData")
-# ?save
 
+# Output to a csv file
 write.csv(trips, file = "foraging_trip_info.csv")
-# ??save.table
