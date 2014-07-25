@@ -169,12 +169,20 @@ sort.tab <- order(out.table$ring_number, out.table$start_time)
 out.table <- out.table[sort.tab,]
 
 
-# Output to DB
-sqlSave(gps.db, out.table, tablename = "lund_trips_depart",
-        append = FALSE, rownames = FALSE,
+
+# load("trip_info.RData")
+
+# Output to DB ------
+
+# sqlDrop(gps.db, "lund_trips_depart", errors = FALSE)
+
+sqlSave(gps.db, out.table,
+        tablename = "lund_trips_depart",
+        append = TRUE, rownames = FALSE,
         colnames = FALSE, verbose = FALSE,
-        safer = TRUE, addPK = FALSE, fast = TRUE,
+        safer = TRUE, addPK = FALSE, fast = FALSE,
         test = FALSE, nastring = NULL,
+# #         index = c("ring_number", "start_time"),
         varTypes =  c(start_time = "datetime",
                       end_time = "datetime",
                       sunrise_date_time = "datetime",
@@ -182,22 +190,7 @@ sqlSave(gps.db, out.table, tablename = "lund_trips_depart",
                       time_local = "datetime",
                       time_utc = "datetime",
                       date_utc = "datetime"
-                      ))
-# ?sqlSave
-# sqlTypeInfo(gps.db)
-
-# hist(out.table$gotland_time_prop)
-
-***********
-
-  
+                      )
+)
 
 
-
-# Replace device numbers with ring numbers
-
-
-# Add sexes for each bird
-  
-
-# Output table (DB and csv)
