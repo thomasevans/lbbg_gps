@@ -198,4 +198,5 @@ trips <- out.table
 save(trips, file = "foraging_trip_info.RData")
 # ?save
 
-
+write.csv(trips, file = "foraging_trip_info.csv")
+# ??save.table
