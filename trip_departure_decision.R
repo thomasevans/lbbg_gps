@@ -209,5 +209,5 @@ write.csv(trips, file = "foraging_trip_info.csv")
 
 
 
-hist(trips$cloud_cover_low_altitude)
+# hist(trips$cloud_cover_low_altitude)
 # hist(trips$wind_dir)
