@@ -38,7 +38,7 @@ View(trips)
 
 # Filter data ----
 
-# trip_type ----
+# *trip_type ----
 # 1/0, 1 - migratory, 0 - non-migratory
 # First filter out migratory trips.
 # Note double equals sign to indicate 'is equal to'
@@ -47,7 +47,7 @@ f0 <- trips$trip_type == 0
 summary(f0)
 
 
-# fix_n ----
+# *fix_n ----
 # Fix number - Number of GPS fixes for a trip
 # First see the distribution and don't include
 # migratory trips (use the filter we made above)
@@ -77,7 +77,7 @@ f <- f0 & f1
 summary(f)
 
 
-# duration_s ----
+# *duration_s ----
 # The duration of a trip in seconds
 # For a trip to be a 'foraging trip' it should have
 # some minimum duration, plus also a maximum.
@@ -145,7 +145,7 @@ f <- f & f4
 summary(f)
 
 
-# dist_max ----
+# *dist_max ----
 # The maximum distance (km) reached from the nest
 # It's seems sensible to have a minimum distance threshold.
 # If the bird only travels say 1 km, perhaps it is roosting
@@ -172,7 +172,7 @@ f <- f & f5
 summary(f)
 
 
-# interval_max ----
+# *interval_max ----
 # Maximum time interval between GPS locations
 # We don't want to include trips with long data gaps.
 # If there is a very long gap there could potentially
