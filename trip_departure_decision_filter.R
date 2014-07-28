@@ -206,8 +206,22 @@ f <- f & f6
 summary(f)
 
 
+# *month-----
+# Months are stored as text, as a factor. They are numbered.
+# 01 - January
+# 02 - February, etc. ...
+
+# Filter to include only trips during May (05), June (06), and July (07)
+f7 <- trips$month == "05" |  trips$month == "06" |  trips$month == "07"
+
+summary(f7)
+# Add to existing filter
+f <- f & f7
+# See how many trips we now have (TRUE)
+summary(f)
+
 # Summary ----
-# We applied the following 6 filters:
+# We applied the following 7 filters:
 # Non-migration trips
 f0 <- trips$trip_type == 0  
 
@@ -225,6 +239,9 @@ f5 <- trips$dist_max > 3
 
 # Trips with no more than 30 minutes between GPS locations
 f6 <- trips$interval_max < 0.5 * hour
+
+# Trips during months of May, June, and July only
+f7 <- trips$month == "05" |  trips$month == "06" |  trips$month == "07"
 
 length(trips$fix_n)
 # We started with 3283 trips ...
