@@ -252,6 +252,11 @@ aggregate(fix_n ~ month,
           data = trips,
           FUN = length)
 
+# Number of trips per individual by year
+aggregate(fix_n ~ year + ring_number ,
+          data = trips,
+          FUN = length)
+
 # Output filtered data ----
 # For later analysis we can save the filtered data
 
