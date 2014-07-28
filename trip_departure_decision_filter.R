@@ -46,6 +46,9 @@ f0 <- trips$trip_type == 0
 # 8 trips are now excluded 'FALSE'
 summary(f0)
 
+# Keep a running tally of all trip filters:
+f <- f0
+
 
 # *fix_n ----
 # Fix number - Number of GPS fixes for a trip
@@ -117,7 +120,7 @@ abline(v = 110000,
 f3 <- trips$duration_s < 110000
 summary(f3)
 f <- f & f3
-# We've now exluced one-third of trips!
+# We've now excluded one-third of trips!
 summary(f)
 
 # Minimum time duration
@@ -228,6 +231,8 @@ f0 <- trips$trip_type == 0
 # At least 8 GPS locations
 f1 <- trips$fix_n >= 8  
 
+# Note there is no f2!
+
 # Trips of less than ca. 31 hours
 f3 <- trips$duration_s < 110000  
 
@@ -246,7 +251,7 @@ f7 <- trips$month == "05" |  trips$month == "06" |  trips$month == "07"
 length(trips$fix_n)
 # We started with 3283 trips ...
 summary(f)
-# ... and ended up with 1427 trips that met the above criteria
+# ... and ended up with 1231 trips that met the above criteria
 
 # Sample sizes ----
 # First install package 'reshape2' which makes this
