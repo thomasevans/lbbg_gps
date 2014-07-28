@@ -5,19 +5,19 @@
 # setwd("D:/Dropbox/R_projects/lbbg_gps/workspace_alternative")
 
 
-#Description#######
-#In this script we produce various figures and summary statistics to compare outward and inward commuting flights.
-#These were originally prepared for a meeting with Susanne and Anders on 2013-01-17
+# Description -----
+# In this script we produce various figures and summary statistics to compare outward and inward commuting flights.
+# These were originally prepared for a meeting with Susanne and Anders on 2013-01-17
 
 
-#Datbase functions#########
-#Get the flight data from the db.
+# Datbase functions -----
+# Get the flight data from the db.
 library(RODBC)
 
-#Establish a connection to the database
+# Establish a connection to the database
 gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
 
-#See what tables are available
+# See what tables are available
 #sqlTables(gps.db)
 
 
