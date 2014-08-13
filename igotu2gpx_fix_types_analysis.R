@@ -12,7 +12,7 @@ source("parse_igotu2gpx_txt.R")
 
 
 # Get some example data -----
-points <- parse.file(file = "D:/Dropbox/guillemot_2014_data/igotu2gpx_files/g01.txt")
+points <- parse.file(file = "D:/Dropbox/guillemot_2014_data/igotu2gpx_files/g09.txt")
 
 # General idea ----
 # Add column to indicate GPS fix type
@@ -209,8 +209,110 @@ points(points$lat[pre.point.f]~points$long[pre.point.f],
 
 
 
+
+# Aquisition time - vallid GPS -----
+# How about aquisition time for when fixes are gained? Is it possible to recognise when the bird was coming up from a dive - thus took longer to gain GPS data, but once at surface did?
+str(points)
+
+# Filter for only 'vallid' GPS points
+pos <- (points$lat != 0 )
+pos_ind <- ind[pos]
+
+# look at this
+hist(points$timeout[pos])
+summary(as.factor(as.character(points$timeout[pos])))
+
+hist(points$timeout[pos & points$timeout < 100],
+     breaks = 40)
+# Some suggestion of a bimodal distribution with
+# aquisition times >20 s being a sepperate distribution
+# than those <20 s.
+
+# Map those points that are > 20s
+map.trip(points = points)
+f <- (points$lat != 0 ) & (points$timeout > 20)
+points(points$lat[f]~points$long[f],
+       col = "orange", pch = 8, cex = 1.2)
+# Mainly points at the colony where the single is
+# likely to be bad - probably not a useful filtering
+# criterion
+
+# Possibly 'dodgy' points could be filtered out by
+# timeout, with high values of timeout, say >150 being
+# excluded
+plot(points$timeout[points$lat != 0] ~ points$lat[points$lat != 0])
+
+map.trip(points = points)
+f <- (points$lat != 0 ) & (points$timeout > 150)
+points(points$lat[f]~points$long[f],
+       col = "green", pch = 8, cex = 1.2)
+# This does indeed seem to include both 'dodgy' points
+# likely at the colony and those 'dodgy' points some
+# way away from the colony.
+# We should check EHPE first though - as it's a more
+# conventional way to filter points
+
+
+# EHPE -----
 # some possible pattern in 'EHPE' too
-summary(as.factor(as.character(points.no_pos$ehpe)))
+# For vallid fixes
+summary(as.factor(as.character(points$ehpe[pos])))
+hist(points$ehpe[pos])
+hist(points$ehpe[pos & points$ehpe < 100], breaks = 40)
+
+hist(points$ehpe[pos & points$ehpe > 100], breaks = 40)
+# Nothing obvious or likely useful here. Though few
+# point beyond ca. 250, how about filtering these out?
+
+map.trip(points = points[points$long > 17.93,])
+f <- (points$lat != 0 ) & (points$ehpe > 100)
+points(points$lat[f]~points$long[f],
+       col = "green", pch = 8, cex = 1.2)
+summary(f)
+
+# How many points do we lose by filtering EHPE quite
+# drastically, does it mainly only affect those points
+# at the colony, which we don't 'need' anyway?
+points$ehpe[pos]
+
+# For invallid fixes
+no_pos <- points$lat == 0
+
+summary(as.factor(as.character(points$ehpe[no_pos])))
+hist(points$ehpe[no_pos])
+hist(points$ehpe[no_pos & points$ehpe > 100], breaks = 40)
+
+# Somthing at EHPE = 344.64
+# Map these points
+
+map.trip(points)
+
+no_pos_ehpe <- (points$lat == 0 ) & (points$ehpe == 344.64)
+no_pos_ind <- ind[no_pos_ehpe]
+
+pre.point <- no_pos_ind + 1
+pre.point.f <- pre.point[points$long[pre.point] != 0]
+
+points(points$lat[pre.point.f]~points$long[pre.point.f],
+       col = "green", pch = 8, cex = 1.2)
+# All at colony, probably in some way related to
+# bad reception - not useful.
+
+# So EHPE doesn't appear useful to use one we have
+# filtered by vallid GPS + timeout
+
+str(points)
+# 
+
+
+
+
+
+
+
+
+
+
 
 
 points.no_pos$timeout[points.no_pos$ehpe == 344.64]
