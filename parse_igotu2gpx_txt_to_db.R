@@ -50,4 +50,33 @@ points.df <- do.call("rbind", parse.list)
 names(points.df)[12] <- "device_info_serial"
 names(points.df)[13] <- "file_name"
 
+# str(points.df)
+
+# Write to database
+library("RODBC")
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+
+# Remove points that don't have a date_time
+points.df.f <- points.df[!is.na(points.df$date_time),]
+
+# Get data in order
+points.df.f <- points.df.f[order(points.df.f$device_info_serial,
+                                 points.df.f$date_time),]
+
+# Re-order df columns
+cols <- names(points.df.f)
+first.cols <- c("device_info_serial",
+                "date_time")
+f <- cols %in% first.cols
+points.df.f.ordered <- points.df.f[,c(first.cols,cols[!f])]
+row.names(points.df.f.ordered) <- NULL
+
+#will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
+sqlSave(gps.db, points.df.f.ordered,
+        tablename = "guillemots_gps_points_igu",
+        append = FALSE, rownames = FALSE, colnames = FALSE,
+        verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
+        test = FALSE, nastring = NULL,
+        varTypes =  c(date_time = "datetime")
+        )
 
