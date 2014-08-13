@@ -12,7 +12,7 @@ source("parse_igotu2gpx_txt.R")
 
 
 # Get some example data -----
-points <- parse.file(file = "D:/Dropbox/guillemot_2014_data/igotu2gpx_files/g09.txt")
+points <- parse.file(file = "D:/Dropbox/guillemot_2014_data/igotu2gpx_files/g12.txt")
 
 # General idea ----
 # Add column to indicate GPS fix type
@@ -38,7 +38,7 @@ points <- parse.file(file = "D:/Dropbox/guillemot_2014_data/igotu2gpx_files/g09.
 
 # Base map to plot different types of points on -----
 # function to create a simple map, high-lighting flight and non-flight only
-map.trip <- function(points = points){
+map.trip <- function(points = points, xlim = NULL, ylim = NULL){
   
   library(maps)
   
@@ -51,11 +51,21 @@ map.trip <- function(points = points){
   dif    <- dif *.12
   c.xlim <- c((c.xlim[1] - dif), (c.xlim[2] + dif))
   
+#   xlim = NULL
+  
+  if(!is.null(xlim)){
+    c.xlim <- xlim
+  }
+  
   c.ylim <- range(p$lat)
   dif    <- c.ylim[2] - c.ylim[1]
   dif    <- dif *.1
   c.ylim <- c((c.ylim[1] - dif), (c.ylim[2] + dif))
   
+if(!is.null(ylim)){
+  c.ylim <- ylim
+}
+
   # Plot base map
   load("SWE_adm0.RData")
   
@@ -220,6 +230,8 @@ pos_ind <- ind[pos]
 
 # look at this
 hist(points$timeout[pos])
+hist(points$timeout[pos], xlim = c(0,100), breaks = 40)
+
 summary(as.factor(as.character(points$timeout[pos])))
 
 hist(points$timeout[pos & points$timeout < 100],
@@ -230,7 +242,11 @@ hist(points$timeout[pos & points$timeout < 100],
 
 # Map those points that are > 20s
 map.trip(points = points)
+f <- (points$lat != 0 ) & (points$timeout > 100)
 f <- (points$lat != 0 ) & (points$timeout > 20)
+f <- (points$lat != 0 ) & (points$timeout > 50)
+
+
 points(points$lat[f]~points$long[f],
        col = "orange", pch = 8, cex = 1.2)
 # Mainly points at the colony where the single is
@@ -264,11 +280,42 @@ hist(points$ehpe[pos & points$ehpe > 100], breaks = 40)
 # Nothing obvious or likely useful here. Though few
 # point beyond ca. 250, how about filtering these out?
 
-map.trip(points = points[points$long > 17.93,])
-f <- (points$lat != 0 ) & (points$ehpe > 100)
+map.trip(points = points[points$long > 17.2,])
+map.trip(points = points)
+
+f <- (points$lat != 0 ) & (points$ehpe > 50)
 points(points$lat[f]~points$long[f],
        col = "green", pch = 8, cex = 1.2)
+f <- (points$lat != 0 ) & ((points$ehpe > 100) | (points$timeout > 150))
+points(points$lat[f]~points$long[f],
+       col = "orange", pch = 8, cex = 1.2)
+
 summary(f)
+
+
+# Unifiltered
+map.trip(points = points)
+
+# Colony area
+f <- (points$lat != 0 ) & ((points$ehpe > 100) | (points$timeout > 150))
+map.trip(points = points[!f,],xlim = c(17.8,18.0),
+         ylim = c(57.28,57.35))
+f2 <- (points$lat != 0 ) & (points$ehpe > 50) & !f
+points(points$lat[f2 ]~points$long[f2 ],
+       col = "green", pch = 8, cex = 1.2)
+
+
+# Whole trip
+f <- (points$lat != 0 ) & ((points$ehpe > 100) | (points$timeout > 150))
+map.trip(points = points[!f,])
+f2 <- (points$lat != 0 ) & (points$ehpe > 50) & !f
+points(points$lat[f2 ]~points$long[f2 ],
+       col = "green", pch = 8, cex = 1.2)
+
+
+
+length(f)
+length(f2)
 
 # How many points do we lose by filtering EHPE quite
 # drastically, does it mainly only affect those points
@@ -298,8 +345,9 @@ points(points$lat[pre.point.f]~points$long[pre.point.f],
 # All at colony, probably in some way related to
 # bad reception - not useful.
 
-# So EHPE doesn't appear useful to use one we have
-# filtered by vallid GPS + timeout
+# Does depend on device/ bird though. Seems that using
+# a course filter on EHPE may help - suggest 100 m in
+# addition to the timeout filter.
 
 str(points)
 # 
