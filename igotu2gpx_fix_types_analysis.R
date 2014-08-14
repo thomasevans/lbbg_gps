@@ -12,7 +12,13 @@ source("parse_igotu2gpx_txt.R")
 
 
 # Get some example data -----
-points <- parse.file(file = "D:/Dropbox/guillemot_2014_data/igotu2gpx_files/g12.txt")
+points <- parse.file(file = "D:/Dropbox/guillemot_2014_data/igotu2gpx_files/g01.txt")
+
+# Index thing
+n <- length(points$lat)
+# Make an index
+ind <- c(1:n)
+
 
 # General idea ----
 # Add column to indicate GPS fix type
@@ -235,7 +241,13 @@ hist(points$timeout[pos], xlim = c(0,100), breaks = 40)
 summary(as.factor(as.character(points$timeout[pos])))
 
 hist(points$timeout[pos & points$timeout < 100],
-     breaks = 40)
+     breaks = 40, freq = FALSE)
+
+hist(points$timeout[pos],
+     breaks = 40, freq = FALSE)
+
+
+# ?hist
 # Some suggestion of a bimodal distribution with
 # aquisition times >20 s being a sepperate distribution
 # than those <20 s.
@@ -248,18 +260,18 @@ f <- (points$lat != 0 ) & (points$timeout > 50)
 
 
 points(points$lat[f]~points$long[f],
-       col = "orange", pch = 8, cex = 1.2)
+       col = "magenta", pch = 8, cex = 1.2)
 # Mainly points at the colony where the single is
 # likely to be bad - probably not a useful filtering
 # criterion
 
 # Possibly 'dodgy' points could be filtered out by
-# timeout, with high values of timeout, say >150 being
+# timeout, with high values of timeout, say >100 being
 # excluded
 plot(points$timeout[points$lat != 0] ~ points$lat[points$lat != 0])
 
 map.trip(points = points)
-f <- (points$lat != 0 ) & (points$timeout > 150)
+f <- (points$lat != 0 ) & (points$timeout > 100)
 points(points$lat[f]~points$long[f],
        col = "green", pch = 8, cex = 1.2)
 # This does indeed seem to include both 'dodgy' points
@@ -286,11 +298,68 @@ map.trip(points = points)
 f <- (points$lat != 0 ) & (points$ehpe > 50)
 points(points$lat[f]~points$long[f],
        col = "green", pch = 8, cex = 1.2)
-f <- (points$lat != 0 ) & ((points$ehpe > 100) | (points$timeout > 150))
+f <- (points$lat != 0 ) & ((points$ehpe > 100) | (points$timeout > 100))
 points(points$lat[f]~points$long[f],
        col = "orange", pch = 8, cex = 1.2)
 
 summary(f)
+
+
+# Number of satellites -----
+summary(as.factor(as.character(points$sat_n[pos])))
+hist(points$sat_n[pos])
+
+map.trip(points = points, xlim = c(17.8,18.0),
+         ylim = c(57.4,57.5))
+
+f <- (points$lat != 0 ) & (points$sat_n <= 4)
+points(points$lat[f]~points$long[f],
+       col = "green", pch = 8, cex = 1.2)
+f <- (points$lat != 0 ) & (points$sat_n <= 3)
+points(points$lat[f]~points$long[f],
+       col = "orange", pch = 8, cex = 1.2)
+f <- (points$lat != 0 ) & (points$sat_n <= 2)
+points(points$lat[f]~points$long[f],
+       col = "magenta", pch = 8, cex = 1.2)
+f <- (points$lat != 0 ) & (points$sat_n <= 0)
+points(points$lat[f]~points$long[f],
+       col = "black", pch = 8, cex = 1.2)
+
+
+
+# Good GPS filter summary -----
+f0 <- (points$lat != 0 ) & (points$timeout <= 100)
+f1 <- (points$lat != 0 ) & (points$ehpe <= 100)
+f2 <- f0 & f1
+f3 <- f0 | f1
+
+summary(f0)
+summary(f1)
+summary(f2)
+summary(f3)
+
+
+map.trip(points = points, xlim = c(17.9,18.0),
+         ylim = c(57.25,57.3))
+map.trip(points = points)
+
+points(points$lat[!f2]~points$long[!f2],
+       col = "magenta", pch = 8, cex = 1.2)
+points(points$lat[!f3]~points$long[!f3],
+       col = "green", pch = 8, cex = 1.2)
+
+col <- (points$long < 17.98) &
+  (points$long > 17.94) &
+  (points$lat < 57.30) &
+  (points$lat > 57.28)
+
+fc0 <- col
+fc1 <- col & f2
+fc2 <- col & f3
+
+summary(fc0)
+summary(fc1)
+summary(fc2)
 
 
 # Unifiltered
