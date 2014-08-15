@@ -60,9 +60,52 @@ summary(gps_ok)
 flight <- points$speed_ms > 5
 summary(flight)
 
+
 # 2. Collony ----
 
+# For each GPS position get distance from colony
+# If GPS location is 0,0 give NA
+fun.dist <- function(lat,long){
+  # Define collony location
+  lat.c  <- 57.289848
+  long.c <- 17.958252
+  
+  # Get function to calculate distances
+  source("deg.dist.R")
+  
+  if(lat == 0 | long == 0) {x <- NA} else {
+    x <- deg.dist(long.c,lat.c, long,lat) 
+  }
+  return(x)
+}
 
+# Get distance for each point
+col.dist <- mapply(fun.dist,points$lat,points$long)
+
+# Convert distance from km to m
+col.dist <- col.dist * 1000
+
+# Have a look at this data
+hist(col.dist)
+hist(col.dist, breaks = 40)
+hist(col.dist, breaks = 5000, xlim = c(0, 500))
+# Appears that distances between ca. 0 and 100
+# correspond to murre-lab - i.e. nesting - and
+# distances from ca. 100 - 200 are the office (i.e.
+# non-deployed loggers)
+# Non-deployed logger locations should later be 
+# removed by only including data from during the
+# the deployment period.
+
+# Locations within 100 m of central location in colony
+col.loc <- col.dist < 100
+summary(col.loc)
+
+
+# 3. Diving (apparent) ----
+# Check what I have decided in 'fix_types_analysis'
+# script + have a look at potential other signs
+# possible diving locations
 
 
 
