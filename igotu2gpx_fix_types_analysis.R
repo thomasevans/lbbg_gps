@@ -101,14 +101,15 @@ if(!is.null(ylim)){
   
   
   # Scale bar and axis
-  x <- c.xlim[1] + (c.xlim[2] - c.xlim[1])/20
-  y <- c.ylim[1] + (c.ylim[2] - c.ylim[1])/10
-  map.scale(x,y,ratio = FALSE, col="grey50",col.lab="grey50")
-  # ?map.scale
-  #   ?map.scale
+  x <- c.xlim[1] + ((c.xlim[2] - c.xlim[1])/20)
+  y <- c.ylim[1] + ((c.ylim[2] - c.ylim[1])/10)
+  map.scale(x, y, ratio = FALSE, col = "grey60",
+            relwidth = 0.25,
+            col.lab = "grey60")
+
   box(,col="grey50",lwd=2)
-  axis(side=(1), las=1, col="grey50", col.axis="grey50")
-  axis(side=(2), las=1, col="grey50", col.axis="grey50")
+  axis(side=(1), las=1, col="grey60", col.axis="grey50")
+  axis(side=(2), las=1, col="grey60", col.axis="grey50")
     
 }
 
@@ -362,6 +363,36 @@ summary(fc1)
 summary(fc2)
 
 
+
+# Categorising flight by speed -----
+hist(points$speed_ms[f2])
+summary(points$speed_ms[f2] > 5)
+str(points)
+
+hist(points$speed_ms[f2], breaks = 40)
+hist(points$speed_ms[f2 & points$speed_ms > 2], breaks = 40)
+
+# ca. 5 ms-1 appears a good cut-off point, with 
+# an obvious bimodal distribution, though with
+# a much greater number of points <5 ms-1 than
+# >5 ms-1.
+
+# Show these points on a map:
+map.trip(points = points[f2,])
+
+
+
+# coal-face ----
+
+
+
+
+
+
+
+
+
+# Other calculations -----
 # Unifiltered
 map.trip(points = points)
 
