@@ -49,10 +49,21 @@ summary(gps_ok)
 
 # Label by 'behaviour' ------
 #* 1. Flight
-#* 2. Diving (apparent)
-#* 3. Colony
+#* 2. Colony
+#* 3. Diving (apparent)
 #* 4. Water surface (swimming etc)
 #* 5. Other (i.e. uncategorised)
+
+# 1 . Flight ----
+# label as flight if instantaneous speed exceeds
+# 5 ms-1
+flight <- points$speed_ms > 5
+summary(flight)
+
+# 2. Collony ----
+
+
+
 
 
 # Some labelling of previous/ next points? -----
