@@ -103,7 +103,7 @@ summary(col.loc)
 
 
 # 3. Diving (apparent) ----
-diving <- (points$lat == 0 ) & (points$timeout == 12)
+diving <- ((points$lat == 0 ) | (points$long == 0 ) )& (points$timeout == 12)
 summary(diving)
 
 # View number of diving fixes by hour of day
@@ -151,14 +151,71 @@ dive.prev <- rep(FALSE,n)
 dive.prev[dive.next.point] <- TRUE
 # summary(dive.next)
 
-# Label points where next fix is diving
-
-
 
 
 # Combine information to label points ----
+type <- rep("unclassified", n) 
+
+# No location
+# diving
+type[diving] <- "dive"
+
+# no loc, not diving
+summary(!gps_val)
+summary(diving)
+points.test <- points[(!gps_val & !diving),]
+type[(!gps_val & !diving)] <- "no_location"
+
+# View these points on map
+    map.trip(points = points[gps_ok,])
+    
+    #missing points, not diving
+    ind.miss <- ind[(!gps_val & !diving)]
+    
+    # Previous point
+    ind.miss.prev <- ind.miss -1
+    
+    points2plot <- ind.miss.prev[points$long[ind.miss.prev] != 0]
+    
+    points(points$lat[points2plot]~points$long[points2plot],
+           col = "green", pch = 8)
+    # Appear to be nearly universally colony based locations.
+    # Removing these then won't matter too much - not parts of
+    # foraging trips.
+
+summary(as.factor(type))
+
+# With a location
+# With a location but bad
+bad_loc <- (gps_val & !gps_ok)
+points(points$lat[bad_loc]~points$long[bad_loc],
+       col = "magenta", pch = 8)
+type[bad_loc] <- "bad_location"
+
+# Flight
+flight.points <- flight & !bad_loc
+summary(flight.points)
+type[flight.points] <- "flight"
+
+summary(as.factor(type))
 
 
+# Colony
+col.points <- col.loc & !bad_loc
+summary(col.points)
+
+type[col.points] <- "colony"
+
+
+# Map these points
+points(points$lat[col.points]~points$long[col.points],
+       col = "orange", pch = 8)
+
+
+points(points$lat[type == "unclassified"]~points$long[type == "unclassified"],
+       col = "black", pch = 8)
+
+# Coal-face -------
 
 
 # Output to new DB table ----
