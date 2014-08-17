@@ -120,10 +120,46 @@ hist(((as.numeric(as.POSIXlt(hours.loc)$hour)+2) %%24), xlim = c(0,24), breaks =
 
 
 # Some labelling of previous/ next points? -----
-# Could be good for example to label if prio point was diving
+# Could be good for example to label if previous point was diving
 # so as to plot points according to this.
 # When plotting could get average/ intermediate position for diving
 # events
+
+# Label points where next fix is diving
+# Index thing
+n <- length(points$lat)
+# Make an index
+ind <- c(1:n)
+
+# Diving points
+ind.dive <- ind[diving]
+
+# Previous point
+dive.prev.point <- ind.dive -1
+
+# True/ false
+dive.next <- rep(FALSE,n)
+dive.next[dive.prev.point] <- TRUE
+
+
+# Next points where previous point is diving
+# Next point
+dive.next.point <- ind.dive +1
+
+# True/ false
+dive.prev <- rep(FALSE,n)
+dive.prev[dive.next.point] <- TRUE
+# summary(dive.next)
+
+# Label points where next fix is diving
+
+
+
+
+# Combine information to label points ----
+
+
+
 
 # Output to new DB table ----
 # Output annotation to new DB table include device_info_serial
