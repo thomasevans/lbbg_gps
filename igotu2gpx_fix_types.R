@@ -103,10 +103,20 @@ summary(col.loc)
 
 
 # 3. Diving (apparent) ----
-# Check what I have decided in 'fix_types_analysis'
-# script + have a look at potential other signs
-# possible diving locations
+diving <- (points$lat == 0 ) & (points$timeout == 12)
+summary(diving)
 
+# View number of diving fixes by hour of day
+hours <- as.POSIXlt(points$date_time[diving],
+                    tz = "UTC")
+hours.loc <- as.POSIXlt(hours, tz = "Europe/Stockholm")
+
+
+hist(((as.numeric(as.POSIXlt(hours.loc)$hour)+2) %%24), xlim = c(0,24), breaks = 24,
+     xlab = "Hour of day (UTC)",
+     ylab = "Diving GPS fixes",
+     main = "",
+     col = "grey60")
 
 
 # Some labelling of previous/ next points? -----
