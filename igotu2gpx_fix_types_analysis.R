@@ -382,6 +382,97 @@ map.trip(points = points[f2,])
 
 
 
+# Likely diving locations -----
+
+# see timeout values for missing fixes
+summary(as.factor(as.character(points$timeout[no_pos_ind])))
+# There are many at 12 s and 250 s
+# Theorise that 12 s corresponds to when no satellite contact
+# is gained - i.e. likely underwater.
+# While other values are likely when some satellite contact made, but not sufficient.
+
+# Replot map and show '12 s' point locations ----
+map.trip(points = points[f2,])
+
+# Index thing
+n <- length(points$lat)
+# Make an index
+ind <- c(1:n)
+
+
+no_pos_12 <- (points$lat == 0 ) & (points$timeout == 12)
+no_pos_ind <- ind[no_pos_12]
+
+pre.point <- no_pos_ind - 1
+pre.point.f <- pre.point[points$long[pre.point] != 0]
+
+n.col.loc <- ind[!col.loc]
+
+pre.point.f.ncol <- pre.point.f %in% n.col.loc
+
+pre.point.f.ncol.ind <- pre.point.f[pre.point.f.ncol]
+
+points(points$lat[pre.point.f]~points$long[pre.point.f],
+       col = "magenta", pch = 8, cex = 1.2)
+# Mainly likely to be diving locations
+
+# Zoom in on area near collony
+map.trip(points = points[f2 & !col.loc,],
+         xlim = c(17.7,18.1),
+         ylim = c(57.2, 57.4))
+points(points$lat[pre.point.f.ncol.ind]~
+         points$long[pre.point.f.ncol.ind],
+       col = "magenta", pch = 8, cex = 1.2)
+
+# Area further to west from collony (towards Öland)
+map.trip(points = points[f2 & !col.loc,],
+         xlim = c(17.0,17.7),
+         ylim = c(57.2, 57.4))
+points(points$lat[pre.point.f.ncol.ind]~
+         points$long[pre.point.f.ncol.ind],
+       col = "magenta", pch = 8, cex = 1.2)
+
+dates.t <- as.POSIXct(points$date_time[pre.point.f.ncol.ind], tz = "UTC")
+
+# 'Foraging activity' by time of day
+# Number of 'diving GPS fixes' by hour of day
+# in CEST time zone (i.e. local time)
+hist(as.numeric(as.POSIXlt(dates.t, tz = "Europe/Stockholm")$hour), xlim = c(0,24), breaks = 24)
+# C.f. with figure 5.B. of MEPS GPS+TDR paper -
+# shows very similar activity pattern
+
+# Replot map and show '250 s' point locations ----
+map.trip(points = points[f2 & !col.loc,])
+
+no_pos_250 <- (points$lat == 0 ) & (points$timeout == 250)
+no_pos_ind <- ind[no_pos_250]
+
+pre.point <- no_pos_ind - 1
+pre.point.f <- pre.point[points$long[pre.point] != 0]
+
+points(points$lat[pre.point.f]~points$long[pre.point.f],
+       col = "magenta", pch = 8, cex = 1.2)
+# Think these points should be exluded as 'other' or
+# 'unclassified'
+
+# Zoom in on area near collony
+map.trip(points = points[f2 & !col.loc,],
+         xlim = c(17.7,18.1),
+         ylim = c(57.2, 57.4))
+points(points$lat[pre.point.f]~points$long[pre.point.f],
+       col = "magenta", pch = 8, cex = 1.2)
+
+
+# So for now classify diving as simply no GPS and
+# timeout 12 s
+no_pos_12 <- (points$lat == 0 ) & (points$timeout == 12)
+summary(no_pos_12)
+
+timeout12 <- (points$timeout == 12)
+summary(timeout12)
+
+
+
 # coal-face ----
 
 
