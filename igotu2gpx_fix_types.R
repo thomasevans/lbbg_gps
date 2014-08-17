@@ -212,13 +212,62 @@ points(points$lat[col.points]~points$long[col.points],
        col = "orange", pch = 8)
 
 
-points(points$lat[type == "unclassified"]~points$long[type == "unclassified"],
-       col = "black", pch = 8)
+# Remaining points - both water surface and pre/ post deployment
+# points - will have to remove those later (by deployment period)
+# These points will be 'unclassified'
+# Later can classify into 'surface' and just filter out the 
+# non-deployment points
 
-# Coal-face -------
 
 
 # Output to new DB table ----
+
+# Assemble vairables to new data frame
+export.table <- cbind(points$device_info_serial,
+                      points$date_time)
+
+# Add colony distance
+export.table <- cbind(export.table, col.dist)
+
+# dive next and previous
+export.table <- cbind(export.table, dive.prev, dive.next)
+
+# add points classification
+export.table <- cbind(export.table, type)
+
+# Format as data frame
+export.table <- as.data.frame(export.table)
+str(export.table)
+
+# Change structure
+str(col.dist)
+export.table$col.dist <- col.dist
+
+
+names(export.table)[1] <- "device_info_serial"
+names(export.table)[2] <- "date_time"
+
+export.table$date_time <- as.POSIXct(export.table$date_time, tz = "UTC")
+
+str(export.table)
+
 # Output annotation to new DB table include device_info_serial
 # and date_time for primary key data
 
+
+
+
+
+# Write to database
+library("RODBC")
+gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+
+
+#will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
+sqlSave(gps.db, export.table,
+        tablename = "guillemots_gps_points_igu_class",
+        append = FALSE, rownames = FALSE, colnames = FALSE,
+        verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
+        test = FALSE, nastring = NULL,
+        varTypes =  c(date_time = "datetime")
+)
