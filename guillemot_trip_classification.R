@@ -10,5 +10,23 @@
 # second sepperate script.
 
 
-# DB function to extract data for each device_ID for deployment
+# DB function to extract data for each device_ID/ ring number? for deployment
 # period.
+
+# Will need to do sepprately for the IGU and UvA devices
+
+
+# Make some calculations on GPS data
+# - distance from colony
+
+# Classify into foraging trips (see previous
+# analysis for the LBBG)
+
+# Assemble table of foraging trips
+# - trip_id
+# - start_time
+# - end_time
+# - device_id
+
+
+# Output details to DB
