@@ -31,6 +31,14 @@ deployments <- sqlQuery(gps.db,
           ORDER BY d.device_info_serial ASC;",
                    as.is = TRUE)
 
+# Get data into correct format
+str(deployments)
+deployments$device_info_serial <- as.factor(deployments$device_info_serial)
+deployments$ring_number <- as.factor(deployments$ring_number)
+deployments$start_date <- as.POSIXct(deployments$start_date, tz = "UTC")
+deployments$end_date <- as.POSIXct(deployments$end_date, tz = "UTC")
+deployments$successful_deployment <- as.factor(deployments$successful_deployment)
+
 
 
 # Get UvA GPS data
@@ -50,22 +58,153 @@ points_uva <- sqlQuery(gps.db,
           ORDER BY g.device_info_serial ASC, g.date_time ASC ;", sep = ""),
                         as.is = TRUE)
 
+str(points_uva)
+points_uva$device_info_serial <- as.factor(points_uva$device_info_serial)
+points_uva$date_time <- as.POSIXct(points_uva$date_time, tz = "UTC")
 
-# Get IGU data
+
+
+# Get IGU data along with point classification
 points_igu <- sqlQuery(gps.db,
-                       query = "SELECT DISTINCT g.device_info_serial, g.date_time, g.latitude, g.longitude
-          FROM guillemots_gps_points_igu AS g 
+                       query = "SELECT DISTINCT g.device_info_serial, g.date_time, g.latitude, g.longitude, c.coldist, c.diveprev, c.divenext, c.type
+          FROM guillemots_gps_points_igu AS g, guillemots_gps_points_igu_class AS C
+          WHERE g.device_info_serial = c.device_info_serial
+          AND g.date_time = c.date_time
           ORDER BY g.device_info_serial ASC, g.date_time ASC ;",
                        as.is = TRUE)
 
 
+# Fix data structure ----
+str(points_igu)
+points_igu$device_info_serial <- as.factor(points_igu$device_info_serial)
+points_igu$date_time <- as.POSIXct(points_igu$date_time, tz = "UTC")
+points_igu$type <- as.factor(points_igu$type)
+
+
+
+# Filter data by deployment status ------
 # Filter data to only include data when devices are deployed.
 
+hours_2 <- as.difftime(2, units = "hours")
+
+# str(deployments)
+# deployments$device_type <- as.factor(deployments$device_type)
+
+# For IGU devices
+dep_igu <- deployments[(deployments$device_type == "igu") &
+                         deployments$successful_deployment == 1,]
+n <- length(dep_igu[,1])
+
+points_igu_f <- NULL
+# i <- 4
+for(i in 1:n){
+  ring_number <- dep_igu$ring_number[i]
+  t_start <- dep_igu$start_date[i] - hours_2
+  t_end <- dep_igu$end_date[i] - hours_2
+  device <- dep_igu$device_info_serial[i]
+  
+  f <- ((points_igu$device_info_serial == as.character(device)) &
+    (points_igu$date_time > t_start) &
+    (points_igu$date_time < t_end))
+  # summary(f)
+#   summary(points_igu$device_info_serial == as.character(device))
+  
+  
+  points_s <- points_igu[f,]
+  
+  str(points_s)
+  
+  points_s <- cbind(points_s, ring_number)
+  points_igu_f <- rbind(points_igu_f, points_s)
+}
 
 
 
-# Make some calculations on GPS data
+# For UVA devices
+dep_uva <- deployments[(deployments$device_type == "uva") &
+                         deployments$successful_deployment == 1,]
+n <- length(dep_uva[,1])
+
+points_uva_f <- NULL
+
+for(i in 1:n){
+  ring_number <- dep_uva$ring_number[i]
+  t_start <- dep_uva$start_date[i] - hours_2
+  t_end <- dep_uva$end_date[i] - hours_2
+  device <- dep_uva$device_info_serial[i]
+  
+  f <- (points_uva$device_info_serial == as.character(device)) &
+    (points_uva$date_time > t_start) &
+    (points_uva$date_time < t_end)
+  # summary(f)
+  
+  
+  points_s <- points_uva[f,]
+  
+  str(points_s)
+  
+  points_s <- cbind(points_s, ring_number)
+  points_uva_f <- rbind(points_uva_f, points_s)
+}
+
+# Add some empty vairables to UVA table to allow to be combined with
+# data from IGU tags
+str(points_uva_f)
+str(points_igu_f)
+coldist <- diveprev <- divenext <- type <- NA
+points_uva_f <- cbind(points_uva_f, coldist , diveprev , divenext , type)
+
+points_uva_f <- points_uva_f[,c(1:4,6:9,5)]
+
+device_type <- "uva"
+points_uva_f <- cbind(points_uva_f,device_type )
+
+device_type <- "igu"
+points_igu_f <- cbind(points_igu_f,device_type )
+
+
+points_all <- rbind(points_igu_f,points_uva_f )
+
+
+
+
+
+# Make some calculations on GPS data ------
 # - distance from colony
+
+
+# For each GPS position get distance from colony
+# If GPS location is 0,0 give NA
+fun.dist <- function(lat,long){
+  # Define collony location
+  lat.c  <- 57.289848
+  long.c <- 17.958252
+  
+  # Get function to calculate distances
+  source("deg.dist.R")
+  
+  if(lat == 0 | long == 0) {x <- NA} else {
+    x <- deg.dist(long.c,lat.c, long,lat) 
+  }
+  return(x)
+}
+
+# ?difftime
+
+# Get distance for each point
+col.dist <- mapply(fun.dist,
+                   points_all$latitude, points_all$longitude)
+
+# Convert distance from km to m
+col.dist <- col.dist * 1000
+
+# Have a look at this data
+hist(col.dist)
+
+
+
+hist(col.dist[col.dist < 400], breaks = 50)
+
 
 # Classify into foraging trips (see previous
 # analysis for the LBBG)
@@ -78,3 +217,5 @@ points_igu <- sqlQuery(gps.db,
 
 
 # Output details to DB
+# Trip classification
+# Also output combined table of GPS points (for easier analysis)
