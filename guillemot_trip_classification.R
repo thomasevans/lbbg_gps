@@ -51,7 +51,7 @@ igu_dep_dev <- deployments$device_info_serial[
   deployments$device_type == "igu"]
 
 points_uva <- sqlQuery(gps.db,
-                        query = paste("SELECT DISTINCT g.device_info_serial, g.date_time, g.latitude, g.longitude
+                        query = paste("SELECT DISTINCT g.device_info_serial, g.date_time, g.latitude, g.longitude, g.speed
           FROM gps_ee_tracking_speed_limited AS g
           WHERE g.device_info_serial IN (", paste(unique(uva_dep_dev), collapse = ", "),
           ") 
@@ -66,7 +66,7 @@ points_uva$date_time <- as.POSIXct(points_uva$date_time, tz = "UTC")
 
 # Get IGU data along with point classification
 points_igu <- sqlQuery(gps.db,
-                       query = "SELECT DISTINCT g.device_info_serial, g.date_time, g.latitude, g.longitude, c.coldist, c.diveprev, c.divenext, c.type
+                       query = "SELECT DISTINCT g.device_info_serial, g.date_time, g.latitude, g.longitude, c.coldist, c.diveprev, c.divenext, c.type, g.speed_ms
           FROM guillemots_gps_points_igu AS g, guillemots_gps_points_igu_class AS C
           WHERE g.device_info_serial = c.device_info_serial
           AND g.date_time = c.date_time
@@ -80,7 +80,7 @@ points_igu$device_info_serial <- as.factor(points_igu$device_info_serial)
 points_igu$date_time <- as.POSIXct(points_igu$date_time, tz = "UTC")
 points_igu$type <- as.factor(points_igu$type)
 
-
+names(points_igu)[9] <- "speed"
 
 # Filter data by deployment status ------
 # Filter data to only include data when devices are deployed.
@@ -154,7 +154,8 @@ str(points_igu_f)
 coldist <- diveprev <- divenext <- type <- NA
 points_uva_f <- cbind(points_uva_f, coldist , diveprev , divenext , type)
 
-points_uva_f <- points_uva_f[,c(1:4,6:9,5)]
+str(points_uva_f)
+points_uva_f <- points_uva_f[,c(1:4,7:10,5,6)]
 
 device_type <- "uva"
 points_uva_f <- cbind(points_uva_f,device_type )
@@ -165,7 +166,7 @@ points_igu_f <- cbind(points_igu_f,device_type )
 
 points_all <- rbind(points_igu_f,points_uva_f )
 
-
+str(points_igu_f)
 
 
 
@@ -219,3 +220,166 @@ hist(col.dist[col.dist < 400], breaks = 50)
 # Output details to DB
 # Trip classification
 # Also output combined table of GPS points (for easier analysis)
+
+
+
+
+
+# Figures for Stockholm meeting ------
+# August 2014
+
+# Histogram of point speeds
+hist(points_all$speed, xlim = c(0,40),
+     ylim = c(0,1000), breaks = 100,
+     col = "grey40",
+     xlab = "Speed (ms-1)",
+     main = "",
+     cex.lab = 1.6,
+     cex.axis = 1.4)
+
+# Histogram of distances from colony centre
+hist(col.dist/1000,
+     ylim = c(0,1000), breaks = 50,
+     col = "grey40",
+     xlab = "Distance from colony (km)",
+     main = "",
+     cex.lab = 1.6,
+     cex.axis = 1.4)
+
+hist(col.dist[col.dist < 500],
+     ylim = c(0,300), breaks = 50,
+     col = "grey40",
+     xlab = "Distance from colony (m)",
+     main = "",
+     cex.lab = 1.6,
+     cex.axis = 1.4)
+
+# Maybe also map location near the colony??
+str(points_all)
+
+points <- cbind(points_all$latitude,points_all$longitude, col.dist, points_all$type, points_all$device_info_serial, points_all$speed)
+str(points)
+points <- as.data.frame(points)
+names(points) <- c("lat", "long", "coldist",
+                   "type", "device_info_serial",
+                   "speed")
+
+summary(as.factor(points$type))
+summary(points_all$type)
+f <- (points$type != 1) | (points$type != 5)
+map.trip(points = points[f,],xlim = c(17.9,18.0),
+         ylim = c(57.28,57.31))
+
+map.trip(points = points[f,],xlim = c(17.93,17.98),
+         ylim = c(57.285,57.30))
+
+
+f <- (points$type != 1) & (points$type != 5)
+map.trip(points = points[f,],xlim = c(17.9,18.0),
+         ylim = c(57.28,57.31))
+map.trip(points = points[f,],xlim = c(17.93,17.98),
+         ylim = c(57.285,57.30))
+
+
+f2 <- (points$type != 1) & (points$type != 5) &
+  (points$coldist < 300) &
+  (points$coldist > 100)
+points(points$lat[f2]~points$long[f2],
+       col = "orange", pch = 8)
+
+
+
+f2 <- (points$lat != 0 ) & (points$ehpe > 50) & !f
+points(points$lat[f2 ]~points$long[f2 ],
+       col = "green", pch = 8, cex = 1.2)
+
+
+
+
+plot(col.dist[col.dist < 500]~points_all$longitude[col.dist < 500],
+#      ylim = c(0,300), breaks = 50,
+     col = "grey40",
+#      xlab = "Distance from colony (m)",
+     main = "",
+     cex.lab = 1.6,
+     cex.axis = 1.4)
+
+
+# Diving locations
+
+
+points <- cbind(points_all$latitude,points_all$longitude, col.dist, points_all$type, points_all$device_info_serial, points_all$speed, points_all$diveprev)
+str(points_all)
+str(points)
+points <- as.data.frame(points)
+names(points) <- c("lat", "long", "coldist",
+                   "type", "device_info_serial",
+                   "speed_ms", "dive_previous")
+points$long <- as.numeric(as.character(points$long))
+points$lat <- as.numeric(as.character(points$lat))
+
+summary(as.factor(points$type))
+summary(points_all$type)
+summary(points_all$device_info_serial)
+
+f <- (points$type != 1) & (points$type != 5) &
+  points$device_info_serial == "4"
+summary(f)
+str(points_igu)
+str(points$device_info_serial)
+str(points)
+map.trip(points = points[f,])
+
+f2 <- (points$type != 1) & (points$type != 5) &
+  points$device_info_serial == "4" &
+  points$dive_previous == TRUE
+
+
+points(points$lat[f2 ]~points$long[f2 ],
+       col = "red", pch = 8, cex = 1.2)
+
+
+# Plot all
+f <- (points$type != 1) & (points$type != 5) &
+  points$device_info_serial %in% c("1","2","3",
+                                 "4", "5", "6",
+                                 "7", "8",
+                                 "9")
+summary(f)
+str(points_igu)
+str(points$device_info_serial)
+str(points)
+map.trip(points = points[f,])
+
+f2 <- (points$type != 1) & (points$type != 5) &
+  points$device_info_serial %in% c("1","2","3",
+                                   "4", "5", "6",
+                                   "7", "8",
+                                   "9") &
+points$dive_previous == TRUE
+
+
+points(points$lat[f2 ]~points$long[f2 ],
+       col = "red", pch = 8, cex = .8)
+
+
+# Time of day
+diving <- (points$type != 1) & (points$type != 5) &
+  points$device_info_serial %in% c("1","2","3",
+                                   "4", "5", "6",
+                                   "7", "8",
+                                   "9") &
+  points$dive_previous == TRUE
+# View number of diving fixes by hour of day
+hours <- as.POSIXlt(points_all$date_time[diving],
+                    tz = "UTC")
+hours.loc <- as.POSIXlt(hours, tz = "Europe/Stockholm")
+
+
+hist(((as.numeric(as.POSIXlt(hours.loc)$hour)+2) %%24), xlim = c(0,24), breaks = 24,
+     xlab = "Hour of day (CEST)",
+     ylab = "Diving GPS fixes",
+     main = "",
+     col = "grey60")
+
+# KDE
