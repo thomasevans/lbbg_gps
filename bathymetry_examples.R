@@ -26,6 +26,13 @@ load(url("https://dl.dropboxusercontent.com/u/3745544/guillemot_bathy/surface_po
 load(url("https://dl.dropboxusercontent.com/u/3745544/guillemot_bathy/dive_points.Rdata"))
 
 
+# # Get guillemot obs data
+# alk <- read.delim(file.choose())
+# 
+# # Get bathymetric data
+# bsbd_raster <- raster(file.choose())
+
+
 
 
 # Bathymetric data examples ----
@@ -33,11 +40,14 @@ load(url("https://dl.dropboxusercontent.com/u/3745544/guillemot_bathy/dive_point
 # First load required packages ----
 library(RColorBrewer)
 library(raster)
-?brewer.pal
+# ?brewer.pal
 # Colour palette to diplay bathymetric data
 col.bath <- c(rev(brewer.pal(9,"Reds"))[1:5], rev(brewer.pal(9,"Blues")), "black")
 
 col.obs <- brewer.pal(9,"Greys")
+
+karls_x <- 17.958252
+karls_y <- 57.289848
 
 # 1. BSBD data -----
 # Interpolated bathymetric data from 'BSBD'
@@ -59,7 +69,10 @@ col.obs <- brewer.pal(9,"Greys")
 # First download the files and place in a directory
 # Files required 'bsbd_raster.grd', and 'bsbd_raster.gri'
 # Files at: https://www.dropbox.com/sh/laglwoqn8tjpi8g/AAAxGndSiOjzw0oLytEZGJnta?dl=0
+
+# bsbd_raster <- raster("D:/Dropbox/Public/guillemot_bathy/bsbd_raster.grd")
 bsbd_raster <- raster(file.choose())
+
 
 # View raster layer
 # plot(bsbd_raster, col = col.bath, xlim = c(16.9, 18.5), ylim = c(56.7, 57.8), colNA = "black")
@@ -69,6 +82,7 @@ pdf("bsbd_figs.pdf")
 
 plot(bsbd_raster, col = col.bath, xlim = c(16.9, 18.5), ylim = c(56.7, 57.8), colNA = "black",
      main = "BSBD bath only")
+points(karls_x, karls_y, pch = 4, col = "yellow", cex = 2)
 
 # Generate raster layer for surface_points2
 xy <- cbind(surface_points2$longitude,surface_points2$latitude)
@@ -77,6 +91,8 @@ surface_points2_ras <- rasterize(xy,bsbd_raster, fun=function(x,...)length(x))
 plot(bsbd_raster, col = col.bath, xlim = c(16.9, 18.5), ylim = c(56.7, 57.8), colNA = "black",
      main = "BSBD bath + surface GPS")
 plot(surface_points2_ras, col = col.obs, add = T)
+points(karls_x, karls_y, pch = 4, col = "yellow", cex = 2)
+
 # dev.off()
 
 # Do same but just for diving points
@@ -86,15 +102,20 @@ dive_points_ras <- rasterize(xy,bsbd_raster, fun=function(x,...)length(x))
 plot(bsbd_raster, col = col.bath, xlim = c(16.9, 18.5), ylim = c(56.7, 57.8), colNA = "black",
      main = "BSBD bath + dive GPS")
 plot(dive_points_ras, col = col.obs, add = T)
+points(karls_x, karls_y, pch = 4, col = "yellow", cex = 2)
+
 # dev.off()
 
 
 # Do same for guillemot observations
 # ALKER AT SEA
+# alk <- read.delim("D:/Dropbox/guillemot_2014_data/observation_survey/Karlso 2014/Alker_AtSea.TXT")
 alk <- read.delim(file.choose())
 xy <- alk[,3:2]
 sigri <- rasterize(xy, bsbd_raster, field = alk[,4])
 plot(bsbd_raster, col = col.bath, xlim = c(16.9, 18.5), ylim = c(56.7, 57.8), colNA = "black",
      main = "BSBD bath + 'alker at sea'")
 plot(sigri, col = col.obs, add = T)
+points(karls_x, karls_y, pch = 4, col = "yellow", cex = 2)
+
 dev.off()
