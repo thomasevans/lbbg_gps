@@ -19,3 +19,10 @@ progress
 trip_details_list.R
 trips.txt
 Rplot30.emf
+guillemot_bathy_data.R
+BalticBathymetry.grd
+BalticBathymetry.gri
+bsbd-0.9.3.grd
+*.zip
+*.txt
+*.dat
