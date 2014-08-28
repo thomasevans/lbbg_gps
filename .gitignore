@@ -26,3 +26,6 @@ bsbd-0.9.3.grd
 *.zip
 *.txt
 *.dat
+bsbd_raster.grd
+bathy
+bsbd_raster.gri
