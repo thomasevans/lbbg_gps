@@ -208,70 +208,89 @@ hist(col.dist[col.dist < 400], breaks = 50)
 
 
 
-# Output data for use in bathymetric analysis
 str(points_all)
 # head(points_all$coldist)
 points_all$coldist <- col.dist
 
-# Output all points
-save(points_all, file = "points_all.Rdata")
 
 
-# All surface points
-good <- points_all$type != "bad_location"
-na_good <- is.na(good)
-good[na_good] <- TRUE 
-# summary(good)
-p.surface <- ((good) &
-                (col.dist > 300) &
-                (points_all$speed < 5) &
-                (!is.na(points_all$longitude)) &
-                (!is.na(points_all$latitude)))
-surface_points <- points_all[p.surface,]
-surface_points <- surface_points[!is.na(surface_points$date_time),]
-save(surface_points, file = "surface_points.Rdata")
+# Output data for use in bathymetric analysis ------
+# # Output all points
+# save(points_all, file = "points_all.Rdata")
+# 
+# 
+# # All surface points
+# good <- points_all$type != "bad_location"
+# na_good <- is.na(good)
+# good[na_good] <- TRUE 
+# # summary(good)
+# p.surface <- ((good) &
+#                 (col.dist > 300) &
+#                 (points_all$speed < 5) &
+#                 (!is.na(points_all$longitude)) &
+#                 (!is.na(points_all$latitude)))
+# surface_points <- points_all[p.surface,]
+# surface_points <- surface_points[!is.na(surface_points$date_time),]
+# save(surface_points, file = "surface_points.Rdata")
+# 
+# # All surface minus 5113
+# good <- points_all$type != "bad_location"
+# na_good <- is.na(good)
+# good[na_good] <- TRUE 
+# # summary(good)
+# p.surface2 <- ((good) &
+#                 (col.dist > 300) &
+#                 (points_all$speed < 5) &
+#                 (!is.na(points_all$longitude)) &
+#                 (!is.na(points_all$latitude)) &
+#                 points_all$device_info_serial != "5113")
+# surface_points2 <- points_all[p.surface2,]
+# surface_points2 <- surface_points2[!is.na(surface_points2$date_time),]
+# save(surface_points2, file = "surface_points2.Rdata")
+# 
+# # All dive
+# good <- points_all$type != "bad_location"
+# na_good <- is.na(good)
+# good[na_good] <- TRUE 
+# dive <- points_all$diveprev == TRUE
+# na_dive <- is.na(dive)
+# dive[na_dive] <- FALSE 
+# 
+# 
+# # summary(good)
+# p.dive <- ((good) &
+#                  dive &
+#                (col.dist > 300) &
+#                  (!is.na(points_all$longitude)) &
+#                  (!is.na(points_all$latitude)))
+# dive_points <- points_all[p.dive,]
+# dive_points <- dive_points[!is.na(dive_points$date_time),]
+# save(dive_points, file = "dive_points.Rdata")
+# str(dive_points)
 
-# All surface minus 5113
-good <- points_all$type != "bad_location"
-na_good <- is.na(good)
-good[na_good] <- TRUE 
-# summary(good)
-p.surface2 <- ((good) &
-                (col.dist > 300) &
-                (points_all$speed < 5) &
-                (!is.na(points_all$longitude)) &
-                (!is.na(points_all$latitude)) &
-                points_all$device_info_serial != "5113")
-surface_points2 <- points_all[p.surface2,]
-surface_points2 <- surface_points2[!is.na(surface_points2$date_time),]
-save(surface_points2, file = "surface_points2.Rdata")
-
-# All dive
-good <- points_all$type != "bad_location"
-na_good <- is.na(good)
-good[na_good] <- TRUE 
-dive <- points_all$diveprev == TRUE
-na_dive <- is.na(dive)
-dive[na_dive] <- FALSE 
 
 
-# summary(good)
-p.dive <- ((good) &
-                 dive &
-               (col.dist > 300) &
-                 (!is.na(points_all$longitude)) &
-                 (!is.na(points_all$latitude)))
-dive_points <- points_all[p.dive,]
-dive_points <- dive_points[!is.na(dive_points$date_time),]
-save(dive_points, file = "dive_points.Rdata")
-str(dive_points)
+# If running from this point only, can load R binnary data file
+load("guillemot_trip_classification_data.RData")
+
+# Classify into foraging trips -------
+# (see previous
+# analysis for the LBBG in 'export_files.R' lines 75 onwards)
+
+# Label points by on foraging trip or not
+on_trip <- ifelse(points_all$coldist < 0.5, 0,1)
+
+# For 'bad_points' also label as 'NA', as colony distance cannot be
+# relied on.
+x <- points_all$type == "bad_location"
+x[is.na(x)] <- FALSE
+on_trip[x] <- NA
 
 
-str(points_all)
-# str(points_all$diveprev)
+summary(on_trip)
 
-# Classify into foraging trips (see previous
-# analysis for the LBBG)
+
+
 
 # Assemble table of foraging trips
 # - trip_id
