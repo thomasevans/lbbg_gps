@@ -278,7 +278,7 @@ load("guillemot_trip_classification_data.RData")
 # analysis for the LBBG in 'export_files.R' lines 75 onwards)
 
 # Label points by on foraging trip or not
-on_trip <- ifelse(points_all$coldist < 0.5, 0,1)
+on_trip <- ifelse(points_all$coldist < 500, 0,1)
 
 # For 'bad_points' also label as 'NA', as colony distance cannot be
 # relied on.
@@ -287,10 +287,79 @@ x[is.na(x)] <- FALSE
 on_trip[x] <- NA
 
 
-summary(on_trip)
+summary(as.factor(on_trip))
+
+on_trip_f <- on_trip[!is.na(on_trip)]
+summary(as.factor(on_trip_f))
 
 
+# We want to label the positions for each trip with a unique trip id
+# first we make some vectors of next, previous point etc, to find start
+# and end points of trips
+trip1 <- on_trip_f +1
 
+#make vector of next point value
+trip2 <- (2* c(on_trip_f[2:length(on_trip_f)],0))+1
+
+#make vector of prev point value
+trip3 <- (3* c(0,on_trip_f[1:(length(on_trip_f)-1)]))+1
+
+
+#label by type of point: 0 - trip, 1 - start, 2 - end, 3 - nest
+loc_type <- trip1*trip2*trip3   #product of above three vectors
+loc_calc     <- loc_type        #keep a copy of above calculation
+
+summary(as.factor(loc_type))
+
+
+#label by type of point: 0 - trip, 1 - start, 2 - end, 3 - nest
+
+#Reduce to the four possibilties
+loc_type[(loc_type == 1)  ]  <- 0
+loc_type[loc_type == 3 | (loc_type == 12)] <- 1
+loc_type[(loc_type == 24) | (loc_type == 6) 
+             | (loc_type == 8) | (loc_type == 2)]<- 3
+loc_type[loc_type == 4] <- 2
+summary(as.factor(loc_type))
+
+trip_id <- rep(0,length(loc_type))
+
+
+# Loop through all pints (except for NAs)
+#x will keep note of trip number, we start at zero.
+x <- 0
+n <- length(loc_type)
+for(i in 1:n){
+  if(loc_type[i] != 0){
+    #if start of a trip, increment x by one
+    if(loc_type[i] == 1) x <- x+1 
+    
+    #allocated value of x for trip_id for position 'i'.
+    trip_id[i] <- x    
+  }
+}
+
+summary(trip_id)
+
+# Give trip_id for all points (including invallid and dives)
+trip_id_all <- rep(9999,length(on_trip))
+trip_id_all[!is.na(on_trip)] <- trip_id
+summary(as.factor(trip_id_all))
+head(trip_id_all)
+
+n <- length(trip_id_all)
+x <- 0
+for(i in 1:n){
+  if(trip_id_all[i] == 9999)  trip_id_all[i] <- x else{
+    x <- trip_id_all[i]
+  }
+}
+
+summary(trip_id_all == 9999)
+
+# 124 'trips', not all neccessarilly foraging trips, will
+# probably need to filter more.
+max(trip_id_all)
 
 # Assemble table of foraging trips
 # - trip_id
