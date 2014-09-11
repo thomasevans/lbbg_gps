@@ -123,6 +123,7 @@ for(i in 1:n){
 # For UVA devices
 dep_uva <- deployments[(deployments$device_type == "uva") &
                          deployments$successful_deployment == 1,]
+
 n <- length(dep_uva[,1])
 
 points_uva_f <- NULL
@@ -278,13 +279,38 @@ load("guillemot_trip_classification_data.RData")
 # analysis for the LBBG in 'export_files.R' lines 75 onwards)
 
 # Label points by on foraging trip or not
-on_trip <- ifelse(points_all$coldist < 500, 0,1)
+on_trip <- ifelse(points_all$coldist < 250, 0,1)
 
 # For 'bad_points' also label as 'NA', as colony distance cannot be
 # relied on.
 x <- points_all$type == "bad_location"
 x[is.na(x)] <- FALSE
 on_trip[x] <- NA
+
+# Index for 'bad_locations'
+# Index for all location first
+id <- c(1:length(points_all$type))
+
+id.bad_location <- id[x]
+
+# For each bad_location do:
+for(i in 1:length(id.bad_location)){
+  ind.loc <- id.bad_location[i]
+  
+  # Get index for last vallid location (!== "bad_location" | is.na is TRUE)
+  # Work backward from current location
+  last_vallid
+  
+  # Get index for next vallid location (as above)
+  # Work forward from current location
+  
+  
+  if(points_all$coldist[ind.loc] > 250) last vallid else
+    next vallid...
+  
+}
+
+
 
 
 summary(as.factor(on_trip))
@@ -310,9 +336,11 @@ loc_type <- trip1*trip2*trip3   #product of above three vectors
 loc_calc     <- loc_type        #keep a copy of above calculation
 
 summary(as.factor(loc_type))
+head(loc_calc)
+summary(as.factor(loc_calc))
 
 
-#label by type of point: 0 - trip, 1 - start, 2 - end, 3 - nest
+#label by type of point: 0 - nest, 1 - start, 2 - end, 3 - trip
 
 #Reduce to the four possibilties
 loc_type[(loc_type == 1)  ]  <- 0
@@ -367,6 +395,22 @@ max(trip_id_all)
 # - end_time
 # - device_id
 
+length(trip_id_all)
+length(col.dist)
+length(points_all$date_time)
+
+# Distribution of 'trip' start dates
+hist(points_all$date_time[loc_type == 1], breaks = "day",
+     freq = TRUE)
+# ?hist
+# length(loc_calc)
+# Assemble table of GPS point info
+test <- cbind(trip_id_all, col.dist,
+              as.character(points_all$date_time),
+              as.character(points_all$type))
+
+names(points_all)
+
 
 # Output details to DB
 # Trip classification
@@ -399,6 +443,15 @@ hist(col.dist/1000,
 
 hist(col.dist[col.dist < 500],
      ylim = c(0,300), breaks = 50,
+     col = "grey40",
+     xlab = "Distance from colony (m)",
+     main = "",
+     cex.lab = 1.6,
+     cex.axis = 1.4)
+
+
+hist(col.dist[col.dist < 2000],
+     ylim = c(0,300), breaks = 100,
      col = "grey40",
      xlab = "Distance from colony (m)",
      main = "",
