@@ -293,21 +293,46 @@ id <- c(1:length(points_all$type))
 
 id.bad_location <- id[x]
 
+# i <- 34
+
 # For each bad_location do:
 for(i in 1:length(id.bad_location)){
   ind.loc <- id.bad_location[i]
   
   # Get index for last vallid location (!== "bad_location" | is.na is TRUE)
   # Work backward from current location
-  last_vallid
+  
+  xb <- "bad_location"
+  n <- ind.loc
+  while((xb == "bad_location") | is.na(xb)| is.na(on_trip[n])){
+    n <- n -1
+    xb <- points_all$type[n]
+    if(points_all$device_info_serial[ind.loc] !=
+         points_all$device_info_serial[n]) break
+  }
+  
+  last_vallid <- on_trip[n]
   
   # Get index for next vallid location (as above)
   # Work forward from current location
   
+  xb <- "bad_location"
+  n <- ind.loc
+  while((xb == "bad_location") | is.na(xb) | is.na(on_trip[n])){
+    n <- n +1
+    xb <- points_all$type[n]
+    if(points_all$device_info_serial[ind.loc] !=
+         points_all$device_info_serial[n]) break
+  }
   
-  if(points_all$coldist[ind.loc] > 250) last vallid else
-    next vallid...
+  next_vallid <- on_trip[n]
   
+  # If on a transition, assume that it's not on a trip
+  if(next_vallid == last_vallid) {on_trip[ind.loc] <- next_vallid} else {
+    on_trip[ind.loc] <- 0
+  }
+  
+    
 }
 
 
