@@ -279,7 +279,7 @@ load("guillemot_trip_classification_data.RData")
 # analysis for the LBBG in 'export_files.R' lines 75 onwards)
 
 # Label points by on foraging trip or not
-on_trip <- ifelse(points_all$coldist < 250, 0,1)
+on_trip <- ifelse(points_all$coldist < 200, 0,1)
 
 # For 'bad_points' also label as 'NA', as colony distance cannot be
 # relied on.
@@ -293,7 +293,11 @@ id <- c(1:length(points_all$type))
 
 id.bad_location <- id[x]
 
+# summary((points_all$type))
+# 866 - 263
 # i <- 34
+
+# no location and dive missing ...
 
 # For each bad_location do:
 for(i in 1:length(id.bad_location)){
@@ -304,7 +308,7 @@ for(i in 1:length(id.bad_location)){
   
   xb <- "bad_location"
   n <- ind.loc
-  while((xb == "bad_location") | is.na(xb)| is.na(on_trip[n])){
+  while((xb == "no_location") | (xb == "bad_location") | is.na(xb)| is.na(on_trip[n])){
     n <- n -1
     xb <- points_all$type[n]
     if(points_all$device_info_serial[ind.loc] !=
@@ -318,7 +322,7 @@ for(i in 1:length(id.bad_location)){
   
   xb <- "bad_location"
   n <- ind.loc
-  while((xb == "bad_location") | is.na(xb) | is.na(on_trip[n])){
+  while((xb == "no_location") | (xb == "bad_location") | is.na(xb) | is.na(on_trip[n])){
     n <- n +1
     xb <- points_all$type[n]
     if(points_all$device_info_serial[ind.loc] !=
@@ -327,10 +331,16 @@ for(i in 1:length(id.bad_location)){
   
   next_vallid <- on_trip[n]
   
-  # If on a transition, assume that it's not on a trip
-  if(next_vallid == last_vallid) {on_trip[ind.loc] <- next_vallid} else {
-    on_trip[ind.loc] <- 0
-  }
+  
+      if(is.na(next_vallid) | is.na(last_vallid)){
+        on_trip[ind.loc] <- 0
+      }else{
+      # If on a transition, assume that it's not on a trip
+      if(next_vallid == last_vallid) {on_trip[ind.loc] <-
+                                        next_vallid} else {
+        on_trip[ind.loc] <- 0
+      }
+    }
   
     
 }
@@ -378,7 +388,7 @@ summary(as.factor(loc_type))
 trip_id <- rep(0,length(loc_type))
 
 
-# Loop through all pints (except for NAs)
+# Loop through all points (except for NAs)
 #x will keep note of trip number, we start at zero.
 x <- 0
 n <- length(loc_type)
@@ -414,6 +424,7 @@ summary(trip_id_all == 9999)
 # probably need to filter more.
 max(trip_id_all)
 
+
 # Assemble table of foraging trips
 # - trip_id
 # - start_time
@@ -433,6 +444,9 @@ hist(points_all$date_time[loc_type == 1], breaks = "day",
 test <- cbind(trip_id_all, col.dist,
               as.character(points_all$date_time),
               as.character(points_all$type))
+
+test2 <- test[1000:2000,]
+
 
 names(points_all)
 
