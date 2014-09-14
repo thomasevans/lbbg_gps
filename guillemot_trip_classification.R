@@ -269,7 +269,7 @@ points_all$coldist <- col.dist
 # save(dive_points, file = "dive_points.Rdata")
 # str(dive_points)
 
-
+# start here!!!!! -----
 
 # If running from this point only, can load R binnary data file
 load("guillemot_trip_classification_data.RData")
@@ -348,10 +348,10 @@ for(i in 1:length(id.bad_location)){
 
 
 
-summary(as.factor(on_trip))
+# summary(as.factor(on_trip))
 
 on_trip_f <- on_trip[!is.na(on_trip)]
-summary(as.factor(on_trip_f))
+# summary(as.factor(on_trip_f))
 
 
 # We want to label the positions for each trip with a unique trip id
@@ -370,9 +370,9 @@ trip3 <- (3* c(0,on_trip_f[1:(length(on_trip_f)-1)]))+1
 loc_type <- trip1*trip2*trip3   #product of above three vectors
 loc_calc     <- loc_type        #keep a copy of above calculation
 
-summary(as.factor(loc_type))
-head(loc_calc)
-summary(as.factor(loc_calc))
+# summary(as.factor(loc_type))
+# head(loc_calc)
+# summary(as.factor(loc_calc))
 
 
 #label by type of point: 0 - nest, 1 - start, 2 - end, 3 - trip
@@ -385,6 +385,26 @@ loc_type[(loc_type == 24) | (loc_type == 6)
 loc_type[loc_type == 4] <- 2
 summary(as.factor(loc_type))
 
+
+# Fix for device transitions
+# Adding '4' for first point of deployment
+t <- 0
+# []
+#  i <- 1555
+# length(points_all$ring_number[!is.na(on_trip_f)])
+i <- i + 1
+for( i in 2: length(loc_type)){
+  if(points_all$ring_number[!is.na(on_trip)][i] !=
+       points_all$ring_number[!is.na(on_trip)][i-1]){
+    loc_type[i] <- 4
+    t <- t + 1
+  }   
+}
+# t
+
+# points_all$ring_number[1550:1600]
+
+
 trip_id <- rep(0,length(loc_type))
 
 
@@ -392,23 +412,53 @@ trip_id <- rep(0,length(loc_type))
 #x will keep note of trip number, we start at zero.
 x <- 0
 n <- length(loc_type)
+ind <- c(1:n)
+# fours <- NULL
+# t <- 1
+new_device <- FALSE
+
+# i <- ind[trip_id == 21]
+
 for(i in 1:n){
-  if(loc_type[i] != 0){
+  if(loc_type[i] == 4){new_device <- TRUE
+#   fours[t] <- i
+#   t <- t + 1}
+  trip_id[i] <- 0
+  }
+  if(loc_type[i] != 0 & loc_type[i] != 4){
     #if start of a trip, increment x by one
-    if(loc_type[i] == 1) x <- x+1 
+    if(loc_type[i] == 1) {x <- x+1
+                          new_device <- FALSE}
+    if(new_device == TRUE & (loc_type[i] != 0
+                              & loc_type[i] != 1
+                              & loc_type[i] != 2)) {
+      x <- x+1
+      new_device <- FALSE}
     
     #allocated value of x for trip_id for position 'i'.
     trip_id[i] <- x    
   }
 }
 
-summary(trip_id)
+# trip_id[1500:1600]
+# # 
+# test <- cbind(loc_type,trip_id, points_all$ring_number[!is.na(on_trip)])
+# test[1550:1600,]
+# test[loc_type == 4,]
+
+# summary(loc_type == 4)
+# summary(trip_id == 21)
+# test <- points_all[loc_type == 4,]
+
 
 # Give trip_id for all points (including invallid and dives)
 trip_id_all <- rep(9999,length(on_trip))
 trip_id_all[!is.na(on_trip)] <- trip_id
-summary(as.factor(trip_id_all))
-head(trip_id_all)
+# summary(as.factor(trip_id_all))
+# head(trip_id_all)
+
+# summary(trip_id_all == 19)
+
 
 n <- length(trip_id_all)
 x <- 0
@@ -418,44 +468,156 @@ for(i in 1:n){
   }
 }
 
-summary(trip_id_all == 9999)
+# summary(trip_id_all == 21)
 
 # 124 'trips', not all neccessarilly foraging trips, will
 # probably need to filter more.
-max(trip_id_all)
+# max(trip_id_all)
 
 
-# Assemble table of foraging trips
-# - trip_id
-# - start_time
-# - end_time
-# - device_id
 
-length(trip_id_all)
-length(col.dist)
-length(points_all$date_time)
+
+# length(trip_id_all)
+# length(col.dist)
+# length(points_all$date_time)
 
 # Distribution of 'trip' start dates
-hist(points_all$date_time[loc_type == 1], breaks = "day",
-     freq = TRUE)
+# hist(points_all$date_time[loc_type == 1], breaks = "day",
+#      freq = TRUE)
 # ?hist
 # length(loc_calc)
 # Assemble table of GPS point info
-test <- cbind(trip_id_all, col.dist,
-              as.character(points_all$date_time),
-              as.character(points_all$type))
+# test <- cbind(trip_id_all, col.dist,
+#               as.character(points_all$date_time),
+#               as.character(points_all$type))
+# 
+# test2 <- test[1000:2000,]
 
-test2 <- test[1000:2000,]
 
-
-names(points_all)
+# names(points_all)
 
 
 # Output details to DB
 # Trip classification
 # Also output combined table of GPS points (for easier analysis)
 
+# GPS details table -----
+# - device_info_serial
+# - date_time
+# - trip_id
+# - ring_number
+gps_info <- data.frame(points_all$device_info_serial,
+                       points_all$date_time,
+                       points_all$ring_number,
+                       trip_id_all,
+                       col.dist)
+# str(gps_info)
+names(gps_info)  <-  c("device_info_serial",
+                       "date_time",
+                       "trip_id",
+                       "col_dist_m")
 
+
+# Assemble table of foraging trips -----
+# - trip_id
+# - start_time
+# - end_time
+# - device_id
+# - ring_number
+
+trip_ids <- unique(trip_id_all)[-1]
+head(trip_ids)
+
+# i <- 5
+
+trip_start <- NULL
+trip_end <- NULL
+trip_id <- NULL
+trip_device_info_serial <- NULL
+trip_ring_number <- NULL
+trip_start_vallid  <- NULL
+trip_end_vallid   <- NULL
+
+
+# i <- 21
+# summary(points_all$type == "bad_location")
+
+# summary(trip_id_all == 19)
+
+# tail(points_all$coldist)
+
+# i <- 10
+# summary(col.dist > 200)
+for(i in 1:length(trip_ids)){
+  id <- trip_ids[i]
+  points.sub <- subset(points_all, trip_id_all == id)
+  if(points.sub$device_type[1] == "uva"){
+    trip.p <-  (points_all$coldist > 200)
+  } else {trip.p <- (points.sub$type != "no_location") &
+    (points.sub$type != "bad_location") &
+    (points.sub$coldist > 200)}
+  trip.p[is.na(trip.p)] <- FALSE
+  points.sub.t <- points.sub[trip.p,]
+  if(sum(1*(trip.p == TRUE)) < 1){
+    trip_start_vallid[i] <- trip_end_vallid[i] <- NA
+  } else {
+    trip_start_vallid[i] <- min(points.sub.t$date_time)
+    trip_end_vallid[i]   <- max(points.sub.t$date_time)
+  }
+  trip_start[i] <- min(points.sub$date_time)
+  trip_end[i]   <- max(points.sub$date_time)
+  trip_id[i]    <- id
+  trip_device_info_serial[i] <- as.character(
+    points.sub$device_info_serial[1])
+  trip_ring_number[i] <- as.character(points.sub$ring_number[1])
+}
+
+# warnings()
+
+# points_all[points_all$date_time == 
+#              as.POSIXct("2014-06-14 15:47:13",
+#                         origin = "1970-01-01",
+#                         tz = "UTC"),]
+
+trip_start <- as.POSIXct(trip_start, origin = "1970-01-01",
+                         tz = "UTC")
+trip_end <- as.POSIXct(trip_end, origin = "1970-01-01",
+                       tz = "UTC")
+trip_start_vallid <- as.POSIXct(trip_start_vallid,
+                                origin = "1970-01-01",
+                         tz = "UTC")
+trip_end_vallid <- as.POSIXct(trip_end_vallid,
+                              origin = "1970-01-01",
+                       tz = "UTC")
+trip_device_info_serial <- as.factor(trip_device_info_serial)
+trip_ring_number <- as.factor(trip_ring_number)
+
+
+trips.df <- data.frame(trip_id,
+                       trip_device_info_serial,
+                       trip_start,
+                       trip_end,
+                       trip_start_vallid,
+                       trip_end_vallid,
+                       trip_ring_number)
+
+str(trips.df)
+
+names(trips.df) <- c("trip_id",
+                     "device_info_serial",
+                     "start_time",
+                     "end_time",
+                     "start_time_vallid",
+                     "end_time_vallid",
+                     "ring_number")
+
+
+# time.dif <- difftime(trips.df$end_time, trips.df$start_time,
+#                      units = "mins")
+# 
+# hist(as.numeric(time.dif)  )
+
+# Output both tables to the database -----
 
 
 
