@@ -264,8 +264,12 @@ library(reshape2)
 aggregate(speed_inst_mean ~ device_info_serial,
           data = flights.combined,
           FUN = length)
+length(flights.combined$device_info_serial)
 
+str(flights.combined)
 
+save(flights.combined, file = "flights.combined.20140916.RData")
+save(flights.in, file = "flights.in.20140916.RData")
 
 # Alpha values -----
 range(flights.combined$alpha_mean)
