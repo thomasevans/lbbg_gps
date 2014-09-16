@@ -238,3 +238,49 @@ for(i in 1:length(trip_ids)){
 
 source("map_end_source.R")
 dev.off()
+
+
+
+
+
+
+
+# Map all inward flights ----
+win.metafile("map.ex.new_all.wmf",width = 7, height = 7)
+svg("map.ex.new2_all.svg", width = 7, height = 7)
+cairo_pdf("map.ex.new3_all.pdf", width = 7, height = 7)
+pdf("map.ex.new4_all.pdf", width = 7, height = 7)
+
+str(flights.new)
+
+
+flights.n <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.flight_id
+                        FROM lund_flights AS f
+                        WHERE f.trip_flight_type = 'inward'
+                        ORDER BY f.flight_id ASC;")
+
+flight.numbers <- 
+
+
+
+
+source("map_start_source.R")
+source("map_start_source2.R")
+
+# all.flights <- flights.new$flight_id 
+
+
+for(i in 1:length(flights.new$trip_id)){
+  
+  x <- trip_ids[i]
+  gps.sub <- subset(gps.data, (date_time >= flights.new$start_time[i]) & date_time <= flights.new$end_time[i],
+                    select=c(longitude, latitude))
+  n <- length(gps.sub$longitude)
+  segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
+           gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
+           col = col.vec[i], lty = 1, lwd = 2)
+}
+source("map_end_source2.R")
+source("map_end_source.R")
+dev.off()
+# ?win.metafile
