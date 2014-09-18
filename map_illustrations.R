@@ -247,40 +247,99 @@ dev.off()
 
 # Map all inward flights ----
 win.metafile("map.ex.new_all.wmf",width = 7, height = 7)
-svg("map.ex.new2_all.svg", width = 7, height = 7)
-cairo_pdf("map.ex.new3_all.pdf", width = 7, height = 7)
-pdf("map.ex.new4_all.pdf", width = 7, height = 7)
+svg("map.ex.new_all_01.svg", width = 7, height = 7)
+cairo_pdf("map.ex.new_all_cairo.pdf", width = 7, height = 7)
+pdf("map.ex.new_all_07.pdf", width = 5, height = 7)
 
-str(flights.new)
+postscript("map.ex.new_all_02.ps", width = 7, height = 7,
+           paper = "special")
+
+dpi <- 1000
+
+png("map.ex.new_all_04.png", res = dpi,
+    , width = 7*dpi, height = 7*dpi)
+# ?png
+
+load("flights.in.20140916.RData")
+str(flights.in)
+flight.numbers <- flights.in$flight_id
 
 
-flights.n <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.flight_id
-                        FROM lund_flights AS f
-                        WHERE f.trip_flight_type = 'inward'
-                        ORDER BY f.flight_id ASC;")
+# f.n <- flights.new$flight_id %in% flight.numbers
 
-flight.numbers <- 
+f <- flights.in$flight_id %in% flight.numbers
+
+# summary(f)
+trip_ids <- flights.in$trip_id[f]
+
+# names(flights.new)
+
+trips <- sqlQuery(gps.db, query="SELECT DISTINCT t.*
+                  FROM lund_trips AS t
+                  ORDER BY t.trip_id ASC;")
+
+t.f <- trips$trip_id %in% trip_ids
 
 
+source("map_start_source3.R")
 
+# warnings()
 
-source("map_start_source.R")
-source("map_start_source2.R")
+# str(flights.new)
+
+# Fix data types
+# flights.new$start_time <- as.POSIXct(flights.new$start_time, tz = "UTC")
+# flights.new$end_time   <- as.POSIXct(flights.new$end_time, tz = "UTC")
+# gps.data$date_time   <- as.POSIXct(gps.data$date_time, tz = "UTC")
+
+# str(flights.in)
+# str(gps.data)
+
 
 # all.flights <- flights.new$flight_id 
 
+#  z <- 56
 
-for(i in 1:length(flights.new$trip_id)){
-  
-  x <- trip_ids[i]
-  gps.sub <- subset(gps.data, (date_time >= flights.new$start_time[i]) & date_time <= flights.new$end_time[i],
-                    select=c(longitude, latitude))
+num <- length(flights.in$flight_id)
+seq.flight <- c(1:num)
+seq.flight <- sample(seq.flight, num, replace = FALSE)
+# length(seq.flight)
+# str(flights.new)
+# summary(gps.data$date_time >= flights.in$start_time[i])
+# summary(gps.data$date_time <= flights.in$end_time[i])
+
+# i <- 47
+# 
+# test <- gps.data[
+#   (gps.data$date_time >= flights.in$start_time[i]) &
+#     (gps.data$date_time <= flights.in$end_time[i]) &
+#     gps.data$device_info_serial == flights.in$device_info_serial[i],]
+# summary(gps.data$device_info_serial == flights.in$device_info_serial[i])
+# summary((gps.data$date_time >= flights.in$start_time[i]) &
+#           (gps.data$date_time <= flights.in$end_time[i]))
+
+# fail.flight <- 0
+for(z in 1:num){
+#   str(gps.data)
+#   x <- trip_ids[i]
+  i <- seq.flight[z]
+  gps.sub <- gps.extract(flights.in$device_info_serial[z],
+                         flights.in$start_time[z],
+                         flights.in$end_time[z], simple = TRUE)
+#   w <- length(gps.sub$longitude)
+#   if(w == 0){
+#     fail.flight <- fail.flight + 1
+#   }
   n <- length(gps.sub$longitude)
   segments(gps.sub$longitude[-1], gps.sub$latitude[-1],
            gps.sub$longitude[1:n-1], gps.sub$latitude[1:n-1],
-           col = col.vec[i], lty = 1, lwd = 2)
+           col = col.vec[i], lty = 1, lwd = 0.6)
 }
-source("map_end_source2.R")
+# warnings()
+# ?postscript
+# fail.flight
+
+# source("map_end_source2.R")
 source("map_end_source.R")
 dev.off()
 # ?win.metafile
