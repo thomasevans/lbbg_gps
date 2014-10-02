@@ -71,8 +71,11 @@ karls_y <- 57.289848
 # Files at: https://www.dropbox.com/sh/laglwoqn8tjpi8g/AAAxGndSiOjzw0oLytEZGJnta?dl=0
 
 # bsbd_raster <- raster("D:/Dropbox/Public/guillemot_bathy/bsbd_raster.grd")
-bsbd_raster <- raster(file.choose())
+# bsbd_raster <- raster(file.choose())
 
+save(bsbd_raster, file = "bsbd_raster.RData")
+
+load("bsbd_raster.RData")
 
 # View raster layer
 # plot(bsbd_raster, col = col.bath, xlim = c(16.9, 18.5), ylim = c(56.7, 57.8), colNA = "black")
@@ -119,3 +122,9 @@ plot(sigri, col = col.obs, add = T)
 points(karls_x, karls_y, pch = 4, col = "yellow", cex = 2)
 
 dev.off()
+
+
+
+
+x <- c(0,1:40,3:45,3,7,8,3,1)
+hist(x)
