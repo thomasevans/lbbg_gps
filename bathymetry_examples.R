@@ -122,9 +122,3 @@ plot(sigri, col = col.obs, add = T)
 points(karls_x, karls_y, pch = 4, col = "yellow", cex = 2)
 
 dev.off()
-
-
-
-
-x <- c(0,1:40,3:45,3,7,8,3,1)
-hist(x)
