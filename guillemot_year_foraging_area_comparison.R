@@ -16,6 +16,9 @@ load('bsbd_raster.RData')
 # all 2014 data from R object
 load("guillemot_trip_classification_data.RData")
 
+points.2014.all <- points_all
+save(points.2014.all, file = "points.2014.all.RData")
+# ?save
 # Use points_all table
 
 # Filter out bad points and diving points etc.
