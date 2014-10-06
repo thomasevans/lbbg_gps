@@ -60,6 +60,9 @@ for(i in 2:(length(points.2014$type)-1)){
 # and next point
 time_interval[length(points.2014$type)] <- 0
 
+# Add 'time_interval' to the dataframe
+points.2014 <- cbind(points.2014, time_interval)
+
 # See what the time intervals look like
 # Time interval is in seconds
 range(time_interval)
@@ -84,5 +87,46 @@ sort(time_interval/(60*60), decreasing = TRUE)[1:100]
 # not to give greater weight to these points
 
 
+# Sub-set 2014 data for 'foraging' locations only ----
+# Sub-set 2014 data for:
+# 1. non-colony location (i.e. points during foraging trips only)
+# 2. Non-colony & speed < 5 ms-1 (i.e. non commuting points -
+# more likely actual foraging)
+
+# 1. non-colony locations
+# Only points > 1 km from colony
+points.2014.non_col <- subset(points.2014, coldist > 1000)
+
+# Only points > 1 km from colony & where speed is < 5 ms-1
+points.2014.surface <- subset(points.2014, (coldist > 1000) & (
+  speed < 5))
 
 
+# Prepare raster layers for GPS point subsets -----
+# 2014 + surface points
+xy.2014.surface <- cbind(points.2014.surface$long,
+                         points.2014.surface$lat)
+
+time.weight.2014.surface <- points.2014.surface$time_interval
+
+# Mean of time_intervals for points with <35 minute time interval
+t.mean <- mean(time.weight.2014.surface[time.weight.2014.surface <
+                                35*60])
+
+# Replace long time intervals with the mean time interval to prevent
+# excessive weights on these points
+time.weight.2014.surface[time.weight.2014.surface >
+                           35*60] <- t.mean
+time.weight.2014.surface.prop <- 100*time.weight.2014.surface /
+  sum(time.weight.2014.surface)
+
+
+# 2014 surface points raster layer
+time.weight.2014.surface.raster <- rasterize(xy.2014.surface,
+                                     bsbd_raster,
+                                     time.weight.2014.surface.prop,
+                                     fun = sum)
+
+
+plot(time.weight.2014.surface.raster,
+     xlim = c(17,18), ylim = c(56.8,57.7))
