@@ -65,12 +65,22 @@ time_interval[length(points.2014$type)] <- 0
 range(time_interval)
 # In seconds
 sort(time_interval, decreasing = TRUE)[1:100]
-# In hourse
+# In hours
 sort(time_interval/(60*60), decreasing = TRUE)[1:100]
 # There are some larger time intervals ('gaps') in the
 # GPS data.
+# Looking into these it turned out that the longest intervals
+# are nearly all of points either at the colony or the gap
+# between the last position at the colony, and the first point
+# away from the colony.
+# This is most likely owning to poor GPS reception at the
+# colony, with the high cliff, and the murre-lab above both
+# obscurring the view of the sky - leading to more failed
+# fixes.
 
-
+hist(time_interval[time_interval < 20000])
+hist(time_interval[time_interval < 10000])
+hist(time_interval[time_interval < 4000])
 
 
 
@@ -80,10 +90,40 @@ plot(bsbd_raster,  xlim = c(16.9, 18.5), ylim = c(56.7, 57.8), colNA = "black",
      main = "BSBD bath only")
 points(karls_x, karls_y, pch = 4, col = "red", cex = 2)
 
-long_int <- time_interval > 60*60*.5
+long_int <- time_interval > 60*60*1
 points(points.2014$long[long_int],
        points.2014$lat[long_int])
 median(time_interval)
 mean(time_interval)
+sd(time_interval)
+#se
+sd(time_interval) / (sqrt(length(time_interval)))
 
 summary(points.2014$ring_number[long_int])
+
+
+long_int_aaz980 <- long_int & points.2014$ring_number == "AAK999"
+summary(long_int_aaz980)
+
+points.2014[long_int_aaz980,]
+
+x <- row.names(points.2014)[long_int_aaz980][4]
+
+points.2014[row.names(points.2014) > (x - 5)  &
+              row.names(points.2014) < (x +5), ]
+
+
+
+
+# Why are there such big time gaps in the data?
+# - Are they mainly explained by periods of diving?
+# - Missing locations?
+# What proportion are 'at' the colony, perhaps within
+# 500 m of the colony?
+
+# How to deal with?
+# Give mean time weight? What is mean? - mean after
+# removing 'large' values? What constitues a large
+# value?
+
+
