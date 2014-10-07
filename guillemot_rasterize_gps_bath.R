@@ -4,6 +4,7 @@
 # from which you will work.
 # bsbd_raster.RData
 # points.2014.all.RData
+# guillemot_gps_data_all_2009.RData
 # SWE_adm0.RData
 
 # Set working-directory -----
@@ -16,6 +17,9 @@ load('bsbd_raster.RData')
 
 # 2014 GPS data
 load('points.2014.all.RData')
+
+# 2009 GPS data
+load('guillemot_gps_data_all_2009.RData')
 
 
 # Caculate time intevals for 2014 GPS locations -----
