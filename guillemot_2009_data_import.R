@@ -12,6 +12,9 @@ AAK962_g3 <- read.csv("AAK962_g3_09_06_13.gpx.csv")
 AAK963_g4 <- read.csv("AAK963_g4_09_06_14.gpx.csv")
 AAK966_g3 <- read.csv("AAK966_g3_2009_06_19.gpx.csv")
 
+# Return to normal working directory
+setwd("D:/Dropbox/R_projects/lbbg_gps")
+
 # For each add columns with device_info_serial, and ring_number
 AAK959_g1 <- cbind(AAK959_g1,"AAK959","gx1")
 AAK960_g2 <- cbind(AAK960_g2,"AAK960","gx2")
@@ -99,9 +102,26 @@ sqlSave(gps.db, all.points.exp,
         varTypes =  c(date_time = "datetime")
 )
 
+all.points.2009 <- all.points.exp
 
 
-# dummy test text
-# My dot hit me
+
+source("deg.dist.R")
+nest.long <- 17.9584114
+
+nest.lat  <- 57.2896727  
+
+
+#calculate grand circle distance from nest for each GPS location             
+coldist <- 1000*deg.dist(all.points.2009$longitude,
+                      all.points.2009$latitude,
+                      nest.long, nest.lat)
+
+all.points.2009 <- cbind(all.points.2009, coldist)
+
+# str(all.points.2009)
+# hist(all.points.2009$coldist, ylim = c(0,600), breaks = 40)
+
+save(all.points.2009, file = "guillemot_gps_data_all_2009.RData")
 
 
