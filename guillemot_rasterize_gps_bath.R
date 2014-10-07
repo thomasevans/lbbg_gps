@@ -334,7 +334,7 @@ dif_raster <- time.weight.2014.surface.raster - time.weight.2009.surface.raster
 
 dif_raster[(dif_raster) == 0] <- NA
 
-col.dif <- c(brewer.pal(9,"Reds"), NA, rev(brewer.pal(3,"Greens")))
+col.dif <- c(rev(brewer.pal(8,"Reds")), (brewer.pal(4,"Greens")))
 
 col.dif.transp <- addalpha(col.dif, alpha = 0.65)
 
@@ -347,7 +347,7 @@ plot(bsbd_raster, colNA = "green", col = rev(brewer.pal(9,"Blues")), add = TRUE 
 plot(dif_raster, add = T,
      col = col.dif.transp,
      horizontal = TRUE)
-title(main = "Difference 2009-2014 - surface only", line = 3)
+title(main = "Difference 2014-2009 - surface only", line = 3)
 map.scale(x= 17.1, y = 56.9, ratio = FALSE)
 plot(gadm, col="grey", bg = NA, add = T)
 box(,col="grey50",lwd=2)
