@@ -4,6 +4,7 @@
 # from which you will work.
 # bsbd_raster.RData
 # points.2014.all.RData
+# SWE_adm0.RData
 
 # Set working-directory -----
 # Set working-directory to where above files are located
@@ -123,10 +124,12 @@ time.weight.2014.surface.prop <- 100*time.weight.2014.surface /
 
 
 # 2014 surface points raster layer
+# rasterize(xy_coords, raster_parent, weight_vector, function_for_weight_vector)
 time.weight.2014.surface.raster <- rasterize(xy.2014.surface,
                                      bsbd_raster,
                                      time.weight.2014.surface.prop,
                                      fun = sum)
+
 
 # Check this looks ok
 plot(time.weight.2014.surface.raster,
@@ -168,6 +171,7 @@ map.scale(x= 17, y = 56.9, ratio = FALSE)
 
 dev.off()
 
+# Swedish coast-line data
 load("SWE_adm0.RData")
 
 pdf("test2.pdf")
@@ -186,3 +190,9 @@ box(,col="grey50",lwd=2)
 axis(side=(2), las=1, col="grey50", col.axis="grey50")
 axis(side=(3), las=1, col="grey50", col.axis="grey50")
 dev.off()
+
+
+
+
+
+
