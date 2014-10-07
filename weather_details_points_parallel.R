@@ -12,7 +12,7 @@ require(doParallel)
 
 # Database functions - get data from the database ####
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 
 setwd("D:/Dropbox/R_projects/lbbg_gps")
 
@@ -321,7 +321,7 @@ final.data2$device_info_serial <- num(final.data2$device_info_serial)
 
 
 odbcClose(gps.db)
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 
 
 #Output weather data to database #####

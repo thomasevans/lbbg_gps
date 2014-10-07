@@ -11,7 +11,7 @@
 library("RODBC")
 
 # Connect to DB
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 
 # Get GPS data
 points <- sqlQuery(gps.db,
@@ -260,7 +260,7 @@ str(export.table)
 
 # Write to database
 library("RODBC")
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 
 
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.

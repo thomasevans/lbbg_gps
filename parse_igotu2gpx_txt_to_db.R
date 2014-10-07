@@ -54,7 +54,7 @@ names(points.df)[13] <- "file_name"
 
 # Write to database
 library("RODBC")
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 
 # Remove points that don't have a date_time
 points.df.f <- points.df[!is.na(points.df$date_time),]

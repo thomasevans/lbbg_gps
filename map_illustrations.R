@@ -6,7 +6,7 @@ flight.numbers <- c(29534,428,16683,16341,35108,16014,32821,36693,37708,2918)
 library(RODBC)
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 
 
 flights.old <- sqlQuery(gps.db, as.is = TRUE, query="SELECT DISTINCT f.*

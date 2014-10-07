@@ -12,7 +12,7 @@
 library(RODBC)
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 
 #See what tables are available
 #sqlTables(gps.db)
@@ -133,7 +133,7 @@ map.trip <- function(id, trips){
   source("gps_extract.R")
   source("flights_extract.R")
   #Establish a connection to the database
-  gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+  gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
   
   
   #First subset the data that we require  

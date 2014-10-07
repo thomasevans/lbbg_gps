@@ -60,7 +60,7 @@ speed_ms <- (all.points$Speed * 1000)/(60*60)
 
 # Combine together to new data-frame following format of
 # 2014 data
-all.points.exp <- cbind(all.points$device_info_serial,
+all.points.exp <- cbind.data.frame(all.points$device_info_serial,
                         date_time,
                         all.points$Latitude,
                         all.points$Longitude,
@@ -69,16 +69,39 @@ all.points.exp <- cbind(all.points$device_info_serial,
                         all.points$ring_number                        
                         )
 
-all.points.exp <- as.data.frame(all.points.exp)
+# all.points.exp <- as.data.frame(all.points.exp)
 
 names(all.points.exp) <- c("device_info_serial",
                            "date_time",
                            "latitude",
                            "longitude",
                            "elev",
+                           "speed_ms",
+                           "ring_number"
                            )
 
+# str(all.points.exp)
 
 
+
+
+# Write to database
+library("RODBC")
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
+
+
+#will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
+sqlSave(gps.db, all.points.exp,
+        tablename = "guillemots_gps_points_igu_2009",
+        append = FALSE, rownames = FALSE, colnames = FALSE,
+        verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
+        test = FALSE, nastring = NULL,
+        varTypes =  c(date_time = "datetime")
+)
+
+
+
+# dummy test text
+# My dot hit me
 
 

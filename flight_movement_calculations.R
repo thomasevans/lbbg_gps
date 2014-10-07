@@ -20,7 +20,7 @@ library(RODBC)
 #Database queries #################################
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 
 #See what tables are available
 #sqlTables(gps.db)

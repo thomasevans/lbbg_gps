@@ -17,7 +17,7 @@
 library(RODBC)
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 
 #See what tables are available
 #sqlTables(gps.db)
@@ -677,7 +677,7 @@ anti.logit(inc)
 library(MuMIn)
 r.squaredGLMM(mod_final)
 
-# S. Nakagawa, H. Schielzeth. “A General and Simple Method for Obtaining R2 from Generalized Linear Mixed-Effects Models.” Methods in Ecology and Evolution 4 (2013): 133–142. doi:Doi 10.1111/J.2041-210x.2012.00261.X.
+# S. Nakagawa, H. Schielzeth. ???A General and Simple Method for Obtaining R2 from Generalized Linear Mixed-Effects Models.??? Methods in Ecology and Evolution 4 (2013): 133???142. doi:Doi 10.1111/J.2041-210x.2012.00261.X.
 
 
 
@@ -943,7 +943,7 @@ fx(inc)
 library(MuMIn)
 r.squaredGLMM(mod_final)
 
-# S. Nakagawa, H. Schielzeth. “A General and Simple Method for Obtaining R2 from Generalized Linear Mixed-Effects Models.” Methods in Ecology and Evolution 4 (2013): 133–142. doi:Doi 10.1111/J.2041-210x.2012.00261.X.
+# S. Nakagawa, H. Schielzeth. ???A General and Simple Method for Obtaining R2 from Generalized Linear Mixed-Effects Models.??? Methods in Ecology and Evolution 4 (2013): 133???142. doi:Doi 10.1111/J.2041-210x.2012.00261.X.
 
 
 
@@ -1229,7 +1229,7 @@ anti.logit(inc)
 library(MuMIn)
 r.squaredGLMM(mod_final)
 
-# S. Nakagawa, H. Schielzeth. “A General and Simple Method for Obtaining R2 from Generalized Linear Mixed-Effects Models.” Methods in Ecology and Evolution 4 (2013): 133–142. doi:Doi 10.1111/J.2041-210x.2012.00261.X.
+# S. Nakagawa, H. Schielzeth. ???A General and Simple Method for Obtaining R2 from Generalized Linear Mixed-Effects Models.??? Methods in Ecology and Evolution 4 (2013): 133???142. doi:Doi 10.1111/J.2041-210x.2012.00261.X.
 
 ##
 
@@ -1745,7 +1745,7 @@ anova(mod_ML[[5]])
 library(MuMIn)
 r.squaredGLMM(mod_ML[[5]])
 
-# S. Nakagawa, H. Schielzeth. “A General and Simple Method for Obtaining R2 from Generalized Linear Mixed-Effects Models.” Methods in Ecology and Evolution 4 (2013): 133–142. doi:Doi 10.1111/J.2041-210x.2012.00261.X.
+# S. Nakagawa, H. Schielzeth. ???A General and Simple Method for Obtaining R2 from Generalized Linear Mixed-Effects Models.??? Methods in Ecology and Evolution 4 (2013): 133???142. doi:Doi 10.1111/J.2041-210x.2012.00261.X.
 
 
 mod_ML[[5]] <- lme(
@@ -1830,7 +1830,7 @@ AIC(mod_ML[[27]])
 library(MuMIn)
 r.squaredGLMM(mod_ML[[27]])
 
-# S. Nakagawa, H. Schielzeth. “A General and Simple Method for Obtaining R2 from Generalized Linear Mixed-Effects Models.” Methods in Ecology and Evolution 4 (2013): 133–142. doi:Doi 10.1111/J.2041-210x.2012.00261.X.
+# S. Nakagawa, H. Schielzeth. ???A General and Simple Method for Obtaining R2 from Generalized Linear Mixed-Effects Models.??? Methods in Ecology and Evolution 4 (2013): 133???142. doi:Doi 10.1111/J.2041-210x.2012.00261.X.
 
 
 mod_final_ML <- lme(

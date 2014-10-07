@@ -9,7 +9,7 @@
 
 # Connect to database and extract GPS data
 library("RODBC")
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 
 
 gps.points <- sqlQuery(gps.db,

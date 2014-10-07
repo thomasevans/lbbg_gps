@@ -12,7 +12,7 @@
 library(RODBC)
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 
 #See what tables are available
 sqlTables(gps.db)
@@ -373,7 +373,7 @@ odbcCloseAll()
 
 
 
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 # names(gps.data.par)
 
 #Output weather data to database #####

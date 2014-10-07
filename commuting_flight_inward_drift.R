@@ -12,7 +12,7 @@
 library(RODBC)
 
 #Establish a connection to the database
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 
 #See what tables are available
 sqlTables(gps.db)
@@ -119,12 +119,12 @@ flight.drift.fun <- function(i, nest_loc. = nest_loc, flights. = flights){
   #                                  )
   
   
-  gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+  gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
   
   # Somtimes above fails for some reason - if it fails try again some more times
   if(!inherits(gps.db,"RODBC")){
     for(i in 1:4){
-      gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+      gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
       if(inherits(gps.db,"RODBC")) break
     }
   }
@@ -462,7 +462,7 @@ save(flights.par, file = "commuting_flight_inward_drift_data_out.RData")
 # Save data to database -------
 odbcCloseAll()
 
-gps.db <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 # names(gps.data.par)
 
 str(flights.par)

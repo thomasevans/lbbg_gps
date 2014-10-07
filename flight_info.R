@@ -45,14 +45,14 @@ flight.info <- function(id, type = c("com","default")){
   require(RODBC)
   
 
-  gps.db3 <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+  gps.db3 <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
   
   
-#   gps.db2 <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+#   gps.db2 <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
   #   class(gps.db2)
   if(!inherits(gps.db3,"RODBC")){
     for(i in 1:4){
-      gps.db3 <- odbcConnectAccess2007('D:/Documents/Work/GPS_DB/GPS_db.accdb')
+      gps.db3 <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
       if(inherits(gps.db3,"RODBC")) break
     }
   }
