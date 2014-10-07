@@ -77,7 +77,7 @@ calculated_speed  <- p2p_dist/time_interval_s
 # Calculate instaneous ground_speed recorded by GPS using the
 # veast and vnorth speeds from the GPS (Pythagoras theorem)
 #
-# **2013-09-21 corrected this to noth and east movment,
+# **2013-09-21 corrected this to north and east movment,
 # not x and y, as these are different - earth coordinates
 # rather than perpendicular to geoid (which we require here.)
 
