@@ -24,7 +24,8 @@ load('points.2014.all.RData')
 # and exclude those with no location ('dive' and 'no_location')
 f <- (points.2014.all$type != "bad_location") &
   (points.2014.all$type != "dive") &
-  (points.2014.all$type != "no_location")
+  (points.2014.all$type != "no_location") &
+  (points.2014.all$ring_number != "AAZ972")
 f[is.na(f)] <- TRUE
 
 # New datafame with only GPS locations meeting above criteria
@@ -127,6 +128,61 @@ time.weight.2014.surface.raster <- rasterize(xy.2014.surface,
                                      time.weight.2014.surface.prop,
                                      fun = sum)
 
-
+# Check this looks ok
 plot(time.weight.2014.surface.raster,
      xlim = c(17,18), ylim = c(56.8,57.7))
+
+
+
+
+
+
+# Plot some maps -------
+
+library(RColorBrewer)
+library(maps)
+
+
+# Code for transparent colours ----
+# Code from https://github.com/mylesmharrison/colorRampPaletteAlpha/blob/master/colorRampPaletteAlpha.R
+# Hight-lighted by blog post: http://www.everydayanalytics.ca/2014/03/colorRampPalette-alpha-in-R.html
+addalpha <- function(colors, alpha=1.0) {
+  r <- col2rgb(colors, alpha=T)
+  # Apply alpha
+  r[4,] <- alpha*255
+  r <- r/255.0
+  return(rgb(r[1,], r[2,], r[3,], r[4,]))
+}
+
+col.obs.transp <- addalpha((brewer.pal(9,"OrRd")), alpha = 0.85)
+
+pdf("test.bath.pdf")
+# Plot bathymetric map
+plot(bsbd_raster, xlim = c(16.9, 18.3), ylim = c(56.5, 58), colNA = "green", col = rev(brewer.pal(9,"BuPu")))
+
+# Overlay the 2014 foraging data
+plot(time.weight.2014.surface.raster, add = T,
+     col = col.obs.transp,
+     horizontal = TRUE)
+map.scale(x= 17, y = 56.9, ratio = FALSE)
+
+dev.off()
+
+load("SWE_adm0.RData")
+
+pdf("test2.pdf")
+# Plot base map
+par(mfrow=c(1,1))
+par( mar = c(5, 4, 4, 5))
+plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1), ylim = c(56.8, 57.65))
+plot(bsbd_raster, colNA = "green", col = rev(brewer.pal(9,"Blues")), add = TRUE ,xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
+plot(time.weight.2014.surface.raster, add = T,
+     col = col.obs.transp,
+     horizontal = TRUE)
+title(main = "2014 GPS points - surface only", line = 3)
+map.scale(x= 17.1, y = 56.9, ratio = FALSE)
+plot(gadm, col="grey", bg = NA, add = T)
+box(,col="grey50",lwd=2)
+axis(side=(2), las=1, col="grey50", col.axis="grey50")
+axis(side=(3), las=1, col="grey50", col.axis="grey50")
+dev.off()
