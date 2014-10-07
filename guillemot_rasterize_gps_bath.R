@@ -93,6 +93,59 @@ sort(time_interval/(60*60), decreasing = TRUE)[1:100]
 # not to give greater weight to these points
 
 
+
+
+# Caculate time intevals for 2009 GPS locations -----
+
+
+
+# Calculate time between locations
+time_interval <- NULL
+
+# Set first to zero (no preceding points)
+time_interval[1] <- 0
+
+
+# Calculate time between points
+# If final or first point from bird (ring_number)
+# Set to zero
+for(i in 2:(length(points.2009.all$ring_number)-1)){
+  if(points.2009.all$ring_number[i] !=
+       points.2009.all$ring_number[i-1]){
+    time_interval[i] <- 0
+  } else if(points.2009.all$ring_number[i] !=
+              points.2009.all$ring_number[i+1]){
+    time_interval[i] <- 0} else{
+      time_interval[i] <- as.numeric(
+        difftime(
+          points.2009.all$date_time[i-1],
+          points.2009.all$date_time[i],
+          units = "secs") * -1
+      )
+    }
+}
+# Set final point to zero otherwise will get
+# error with above code where compares current
+# and next point
+time_interval[length(points.2009.all$ring_number)] <- 0
+
+# Add 'time_interval' to the dataframe
+points.2009.all <- cbind(points.2009.all, time_interval)
+
+# See what the time intervals look like
+# Time interval is in seconds
+range(time_interval[points.2009.all$coldist > 1000])
+
+# In seconds
+sort(time_interval, decreasing = TRUE)[1:100]
+# In hours
+sort(time_interval/(60*60), decreasing = TRUE)[1:100]
+
+
+# 23453/(60*60)
+
+
+
 # Sub-set 2014 data for 'foraging' locations only ----
 # Sub-set 2014 data for:
 # 1. non-colony location (i.e. points during foraging trips only)
@@ -106,6 +159,19 @@ points.2014.non_col <- subset(points.2014, coldist > 1000)
 # Only points > 1 km from colony & where speed is < 5 ms-1
 points.2014.surface <- subset(points.2014, (coldist > 1000) & (
   speed < 5))
+
+
+
+
+# Sub-set 2009 data for 'foraging' locations only ----
+
+# 1. non-colony locations
+# Only points > 1 km from colony
+points.2009.non_col <- subset(points.2009.all, coldist > 1000)
+
+# Only points > 1 km from colony & where speed is < 5 ms-1
+points.2009.surface <- subset(points.2009.all, (coldist > 1000) & (
+  speed_ms < 5))
 
 
 # Prepare raster layers for GPS point subsets -----
@@ -144,6 +210,41 @@ plot(time.weight.2014.surface.raster,
 
 
 
+# 2009 + surface points
+xy.2009.surface <- cbind(points.2009.surface$long,
+                         points.2009.surface$lat)
+
+time.weight.2009.surface <- points.2009.surface$time_interval
+
+# Mean of time_intervals for points with <35 minute time interval
+t.mean <- mean(time.weight.2009.surface[time.weight.2009.surface <
+                                          35*60])
+
+# Replace long time intervals with the mean time interval to prevent
+# excessive weights on these points
+time.weight.2009.surface[time.weight.2009.surface >
+                           35*60] <- t.mean
+time.weight.2009.surface.prop <- (100*time.weight.2009.surface             
+                                  /  sum(time.weight.2009.surface))
+
+
+# 2009 surface points raster layer
+# rasterize(xy_coords, raster_parent, weight_vector, function_for_weight_vector)
+time.weight.2009.surface.raster <- rasterize(xy.2009.surface,
+                                             bsbd_raster,
+                                             time.weight.2009.surface.prop,
+                                             fun = sum)
+
+
+# Check this looks ok
+plot(time.weight.2009.surface.raster,
+     xlim = c(17,18), ylim = c(56.8,57.7))
+
+
+
+
+
+
 # Plot some maps -------
 
 library(RColorBrewer)
@@ -161,7 +262,7 @@ addalpha <- function(colors, alpha=1.0) {
   return(rgb(r[1,], r[2,], r[3,], r[4,]))
 }
 
-col.obs.transp <- addalpha((brewer.pal(9,"OrRd")), alpha = 0.85)
+col.obs.transp <- addalpha((brewer.pal(9,"OrRd")), alpha = 0.65)
 
 pdf("test.bath.pdf")
 # Plot bathymetric map
@@ -178,7 +279,10 @@ dev.off()
 # Swedish coast-line data
 load("SWE_adm0.RData")
 
-pdf("test2.pdf")
+
+
+
+pdf("test3.pdf")
 # Plot base map
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
@@ -198,5 +302,55 @@ dev.off()
 
 
 
+# Map for 2009 data ----
+
+pdf("test4.pdf")
+# Plot base map
+par(mfrow=c(1,1))
+par( mar = c(5, 4, 4, 5))
+plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1), ylim = c(56.8, 57.65))
+plot(bsbd_raster, colNA = "green", col = rev(brewer.pal(9,"Blues")), add = TRUE ,xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
+plot(time.weight.2009.surface.raster, add = T,
+     col = col.obs.transp,
+     horizontal = TRUE)
+title(main = "2009 GPS points - surface only", line = 3)
+map.scale(x= 17.1, y = 56.9, ratio = FALSE)
+plot(gadm, col="grey", bg = NA, add = T)
+box(,col="grey50",lwd=2)
+axis(side=(2), las=1, col="grey50", col.axis="grey50")
+axis(side=(3), las=1, col="grey50", col.axis="grey50")
+dev.off()
 
 
+
+
+# Map for difference between years ----
+
+time.weight.2014.surface.raster[is.na(time.weight.2014.surface.raster)] <- 0
+
+time.weight.2009.surface.raster[is.na(time.weight.2009.surface.raster)] <- 0
+dif_raster <- time.weight.2014.surface.raster - time.weight.2009.surface.raster
+
+
+dif_raster[(dif_raster) == 0] <- NA
+
+col.dif <- c(brewer.pal(9,"Reds"), NA, rev(brewer.pal(3,"Greens")))
+
+col.dif.transp <- addalpha(col.dif, alpha = 0.65)
+
+pdf("test6.pdf")
+# Plot base map
+par(mfrow=c(1,1))
+par( mar = c(5, 4, 4, 5))
+plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1), ylim = c(56.8, 57.65))
+plot(bsbd_raster, colNA = "green", col = rev(brewer.pal(9,"Blues")), add = TRUE ,xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
+plot(dif_raster, add = T,
+     col = col.dif.transp,
+     horizontal = TRUE)
+title(main = "Difference 2009-2014 - surface only", line = 3)
+map.scale(x= 17.1, y = 56.9, ratio = FALSE)
+plot(gadm, col="grey", bg = NA, add = T)
+box(,col="grey50",lwd=2)
+axis(side=(2), las=1, col="grey50", col.axis="grey50")
+axis(side=(3), las=1, col="grey50", col.axis="grey50")
+dev.off()
