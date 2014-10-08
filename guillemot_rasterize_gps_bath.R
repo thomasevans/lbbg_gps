@@ -262,34 +262,62 @@ addalpha <- function(colors, alpha=1.0) {
   return(rgb(r[1,], r[2,], r[3,], r[4,]))
 }
 
-col.obs.transp <- addalpha((brewer.pal(9,"OrRd")), alpha = 0.65)
+col.obs.transp <- addalpha((brewer.pal(9,"OrRd")), alpha = 0.75)
 
-pdf("test.bath.pdf")
-# Plot bathymetric map
-plot(bsbd_raster, xlim = c(16.9, 18.3), ylim = c(56.5, 58), colNA = "green", col = rev(brewer.pal(9,"BuPu")))
+# Batymetry colours
+bath.break.points <- c(seq(0,-50,-10),-75,-100,-125,-175)
+bath.col <- rev(brewer.pal(9,"PuBu"))
 
-# Overlay the 2014 foraging data
-plot(time.weight.2014.surface.raster, add = T,
-     col = col.obs.transp,
-     horizontal = TRUE)
-map.scale(x= 17, y = 56.9, ratio = FALSE)
-
-dev.off()
+# pdf("test.bath.pdf")
+# # Plot bathymetric map
+# plot(bsbd_raster, xlim = c(16.9, 18.3), ylim = c(56.5, 58), colNA = "green", col = bath.col, breaks = bath.break.points)
+# 
+# # Overlay the 2014 foraging data
+# plot(time.weight.2014.surface.raster, add = T,
+#      col = col.obs.transp,
+#      horizontal = TRUE)
+# map.scale(x= 17, y = 56.9, ratio = FALSE)
+# 
+# dev.off()
 
 # Swedish coast-line data
 load("SWE_adm0.RData")
 
 
-
-
-pdf("test3.pdf")
+# Bathymetry map -----
+pdf("bathymetry.pdf")
 # Plot base map
+break.points <- c(seq(0,4,0.5),5)
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
 plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1), ylim = c(56.8, 57.65))
-plot(bsbd_raster, colNA = "green", col = rev(brewer.pal(9,"Blues")), add = TRUE ,xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
+plot(bsbd_raster, colNA = "green", col = bath.col, add = TRUE , breaks = bath.break.points, xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
+title(main = "Bathymetry map", line = 3)
+map.scale(x= 17.1, y = 56.9, ratio = FALSE)
+plot(gadm, col="grey", bg = NA, add = T)
+box(,col="grey50",lwd=2)
+axis(side=(2), las=1, col="grey50", col.axis="grey50")
+axis(side=(3), las=1, col="grey50", col.axis="grey50")
+mtext("Depth (m)",
+      side = 4,
+      line = 1,
+      las = 2,
+      at = 57.5)
+dev.off()
+
+
+
+# Map for 2014 data -----
+pdf("guillemots_2014.pdf")
+# Plot base map
+break.points <- c(seq(0,2,0.25),2.5)
+par(mfrow=c(1,1))
+par( mar = c(5, 4, 4, 5))
+plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1), ylim = c(56.8, 57.65))
+plot(bsbd_raster, colNA = "green", col = bath.col, add = TRUE , breaks = bath.break.points, xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
 plot(time.weight.2014.surface.raster, add = T,
      col = col.obs.transp,
+     breaks = break.points,
      horizontal = TRUE)
 title(main = "2014 GPS points - surface only", line = 3)
 map.scale(x= 17.1, y = 56.9, ratio = FALSE)
@@ -297,21 +325,29 @@ plot(gadm, col="grey", bg = NA, add = T)
 box(,col="grey50",lwd=2)
 axis(side=(2), las=1, col="grey50", col.axis="grey50")
 axis(side=(3), las=1, col="grey50", col.axis="grey50")
+title(xlab = "Time in grid cell (%)", line = 0)
+mtext("Depth (m)",
+      side = 4,
+      line = 1,
+      las = 2,
+      at = 57.5)
 dev.off()
 
 
 
 
 # Map for 2009 data ----
-
-pdf("test4.pdf")
+# range(time.weight.2009.surface.raster)
+pdf("guillemots_2009.pdf")
 # Plot base map
+break.points <- c(seq(0,4,0.5),5)
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
 plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1), ylim = c(56.8, 57.65))
-plot(bsbd_raster, colNA = "green", col = rev(brewer.pal(9,"Blues")), add = TRUE ,xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
+plot(bsbd_raster, colNA = "green", col = bath.col, add = TRUE , breaks = bath.break.points, xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
 plot(time.weight.2009.surface.raster, add = T,
      col = col.obs.transp,
+     breaks = break.points,
      horizontal = TRUE)
 title(main = "2009 GPS points - surface only", line = 3)
 map.scale(x= 17.1, y = 56.9, ratio = FALSE)
@@ -319,6 +355,12 @@ plot(gadm, col="grey", bg = NA, add = T)
 box(,col="grey50",lwd=2)
 axis(side=(2), las=1, col="grey50", col.axis="grey50")
 axis(side=(3), las=1, col="grey50", col.axis="grey50")
+title(xlab = "Time in grid cell (%)", line = 0)
+mtext("Depth (m)",
+      side = 4,
+      line = 1,
+      las = 2,
+      at = 57.5)
 dev.off()
 
 
@@ -326,25 +368,30 @@ dev.off()
 
 # Map for difference between years ----
 
-time.weight.2014.surface.raster[is.na(time.weight.2014.surface.raster)] <- 0
+rast.2014 <- time.weight.2014.surface.raster
+rast.2014[is.na(time.weight.2014.surface.raster)] <- 0
 
-time.weight.2009.surface.raster[is.na(time.weight.2009.surface.raster)] <- 0
-dif_raster <- time.weight.2014.surface.raster - time.weight.2009.surface.raster
+rast.2009 <- time.weight.2009.surface.raster
+rast.2009[is.na(time.weight.2009.surface.raster)] <- 0
+dif_raster <- rast.2014 - rast.2009
 
 
 dif_raster[(dif_raster) == 0] <- NA
 
-col.dif <- c(rev(brewer.pal(8,"Reds")), (brewer.pal(4,"Greens")))
+col.dif <- c(rev(brewer.pal(7,"Reds"))[3:7], (brewer.pal(9,"Greens"))[c(2:4,8:9)])
 
-col.dif.transp <- addalpha(col.dif, alpha = 0.65)
+col.dif.transp <- addalpha(col.dif, alpha = 0.75)
+# range(dif_raster)
+break.points <- c(-5:0,0.5,1,1.5,2)
 
-pdf("test6.pdf")
+pdf("guillemots_year_dif.pdf")
 # Plot base map
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
 plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1), ylim = c(56.8, 57.65))
-plot(bsbd_raster, colNA = "green", col = rev(brewer.pal(9,"Blues")), add = TRUE ,xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
+plot(bsbd_raster, colNA = "green", col = bath.col, add = TRUE , breaks = bath.break.points, xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
 plot(dif_raster, add = T,
+     breaks = break.points,
      col = col.dif.transp,
      horizontal = TRUE)
 title(main = "Difference 2014-2009 - surface only", line = 3)
@@ -353,4 +400,10 @@ plot(gadm, col="grey", bg = NA, add = T)
 box(,col="grey50",lwd=2)
 axis(side=(2), las=1, col="grey50", col.axis="grey50")
 axis(side=(3), las=1, col="grey50", col.axis="grey50")
+title(xlab = "Difference (2014 vs. 2009): -ve (less)  +ve (more)", line = 0)
+mtext("Depth (m)",
+      side = 4,
+      line = 1,
+      las = 2,
+      at = 57.5)
 dev.off()
