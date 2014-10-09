@@ -92,17 +92,44 @@ if(length(bout.gps.10$ring_number)==0){
   # GPS point calculations
   # p2p distance
   if(n_gps > 1){
-    points.next <- xy.gps[-1,]
-    points.prev <- xy.gps[-n_gps,]
-    dist.p2p <- sum(deg.dist(points.prev[,1],
-                             points.prev[,2],
-                             points.next[,1],
-                             points.next[,2]))
-  } else dist.p2p <- NA
+    points.next.lat <- xy.gps[-1,2]
+    points.next.long <- xy.gps[-1,1]
+    
+    points.prev.lat <- xy.gps[-n_gps,2]
+    points.prev.long <- xy.gps[-n_gps,1]
+    
+    # distances
+    dist.p2p <- 1000*sum(deg.dist(points.prev.long,
+                             points.prev.lat,
+                             points.next.long,
+                             points.next.lat))
+    
+    dist.straight <- 1000*deg.dist(xy.gps[1,1],
+                                   xy.gps[1,2],
+                                   xy.gps[n_gps,1],
+                                   xy.gps[n_gps,2])
+    
+    # locations
+    long.start <- points.prev.long[1]
+    lat.start <- points.prev.lat[1]
+    long.end <- xy.gps[n_gps,1]
+    lat.end <- xy.gps[n_gps,2]
+    long.mid <- (long.end + long.start)/2
+    lat.mid <- (lat.end + lat.start)/2
+    
+    
+  } else {
+    dist.p2p <- NA
+    dist.straight <- NA
+    long.start <- lat.start <- long.end <- lat.end
+    long.mid <- gps.data$longitude
+    lat.mid <- gps.data$latitude
+  }
   
-  
-  
-  
-  
-  
+  # Relate to dive bout depths
+  bath_max_dive_max  <- bath.max - dive.bouts$depth_max
+  bath_mean_dive_max <- bath.mean - dive.bouts$depth_max
+  bath_max_dive_max_mean <- bath.max - dive.bouts$depth_max_mean
+  bath_mean_dive_max_mean <- bath.mean - dive.bouts$depth_max_mean
+    
 }
