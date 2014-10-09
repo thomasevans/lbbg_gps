@@ -15,6 +15,8 @@ dive.bouts <- sqlQuery(gps.db,
           ORDER BY d.ring_number ASC, d.date_time_start ASC;",
                         as.is = TRUE)
 
+# str(dive.bouts)
+
 # GPS data
 gps.points <- sqlQuery(gps.db,
                        query = "SELECT DISTINCT d.*
@@ -22,13 +24,85 @@ gps.points <- sqlQuery(gps.db,
           ORDER BY d.ring_number ASC, d.date_time ASC;",
                        as.is = TRUE)
 
+# fix date_times
+gps.points$date_time <- as.POSIXct(gps.points$date_time, tz = "UTC")
+dive.bouts$date_time_start <- as.POSIXct(dive.bouts$date_time_start, tz = "UTC")
+dive.bouts$date_time_end <- as.POSIXct(dive.bouts$date_time_end, tz = "UTC")
+
+
 # Bathymetry
 load('bsbd_raster.RData')
 
-
+str(gps.points)
 # Combine two data - for loop to go through all bouts -----
 
+# Start with an example bout
+i <- 1
+
+t_sub_10 <-  dive.bouts$date_time_start[i] - 600
+t_plus_10 <-  dive.bouts$date_time_end[i]  + 600
+
+t_sub_5 <-  dive.bouts$date_time_start[i] - 300
+t_plus_5 <-  dive.bouts$date_time_end[i]  + 300
+
+bird_id <- dive.bouts$ring_number[i]
+bout.gps.10 <- NULL
+bout.gps.10 <- subset(gps.points, (ring_number == bird_id) &
+                     (date_time > t_sub_10) &
+                     (date_time < t_plus_10)
+                   )
+bout.gps.5 <- NULL
+bout.gps.5 <- subset(gps.points, (ring_number == bird_id) &
+                       (date_time > t_sub_5) &
+                       (date_time < t_plus_5)
+  )
 
 
+# For distance calculations
+source("deg.dist.R")
 
-
+if(length(bout.gps.10$ring_number)==0){
+  
+  # skip rest...
+  # return NAs
+  # GPS_data  <- FALSE
+  
+} else {
+  
+  # IF GPS data continue...
+  
+  # Use 5 minute if possible, but if too few points (<2)
+  # use the 10 minute data
+  if(length(bout.gps.5$ring_number) <2){
+    gps.data <- bout.gps.10
+  } else gps.data <- bout.gps.5
+  
+  # XY GPS location data
+  xy.gps <- cbind(gps.data$longitude, gps.data$latitude)
+  
+  # Extract bathymetry data for these positions
+  gps.bath <- extract(bsbd_raster,xy.gps)
+  
+  bath.mean <- mean(gps.bath)
+  bath.min <- min(gps.bath)
+  bath.max <- max(gps.bath)
+  
+  n_gps <- length(gps.data$ring_number)
+  
+  # GPS point calculations
+  # p2p distance
+  if(n_gps > 1){
+    points.next <- xy.gps[-1,]
+    points.prev <- xy.gps[-n_gps,]
+    dist.p2p <- sum(deg.dist(points.prev[,1],
+                             points.prev[,2],
+                             points.next[,1],
+                             points.next[,2]))
+  } else dist.p2p <- NA
+  
+  
+  
+  
+  
+  
+}
