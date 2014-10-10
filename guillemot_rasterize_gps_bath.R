@@ -82,7 +82,7 @@ sort(time_interval/(60*60), decreasing = TRUE)[1:100]
 # are nearly all of points either at the colony or the gap
 # between the last position at the colony, and the first point
 # away from the colony.
-# This is most likely owning to poor GPS reception at the
+# This is most likely owing to poor GPS reception at the
 # colony, with the high cliff, and the murre-lab above both
 # obscurring the view of the sky - leading to more failed
 # fixes.
@@ -291,7 +291,9 @@ break.points <- c(seq(0,4,0.5),5)
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
 plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1), ylim = c(56.8, 57.65))
-plot(bsbd_raster, colNA = "green", col = bath.col, add = TRUE , breaks = bath.break.points, xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
+plot(bsbd_raster, colNA = "green", col = bath.col, add = TRUE ,
+     breaks = bath.break.points, xlim = c(16.8, 18.3),
+     ylim = c(56.8, 57.8))
 title(main = "Bathymetry map", line = 3)
 map.scale(x= 17.1, y = 56.9, ratio = FALSE)
 plot(gadm, col="grey", bg = NA, add = T)
@@ -313,8 +315,11 @@ pdf("guillemots_2014.pdf")
 break.points <- c(seq(0,2,0.25),2.5)
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
-plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1), ylim = c(56.8, 57.65))
-plot(bsbd_raster, colNA = "green", col = bath.col, add = TRUE , breaks = bath.break.points, xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
+plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1),
+     ylim = c(56.8, 57.65))
+plot(bsbd_raster, colNA = "green", col = bath.col,
+     add = TRUE , breaks = bath.break.points,
+     xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
 plot(time.weight.2014.surface.raster, add = T,
      col = col.obs.transp,
      breaks = break.points,
@@ -343,8 +348,11 @@ pdf("guillemots_2009.pdf")
 break.points <- c(seq(0,4,0.5),5)
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
-plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1), ylim = c(56.8, 57.65))
-plot(bsbd_raster, colNA = "green", col = bath.col, add = TRUE , breaks = bath.break.points, xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
+plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1),
+     ylim = c(56.8, 57.65))
+plot(bsbd_raster, colNA = "green", col = bath.col,
+     add = TRUE , breaks = bath.break.points,
+     xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
 plot(time.weight.2009.surface.raster, add = T,
      col = col.obs.transp,
      breaks = break.points,
@@ -388,8 +396,11 @@ pdf("guillemots_year_dif.pdf")
 # Plot base map
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
-plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1), ylim = c(56.8, 57.65))
-plot(bsbd_raster, colNA = "green", col = bath.col, add = TRUE , breaks = bath.break.points, xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
+plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1),
+     ylim = c(56.8, 57.65))
+plot(bsbd_raster, colNA = "green", col = bath.col,
+     add = TRUE , breaks = bath.break.points,
+     xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
 plot(dif_raster, add = T,
      breaks = break.points,
      col = col.dif.transp,
