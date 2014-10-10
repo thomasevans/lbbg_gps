@@ -44,8 +44,7 @@ load('bsbd_raster.RData')
 # z
 
 # Start with an example bout
-i <- 5
-n_bouts <- length(dive.bouts$ring_number)
+# i <- 5
 
 # For distance calculations
 source("deg.dist.R")
@@ -76,6 +75,7 @@ c.bath.min <- NULL
 c.bath.max <- NULL
 c.n_gps <- NULL
 
+n_bouts <- length(dive.bouts$ring_number)
 
 
 for(i in 1:n_bouts){
@@ -228,13 +228,16 @@ for(i in 1:n_bouts){
       c.bath_mean_dive_max_mean[i] <- bath_mean_dive_max_mean
       c.prop_bath_mean_dive_max[i] <- prop_bath_mean_dive_max
       c.prop_bath_mean_dive_max_mean[i] <- prop_bath_mean_dive_max_mean
-      
+   
+
       c.long.start[i] <- long.start
       c.lat.start[i] <- lat.start
       c.long.end[i] <- long.end
       c.lat.end[i] <- lat.end
       c.long.mid[i] <- long.mid
       c.lat.mid[i] <- lat.mid
+      
+  
       
       c.dist.p2p[i] <- dist.p2p
       c.dist.straight[i] <- dist.straight
@@ -244,5 +247,21 @@ for(i in 1:n_bouts){
       c.bath.max[i] <- bath.max
       c.n_gps[i] <- n_gps
       
+    
     }
 } #End of for loop
+
+
+bout.info <- cbind.data.frame(c.gps_info, c.bath_max_dive_max,
+                      c.bath_mean_dive_max,
+                      c.bath_max_dive_max_mean,
+                      c.bath_mean_dive_max_mean,
+                      c.prop_bath_mean_dive_max,
+                      c.prop_bath_mean_dive_max_mean,
+                      c.long.start, c.lat.start,
+                      c.long.end, c.lat.end,
+                      c.long.mid, c.lat.mid,
+                      c.dist.p2p, c.dist.straight,
+                      c.bath.mean, c.bath.min,
+                      c.bath.max, c.n_gps                      
+                      )
