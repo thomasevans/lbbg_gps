@@ -36,9 +36,47 @@ load('bsbd_raster.RData')
 # str(gps.points)
 # Combine two data - for loop to go through all bouts -----
 
+
+# x <- c(0,4,5)
+# y <- c(3,5,2)
+# z <- cbind.data.frame(x,y)
+# z[4,] <- NA
+# z
+
 # Start with an example bout
 i <- 5
 n_bouts <- length(dive.bouts$ring_number)
+
+# For distance calculations
+source("deg.dist.R")
+
+
+# Initiate variables called in For loop
+
+c.gps_info <- NULL
+c.bath_max_dive_max <- NULL
+c.bath_mean_dive_max <- NULL
+c.bath_max_dive_max_mean <- NULL
+c.bath_mean_dive_max_mean <- NULL
+c.prop_bath_mean_dive_max <- NULL
+c.prop_bath_mean_dive_max_mean <- NULL
+
+c.long.start <- NULL
+c.lat.start <- NULL
+c.long.end <- NULL
+c.lat.end <- NULL
+c.long.mid <- NULL
+c.lat.mid <- NULL
+
+c.dist.p2p <- NULL
+c.dist.straight <- NULL
+
+c.bath.mean <- NULL
+c.bath.min <- NULL
+c.bath.max <- NULL
+c.n_gps <- NULL
+
+
 
 for(i in 1:n_bouts){
   
@@ -65,14 +103,39 @@ for(i in 1:n_bouts){
       )
     
     
-    # For distance calculations
-    source("deg.dist.R")
+
     
     if(length(bout.gps.10$ring_number)==0){
       
       # skip rest...
       # return NAs
-      # GPS_data  <- FALSE
+    
+      
+      # Put NA/ 0 for variables
+      c.gps_info[i] <- FALSE
+      c.bath_max_dive_max[i] <- NA
+      c.bath_mean_dive_max[i] <- NA
+      c.bath_max_dive_max_mean[i] <- NA
+      c.bath_mean_dive_max_mean[i] <- NA
+      c.prop_bath_mean_dive_max[i] <- NA
+      c.prop_bath_mean_dive_max_mean[i] <- NA
+      
+      c.long.start[i] <- NA
+      c.lat.start[i] <- NA
+      c.long.end[i] <- NA
+      c.lat.end[i] <- NA
+      c.long.mid[i] <- NA
+      c.lat.mid[i] <- NA
+      
+      c.dist.p2p[i] <- NA
+      c.dist.straight[i] <- NA
+      
+      c.bath.mean[i] <- NA
+      c.bath.min[i] <- NA
+      c.bath.max[i] <- NA
+      c.n_gps[i] <- 0
+      
+      
       
     } else {
       
@@ -143,8 +206,7 @@ for(i in 1:n_bouts){
         long.mid <- gps.data$longitude
         lat.mid <- gps.data$latitude
       }
-      
-      
+
       # re-set values
       bath_max_dive_max <- bath_mean_dive_max <- bath_max_dive_max_mean <- bath_mean_dive_max_mean <- prop_bath_mean_dive_max <- prop_bath_mean_dive_max_mean <- NULL
       
@@ -156,6 +218,31 @@ for(i in 1:n_bouts){
       
       prop_bath_mean_dive_max  <-  bath_mean_dive_max/(-bath.mean)
       prop_bath_mean_dive_max_mean  <- bath_mean_dive_max_mean/(-bath.mean)
+      
+      
+      # Put all above values together
+      c.gps_info[i] <- TRUE
+      c.bath_max_dive_max[i] <- bath_max_dive_max
+      c.bath_mean_dive_max[i] <- bath_mean_dive_max
+      c.bath_max_dive_max_mean[i] <- bath_max_dive_max_mean
+      c.bath_mean_dive_max_mean[i] <- bath_mean_dive_max_mean
+      c.prop_bath_mean_dive_max[i] <- prop_bath_mean_dive_max
+      c.prop_bath_mean_dive_max_mean[i] <- prop_bath_mean_dive_max_mean
+      
+      c.long.start[i] <- long.start
+      c.lat.start[i] <- lat.start
+      c.long.end[i] <- long.end
+      c.lat.end[i] <- lat.end
+      c.long.mid[i] <- long.mid
+      c.lat.mid[i] <- lat.mid
+      
+      c.dist.p2p[i] <- dist.p2p
+      c.dist.straight[i] <- dist.straight
+      
+      c.bath.mean[i] <- bath.mean
+      c.bath.min[i] <- bath.min
+      c.bath.max[i] <- bath.max
+      c.n_gps[i] <- n_gps
       
     }
 } #End of for loop
