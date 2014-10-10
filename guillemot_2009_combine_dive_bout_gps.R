@@ -265,3 +265,19 @@ bout.info <- cbind.data.frame(c.gps_info, c.bath_max_dive_max,
                       c.bath.mean, c.bath.min,
                       c.bath.max, c.n_gps                      
                       )
+
+
+names(bout.info) <- c("gps_info", "bath_max_dive_max",
+   "bath_mean_dive_max",
+   "bath_max_dive_max_mean",
+   "bath_mean_dive_max_mean",
+   "prop_bath_mean_dive_max",
+   "prop_bath_mean_dive_max_mean",
+   "long.start", "lat.start",
+   "long.end", "lat.end",
+   "long.mid", "lat.mid",
+   "dist.p2p", "dist.straight",
+   "bath.mean", "bath.min",
+   "bath.max", "n_gps")
+
+names(dive.bouts)
