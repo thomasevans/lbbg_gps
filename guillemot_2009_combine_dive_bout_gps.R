@@ -31,7 +31,11 @@ dive.bouts$date_time_end <- as.POSIXct(dive.bouts$date_time_end, tz = "UTC")
 
 
 # Bathymetry
-load('bsbd_raster.RData')
+# load('bsbd_raster.RData')
+
+# Alternative raster layer
+library("raster")
+bsbd_raster <- raster("BalticBathymetry.grd")
 
 # str(gps.points)
 # Combine two data - for loop to go through all bouts -----
@@ -160,8 +164,9 @@ for(i in 1:n_bouts){
       gps.bath <- extract(bsbd_raster,xy.gps)
       
       bath.mean <- mean(gps.bath)
-      bath.min <- min(gps.bath)
-      bath.max <- max(gps.bath)
+      # Because bathymetry are negative 
+      bath.min <- max(gps.bath)
+      bath.max <- min(gps.bath)
       
       n_gps <- length(gps.data$ring_number)
       
@@ -281,3 +286,14 @@ names(bout.info) <- c("gps_info", "bath_max_dive_max",
    "bath.max", "n_gps")
 
 names(dive.bouts)
+
+
+str(dive.bouts)
+hist(bout.info$prop_bath_mean_dive_max_mean)
+
+plot(bout.info$bath.mean ~ dive.bouts$depth_max_mean)
+
+hist(dive.bouts$depth_max_mean)
+hist(bout.info$bath.mean)
+
+hist(bout.info$bath_mean_dive_max)
