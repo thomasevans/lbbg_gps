@@ -15,6 +15,10 @@ setwd("...")
 # Bathymetry
 load('bsbd_raster.RData')
 
+library("raster")
+bath_raster <- raster("bsbd-0.9.3.grd")
+
+
 # 2014 GPS data
 load('points.2014.all.RData')
 
@@ -262,10 +266,10 @@ addalpha <- function(colors, alpha=1.0) {
   return(rgb(r[1,], r[2,], r[3,], r[4,]))
 }
 
-col.obs.transp <- addalpha((brewer.pal(9,"OrRd")), alpha = 0.75)
+col.obs.transp <- addalpha((brewer.pal(9,"OrRd")), alpha = 0.60)
 
 # Batymetry colours
-bath.break.points <- c(seq(0,-50,-10),-75,-100,-125,-175)
+bath.break.points <- c(0, -20, seq(-30,-70,-10),-90,-110,-250)
 bath.col <- rev(brewer.pal(9,"PuBu"))
 
 # pdf("test.bath.pdf")
@@ -285,13 +289,16 @@ load("SWE_adm0.RData")
 
 
 # Bathymetry map -----
-pdf("bathymetry.pdf")
+pdf("bathymetry_bsbd-0.9.3.pdf")
+# win.metafile("bathymetry_bsbd-0.9.3.wmf")
+png("bathymetry_bsbd-0.9.3.png", width = 1500, height = 1500, res = 200)
+
 # Plot base map
 break.points <- c(seq(0,4,0.5),5)
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
 plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1), ylim = c(56.8, 57.65))
-plot(bsbd_raster, colNA = "green", col = bath.col, add = TRUE ,
+plot(bath_raster, colNA = "green", col = bath.col, add = TRUE ,
      breaks = bath.break.points, xlim = c(16.8, 18.3),
      ylim = c(56.8, 57.8))
 title(main = "Bathymetry map", line = 3)
@@ -310,16 +317,23 @@ dev.off()
 
 
 # Map for 2014 data -----
-pdf("guillemots_2014.pdf")
+pdf("guillemots_2014_bsbd-0.9.3.pdf")
+# win.metafile("guillemots_2014_bsbd-0.9.3.wmf")
+png("guillemots_2014_bsbd-0.9.3.png", width = 1500, height = 1500, res = 200)
 # Plot base map
 break.points <- c(seq(0,2,0.25),2.5)
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
 plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1),
      ylim = c(56.8, 57.65))
-plot(bsbd_raster, colNA = "green", col = bath.col,
+plot(bath_raster, colNA = "green", col = bath.col,
      add = TRUE , breaks = bath.break.points,
      xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
+
+dist <- distanceFromPoints(time.weight.2014.surface.raster, xy = c(17.973, 57.286))
+maxdist <- 100000 # 100 km
+time.weight.2014.surface.raster[dist > maxdist] <- NA
+
 plot(time.weight.2014.surface.raster, add = T,
      col = col.obs.transp,
      breaks = break.points,
@@ -343,14 +357,18 @@ dev.off()
 
 # Map for 2009 data ----
 # range(time.weight.2009.surface.raster)
-pdf("guillemots_2009.pdf")
+pdf("guillemots_2009_bsbd-0.9.3.pdf")
+# win.metafile("guillemots_2009_bsbd-0.9.3.wmf")
+png("guillemots_2009_bsbd-0.9.3.png", width = 1500, height = 1500, res = 200)
+
+
 # Plot base map
 break.points <- c(seq(0,4,0.5),5)
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
 plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1),
      ylim = c(56.8, 57.65))
-plot(bsbd_raster, colNA = "green", col = bath.col,
+plot(bath_raster, colNA = "green", col = bath.col,
      add = TRUE , breaks = bath.break.points,
      xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
 plot(time.weight.2009.surface.raster, add = T,
@@ -388,17 +406,24 @@ dif_raster[(dif_raster) == 0] <- NA
 
 col.dif <- c(rev(brewer.pal(7,"Reds"))[3:7], (brewer.pal(9,"Greens"))[c(2:4,8:9)])
 
-col.dif.transp <- addalpha(col.dif, alpha = 0.75)
+col.dif.transp <- addalpha(col.dif, alpha = 0.65)
 # range(dif_raster)
 break.points <- c(-5:0,0.5,1,1.5,2)
 
-pdf("guillemots_year_dif.pdf")
+pdf("guillemots_year_dif_bsbd-0.9.3.pdf")
+# png("guillemots_year_dif_bsbd-0.9.3.png")
+# win.metafile("guillemots_year_dif_bsbd-0.9.3.wmf")
+png("guillemots_year_dif_bsbd-0.9.3.png", width = 1500, height = 1500, res = 200)
+
+# ?pdf
+# ?png
+# ?windows.metafile
 # Plot base map
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
 plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1),
      ylim = c(56.8, 57.65))
-plot(bsbd_raster, colNA = "green", col = bath.col,
+plot(bath_raster, colNA = "green", col = bath.col,
      add = TRUE , breaks = bath.break.points,
      xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
 plot(dif_raster, add = T,
