@@ -35,7 +35,7 @@ dive.bouts$date_time_end <- as.POSIXct(dive.bouts$date_time_end, tz = "UTC")
 
 # Alternative raster layer
 library("raster")
-bsbd_raster <- raster("BalticBathymetry.grd")
+bath_raster <- raster("bsbd-0.9.3.grd")
 
 # str(gps.points)
 # Combine two data - for loop to go through all bouts -----
@@ -161,7 +161,7 @@ for(i in 1:n_bouts){
       xy.gps <- cbind(gps.data$longitude, gps.data$latitude)
       
       # Extract bathymetry data for these positions
-      gps.bath <- extract(bsbd_raster,xy.gps)
+      gps.bath <- extract(bath_raster,xy.gps)
       
       bath.mean <- mean(gps.bath)
       # Because bathymetry are negative 
@@ -288,10 +288,115 @@ names(bout.info) <- c("gps_info", "bath_max_dive_max",
 names(dive.bouts)
 
 
-str(dive.bouts)
-hist(bout.info$prop_bath_mean_dive_max_mean)
 
-plot(bout.info$bath.mean ~ dive.bouts$depth_max_mean)
+# Histograms of dive info -----
+
+pdf("guillemots_dive_histograms.pdf")
+# png("guillemots_year_dif_bsbd-0.9.3.png")
+# win.metafile("guillemots_year_dif_bsbd-0.9.3.wmf")
+png("guillemots_dive_histograms.png", width = 1000, height = 1500, res = 200)
+
+par(mfrow = c(3,1))
+par( mar = c(4, 4, 2, 1))
+
+hist((dive.bouts$depth_max_mean),
+     xlim = c(0,90), breaks = 20,
+     ylim = c(0,100),
+     las = 1,
+     ylab = "n dive bouts",
+     xlab = "Dive depth (m)",
+     main = "",
+     col = "red",
+     yaxs = "i",
+     cex.axis = 1.2,
+     cex.main = 1.5,
+     cex.lab = 1.2
+)
+box()
+
+
+# str(dive.bouts)
+hist((bout.info$bath_mean_dive_max_mean),
+     xlim = c(-20,100), breaks = 20,
+     ylim = c(0,9),
+     las = 1,
+     ylab = "n dive bouts",
+     xlab = "Distance above sea bottom (m)",
+     main = "",
+     col = "red",
+     yaxs = "i",
+     cex.axis = 1.2,
+     cex.main = 1.5,
+     cex.lab = 1.2
+)
+abline(v = 0, lty = 2, lwd = 2, col = "dark grey")
+box()
+
+
+# str(dive.bouts)
+
+# str(dive.bouts)
+hist(100 - (100 * bout.info$prop_bath_mean_dive_max_mean),
+     xlim = c(0,150), breaks = 20,
+     ylim = c(0,20),
+     las = 1,
+     ylab = "n dive bouts",
+     xlab = "% of sea depth",
+     main = "",
+     col = "red",
+     yaxs = "i",
+     cex.axis = 1.2,
+     cex.main = 1.5,
+     cex.lab = 1.2
+)
+abline(v = 100, lty = 2, lwd = 2, col = "dark grey")
+box()
+dev.off()
+
+
+
+# Plot dive depth vs. bathymetry ------
+pdf("guillemots_dive_water_depth.pdf")
+# png("guillemots_year_dif_bsbd-0.9.3.png")
+# win.metafile("guillemots_year_dif_bsbd-0.9.3.wmf")
+png("guillemots_dive_water_depth.png", width = 1500, height = 1500, res = 200)
+plot(-bout.info$bath.mean , dive.bouts$depth_max_mean,
+     ylim = c(90,-2), xlim = c(0,120),
+     xaxs = "i",
+     xlab = "Water depth (m)",
+     ylab = "Dive depth (m)",
+     las = 1,
+     cex.axis = 1.2,
+     cex.main = 1.5,
+     cex.lab = 1.2,
+     main = "Dive depths (bout mean) vs. sea depth"
+     )
+polygon(x = c(0,130,130), y = c(0,130,0),
+        col = "light blue",
+        lty = 4)
+polygon(x = c(0,0,95), y = c(95,0,95),
+       col = "grey")
+
+# ?abline
+abline(a = 0, b = 0.5, col = "black", lty = 2, lwd = 2)
+# abline(a = 0, b = 1, col = "red", lty = 2, lwd = 2)
+abline(a = 15, b = 1, col = "red", lty = 3, lwd = 1)
+abline(a = -15, b = 1, col = "red", lty = 3, lwd = 1)
+abline(a = -30, b = 1, col = "blue", lty = 3, lwd = 1)
+abline(a = -45, b = 1, col = "blue", lty = 3, lwd = 1)
+
+text(x = 40, y = 40, labels = "Bottom", col = "black")
+text(x = 45, y = 30, labels = "+15 m", col = "red")
+text(x = 35, y = 50, labels = "-15 m", col = "red")
+text(x = 50, y = 20, labels = "+30 m", col = "blue")
+text(x = 55, y = 10, labels = "+45 m", col = "blue")
+text(x = 85, y = 45, labels = "50%", col = "black")
+points(-bout.info$bath.mean , dive.bouts$depth_max_mean,
+       cex = 1.5)
+box()
+dev.off()
+
+#-----
 
 hist(dive.bouts$depth_max_mean)
 hist(bout.info$bath.mean)
