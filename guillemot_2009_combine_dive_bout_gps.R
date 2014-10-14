@@ -81,7 +81,7 @@ c.n_gps <- NULL
 
 n_bouts <- length(dive.bouts$ring_number)
 
-
+i <- 17
 for(i in 1:n_bouts){
   
   # Re-set vairables
@@ -163,10 +163,10 @@ for(i in 1:n_bouts){
       # Extract bathymetry data for these positions
       gps.bath <- extract(bath_raster,xy.gps)
       
-      bath.mean <- mean(gps.bath)
+      bath.mean <- median(gps.bath, na.rm = TRUE)
       # Because bathymetry are negative 
-      bath.min <- max(gps.bath)
-      bath.max <- min(gps.bath)
+      bath.min <- max(gps.bath, na.rm = TRUE)
+      bath.max <- min(gps.bath, na.rm = TRUE)
       
       n_gps <- length(gps.data$ring_number)
       
@@ -318,7 +318,7 @@ box()
 # str(dive.bouts)
 hist((bout.info$bath_mean_dive_max_mean),
      xlim = c(-20,100), breaks = 20,
-     ylim = c(0,9),
+     ylim = c(0,20),
      las = 1,
      ylab = "n dive bouts",
      xlab = "Distance above sea bottom (m)",
@@ -337,7 +337,7 @@ box()
 
 # str(dive.bouts)
 hist(100 - (100 * bout.info$prop_bath_mean_dive_max_mean),
-     xlim = c(0,150), breaks = 20,
+     xlim = c(0,150), breaks = 100,
      ylim = c(0,20),
      las = 1,
      ylab = "n dive bouts",
@@ -360,6 +360,8 @@ pdf("guillemots_dive_water_depth.pdf")
 # png("guillemots_year_dif_bsbd-0.9.3.png")
 # win.metafile("guillemots_year_dif_bsbd-0.9.3.wmf")
 png("guillemots_dive_water_depth.png", width = 1500, height = 1500, res = 200)
+par(mfrow=c(1,1))
+par(mar= c(5, 4, 4, 2) + 0.1)
 plot(-bout.info$bath.mean , dive.bouts$depth_max_mean,
      ylim = c(90,-2), xlim = c(0,120),
      xaxs = "i",
@@ -396,9 +398,41 @@ points(-bout.info$bath.mean , dive.bouts$depth_max_mean,
 box()
 dev.off()
 
-#-----
 
-hist(dive.bouts$depth_max_mean)
-hist(bout.info$bath.mean)
+str(bout.info)
+str(dive.bouts)
 
-hist(bout.info$bath_mean_dive_max)
+
+# Export table to database table -----
+
+export.tab <- bout.info
+export.tab <- cbind(export.tab, dive.bouts[,1:2])
+
+str(export.tab)
+
+
+# Write to database
+library("RODBC")
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
+
+
+#will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
+sqlSave(gps.db, export.tab,
+        tablename = "guillemots_dive_bouts_2009_bathymetry",
+        append = FALSE, rownames = FALSE, colnames = FALSE,
+        verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
+        test = FALSE, nastring = NULL,
+        varTypes =  c(date_time_start = "datetime")
+)
+
+
+
+
+# Checking data ----
+sort(-bout.info$bath.mean)
+
+test.sub <- bout.info[((bout.info$bath.mean == bout.info$bath.mean[7]) & (!is.na(bout.info$bath.mean))),]
+
+points(test.sub$long.mid, test.sub$lat.mid, col = "red")
+
+# summary(((bout.info$bath.mean == -11.6470) & (!is.na(bout.info$bath.mean))))
