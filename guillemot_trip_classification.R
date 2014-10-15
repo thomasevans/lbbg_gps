@@ -628,9 +628,34 @@ hist((trip_duration[trip_duration < 24*60*60]/(60*60)), breaks = 40)
 
 hist(trips.df$col_dist_max[trips.df$col_dist_max < 100000]/1000, breaks = 80)
 
-trips.f$duration <- trip_duration[trips.df$col_dist_max > 3000]
 # Exclude trips < 3 km (3000 m)
 trips.f <- trips.df[trips.df$col_dist_max > 3000,]
+
+
+trips.f$duration <- trip_duration[trips.df$col_dist_max > 3000]
+
+dist_2009_km <- (trips.f$col_dist_max/1000)
+dur_2009_km <- (trips.f$duration/(60*60))
+
+png("guillemots_2014_dist_dur_comp.png", width = 800, height = 800, res = 200)
+plot(dist_2009_km ~ dur_2009_km,
+#      xlim = c(0,50), ylim = c(0,70),
+     log = "xy",
+     ylab = "Distance (km)",
+    xlab = "Duration (h)",
+las = 1
+)
+dev.off()
+f <- dur_2009_km < 30
+abline(lm(log(dist_2009_km[f]) ~ log(dur_2009_km[f])))
+
+
+
+xs <- range(log(dur_2009_km[f]))
+lmObj <- lm(log(dist_2009_km[f]) ~ log(dur_2009_km[f]))
+ys.new <- predict(lmObj,  newdata = data.frame(x = xs))
+lines(log(dur_2009_km[f]), ys.new, col = "black" ,lty=1,lwd=2)
+
 
 png("guillemots_2014_dist_dur.png", width = 1600, height = 800, res = 200)
 par(mfrow = c(1,2))
