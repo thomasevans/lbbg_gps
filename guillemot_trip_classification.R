@@ -537,7 +537,7 @@ trip_device_info_serial <- NULL
 trip_ring_number <- NULL
 trip_start_vallid  <- NULL
 trip_end_vallid   <- NULL
-
+trip_col_dist <- NULL
 
 # i <- 21
 # summary(points_all$type == "bad_location")
@@ -567,6 +567,7 @@ for(i in 1:length(trip_ids)){
   trip_start[i] <- min(points.sub$date_time)
   trip_end[i]   <- max(points.sub$date_time)
   trip_id[i]    <- id
+  trip_col_dist[i]  <- max(points.sub$coldist, na.rm = TRUE)
   trip_device_info_serial[i] <- as.character(
     points.sub$device_info_serial[1])
   trip_ring_number[i] <- as.character(points.sub$ring_number[1])
@@ -599,7 +600,8 @@ trips.df <- data.frame(trip_id,
                        trip_end,
                        trip_start_vallid,
                        trip_end_vallid,
-                       trip_ring_number)
+                       trip_ring_number,
+                       trip_col_dist)
 
 str(trips.df)
 
@@ -609,9 +611,72 @@ names(trips.df) <- c("trip_id",
                      "end_time",
                      "start_time_vallid",
                      "end_time_vallid",
-                     "ring_number")
+                     "ring_number",
+                     "col_dist_max")
 
 
+
+# Summary statistics ----
+
+trip_duration <- as.numeric(trips.df$end_time - trips.df$start_time)
+hist(trip_duration)
+
+summary(trip_duration < 30*60)
+hist((trip_duration[trip_duration < 24*60*60]/(60*60)), breaks = 40)
+hist((trip_duration[trip_duration < 24*60*60]/(60*60)), breaks = 40)
+
+
+hist(trips.df$col_dist_max[trips.df$col_dist_max < 100000]/1000, breaks = 80)
+
+trips.f$duration <- trip_duration[trips.df$col_dist_max > 3000]
+# Exclude trips < 3 km (3000 m)
+trips.f <- trips.df[trips.df$col_dist_max > 3000,]
+
+png("guillemots_2014_dist_dur.png", width = 1600, height = 800, res = 200)
+par(mfrow = c(1,2))
+par(mar= c(5, 4, 4, 2) + 0.1)
+# dev.off()
+hist((trips.f$duration/(60*60)), breaks = 80,
+     xlim = c(0,80),
+     col = "grey",
+     las = 1,
+     xlab = "Trip duration (h)",
+     main = "")
+box()
+
+# str(trips.f)
+
+hist(trips.f$col_dist_max/1000, breaks = 20,
+     col = "grey",
+     las = 1,
+     xlab = "Trip distance (km)",
+     main = "")
+box()
+dev.off()
+
+median(trips.f$col_dist_max/1000)
+median((trips.f$duration/(60*60)))
+
+
+
+hist(trips.f$duration/(60*60), xlim = c(0,100), breaks = 80)
+
+times <- format(trips.f$start_time, format="%H:%M:%S")
+dtTime <- as.numeric(trips.f$start_time - trunc(trips.f$start_time, "days"))
+
+col.dif <- rainbow(15)
+
+str(times)
+plot((dtTime/60),(trips.f$duration/(60*60)),
+     ylim = c(0,80),
+     col = col.dif[as.numeric(trips.f$ring_number)])
+abline(h = (24), lty = 2, lwd = 2)
+
+unique(trips.f$ring_number[trips.f$duration > (24*60*60)])
+
+
+
+# length(dtTime)
 # time.dif <- difftime(trips.df$end_time, trips.df$start_time,
 #                      units = "mins")
 # 
