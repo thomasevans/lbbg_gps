@@ -19,9 +19,66 @@ library("animation")
 hg.points <- read.csv("fagelsundet_hg_data.csv",
                       header = TRUE)
 
+# Fix date-time
+hg.points$date_time <-  as.POSIXct(strptime(hg.points$date_time,
+                                        format = "%Y-%m-%d %H:%M:%S",
+                                        tz = "UTC"))
+
+
+# Sort data-frame by device_info_serial, then by date_time
+hg.points <- hg.points[order(hg.points$device_info_serial,
+                                    hg.points$date_time), ]
+
 
 # Calculate time intervals ------
 # Calculat the time intervals between GPS points
+
+# First time differences
+n         <- length(hg.points$date_time)
+time_pre  <- hg.points$date_time[1:(n-1)]
+time_next <- hg.points$date_time[2:(n)]
+
+t_diff <- as.numeric(difftime(time_next, time_pre,
+                              units = "secs"))
+
+# Give value to first point
+t_diff <- c(NA,t_diff)
+
+
+id_pre <- hg.points$device_info_serial[1:(n-1)]
+id_next <- hg.points$device_info_serial[2:(n)]
+
+id.fun <- function(id1, id2){
+  if(id1 == id2) return(1) else return(0)
+}
+
+id_test <- mapply(id.fun, id1 = id_pre, id2 = id_next)
+# summary(as.factor(id_test))
+id_test <- c(0,id_test)
+
+t_diff[id_test == 0] <- NA
+
+
+hist(t_diff)
+# range(t_diff, na.rm = TRUE)
+
+# median(t_diff, na.rm = TRUE)
+
+
+# sort(t_diff, decreasing = FALSE)[1:100]
+
+# There are some longer time intervals (not many)
+# Here I replace time intervals longer than 1850 s (just over 30 minutes)
+# with NA values - i.e. giving these points zero weight
+sort(t_diff, decreasing = TRUE)[1:100]
+time_interval <- t_diff
+time_interval[t_diff > 1850] <- NA
+
+hist(time_interval)
+
+
+
+
 
 
 # Calculate distances -----
