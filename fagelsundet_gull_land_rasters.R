@@ -60,7 +60,7 @@ t_diff[id_test == 0] <- NA
 
 
 hist(t_diff)
-# range(t_diff, na.rm = TRUE)
+range(t_diff, na.rm = TRUE)
 
 # median(t_diff, na.rm = TRUE)
 
@@ -77,7 +77,10 @@ time_interval[t_diff > 1850] <- NA
 hist(time_interval)
 
 
+time_interval_narm <- time_interval
 
+# Replace NAs with 0 (i.e. zero weight)
+time_interval_narm[is.na(time_interval)] <- 0
 
 
 
@@ -91,7 +94,9 @@ col_loc <- cbind(17.929104, 60.630572)
 source("deg.dist.R")
 
 # Run for all points
-col.dist <- 1000*deg.dist(col_loc[1],col_loc[2], obs.xy[,1], obs.xy[,2])
+col.dist <- 1000*deg.dist(col_loc[1],col_loc[2],
+                          hg.points$longitude,
+                          hg.points$latitude)
 
 
 # Set-up base-raster layer -----
@@ -121,15 +126,54 @@ f[is.na(f)] <- FALSE
 obs.xy.for <- obs.xy[f,]
 
 
+time.weight.hg.all.for <- 100*((time_interval_narm[f]) /
+  (sum(time_interval_narm[f])))
 
+head(time.weight.hg.all.for)
+hist(time.weight.hg.all.for)
 
 # Make raster layers -----
 
 # All 'foraging' locations
 point_raster_forage <- rasterize(obs.xy.for,
                                  base_raster,
-                                 1,
+                                 time.weight.hg.all.for,
                                  fun = sum)
+
+range(values(point_raster_forage), na.rm = TRUE)
+hist(values(point_raster_forage), breaks = 100)
+hist(values(point_raster_forage), breaks = 100,
+     ylim = c(0,50))
+
+
+
+plotKML(point_raster_forage, file = "point_raster_forage_percent.kml",
+        min.png.width = (10*612))
+# sort(time.weight.hg.all.for, decreasing = TRUE)[1:100]
+
+
+# Top 100
+val.100 <- sort(values(point_raster_forage), decreasing = TRUE)[100]
+point_raster_forage_100 <- point_raster_forage
+point_raster_forage_100[values(point_raster_forage) < val.100] <- NA
+
+source("color_legend_png_fun.R")
+
+values(point_raster_forage_100) <- log10(values(point_raster_forage_100))
+data(SAGA_pal)
+
+plotKML(point_raster_forage_100, file = "point_raster_forage_percent_100.kml",
+        min.png.width = (10*612), colour_scale = SAGA_pal[[1]])
+
+10^(range(values(point_raster_forage_100),na.rm = TRUE))
+# Improve colour scale
+color_legend_png(legend.file = "layer_legend.png",
+                 ras.val = values(point_raster_forage_100),
+                 zval = c(0.2,0.3,0.5,1,2,5,10,15
+                          ))
+
+hist(values(10^point_raster_forage_100), breaks = 40)
+sum(10^values(point_raster_forage_100), na.rm = TRUE)
 
 
 # 6120 HG example -----
@@ -154,3 +198,27 @@ plotKML(point_raster_forage_6120_log, file = "point_raster_forage_6120_log.kml",
 
 
 # Output raster layers to kml files -----
+
+
+
+
+
+# Get points ----------
+coordinates(raster_layer)
+values(raster_layer)
+
+# Could summarise by number of birds, species present, individual IDs
+# etc. making new raster layers for each to extract info - then 
+# combining to a data.frame
+
+
+
+# Put multiple rasters into a kml single file ----
+stacked.ras <- stack(list(point_raster_forage, point_raster_forage_100))
+
+# Doesn't work at the moment
+kml_layer.Raster(stacked.ras, file = "test_stack.kml",
+        min.png.width = (10*612),
+        colour= "black")
+
+# plot(stacked.ras)
