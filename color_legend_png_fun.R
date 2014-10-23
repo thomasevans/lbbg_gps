@@ -3,7 +3,8 @@ color_legend_png <- function(legend.file,pointsize = 14,
                              ras.val = NA,
                              zval = c(0.1,0.2,0.3,0.5,1,2,5,10,15,
                                       25,50),
-                             main = "% use"){
+                             main = "% use",
+                             dig = 1){
   
   require(shape)
       
@@ -102,7 +103,7 @@ color_legend_png <- function(legend.file,pointsize = 14,
                   zval = zval, log = TRUE, posx = c(0, 0.3), 
                   posy = c(0.1, 0.7), main = main, main.cex = 1.0, 
                   main.col = "white", lab.col = "white", 
-                  digit = 1, left = FALSE)
+                  digit = dig, left = FALSE)
   
   
       dev.off()
