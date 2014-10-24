@@ -19,6 +19,14 @@ library("animation")
 hg.points <- read.csv("fagelsundet_hg_data.csv",
                       header = TRUE)
 
+# CG data
+hg.points <- read.csv("fagelsundet_cg_data.csv",
+                      header = TRUE)
+
+# GBBG data
+hg.points <- read.csv("fagelsundet_gbbg_data.csv",
+                      header = TRUE)
+
 # Fix date-time
 hg.points$date_time <-  as.POSIXct(strptime(hg.points$date_time,
                                         format = "%Y-%m-%d %H:%M:%S",
@@ -93,11 +101,76 @@ col_loc <- cbind(17.929104, 60.630572)
 # Previously saved function
 source("deg.dist.R")
 
+# source("col.dist.fun.R")
+
+# If want to use actual nest location
+# Get nest locations
+device_id <- unique(hg.points$device_info_serial)
+
+
+
+library("RODBC")
+# vignette("RODBC")
+gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
+
+# Nest location (actually start location)
+g <- data.frame(device_info_serial=numeric(),
+                start_latitude = numeric(),
+                start_longitude = numeric())
+for(i in 1:length(device_id)){
+g[i,] <- sqlQuery(gps.db,
+              query = paste("SELECT gps_ee_track_session_limited_local.device_info_serial, gps_ee_track_session_limited_local.start_latitude, gps_ee_track_session_limited_local.start_longitude
+          FROM gps_ee_track_session_limited_local
+          WHERE (((gps_ee_track_session_limited_local.device_info_serial)= ",
+                            device_id[i], "));", sep = ""),
+              as.is = TRUE)
+}
+
+close(gps.db)
+
+# s_long <- as.numeric(g$start_longitude[1])
+# s_lat  <- as.numeric(g$start_latitude[1])
+
+bird.dist <- function(device_id,lat,long, z, ...){
+  source("deg.dist.R")
+  x <- as.data.frame(z[1])
+  lat.1 <- as.numeric(x[x$device_info_serial == device_id,2])
+  long.1 <- as.numeric(x[x$device_info_serial == device_id,3])
+  dist <- deg.dist(long.1,lat.1,
+                   long, lat, km = FALSE) 
+  return(unlist(dist)[1])
+}
+# g
+
+# x <- list(g)
+# str(unlist(x))
+# str(as.data.frame(x[1]))
+col.dist <- NULL
+# str(col.dist)
+col.dist <- mapply(bird.dist, lat = hg.points$latitude,
+                   long = hg.points$longitude,
+                   device_id = hg.points$device_info_serial,
+                   MoreArgs = (list(z = list(g)))
+                   )
+# head(col.dist)
+# str(col.dist)
+bird.dist(lat = hg.points$latitude[1],
+          long = hg.points$longitude[1],
+          device_id = hg.points$device_info_serial[1],
+          z = list(g))
+
+col.dist <- mapply(col.dist.fun, lat = hg.points$latitude,
+                   long = hg.points$longitude,
+                   device_info_serial = hg.points$device_info_serial)
+
+
 # Run for all points
 col.dist <- 1000*deg.dist(col_loc[1],col_loc[2],
                           hg.points$longitude,
                           hg.points$latitude)
 
+
+col.dist <- col.dist*1000
 
 # Set-up base-raster layer -----
 # Encompases most of range of GPS points
@@ -150,7 +223,7 @@ hist(values(point_raster_forage), breaks = 100,
 
 values(point_raster_forage) <- log10(values(point_raster_forage))
 
-plotKML(point_raster_forage, file = "raster_hg_all.kml",
+plotKML(point_raster_forage, file = "raster_cg_all.kml",
         min.png.width = (20*612),
         colour_scale = SAGA_pal[[1]])
 # sort(time.weight.hg.all.for, decreasing = TRUE)[1:100]
@@ -158,9 +231,19 @@ plotKML(point_raster_forage, file = "raster_hg_all.kml",
 # Improve colour scale
 10^(range(values(point_raster_forage),na.rm = TRUE))
 
+
 color_legend_png(legend.file = "layer_legend.png",
                  ras.val = values(point_raster_forage),
-                 zval = c(0.001,0.01,0.1,1,5,15
+                  dig = 3)
+# hist(values(point_raster_forage))
+
+
+z.min <- 10^(min(values(point_raster_forage), na.rm = TRUE) - 0.1)
+z.max <- 10^(max(values(point_raster_forage), na.rm = TRUE) + 0.1)
+
+color_legend_png(legend.file = "layer_legend.png",
+                 ras.val = (values(point_raster_forage)),
+                 zval = c(0.001,0.01,0.1,1,5,10,22
                  ), dig = 3)
 
 # Top 100
@@ -178,7 +261,7 @@ plotKML(point_raster_forage_100, file = "point_raster_forage_percent_100.kml",
 # Improve colour scale
 color_legend_png(legend.file = "layer_legend.png",
                  ras.val = values(point_raster_forage_100),
-                 zval = c(0.2,0.3,0.5,1,2,5,10,15
+                 zval = c(0.1,0.5,1,2,5,10,15,22
                           ), dig = 1)
 
 hist(values(10^point_raster_forage_100), breaks = 40)
@@ -237,7 +320,7 @@ make.raster <- function(device_id){
     
     
     values(raster_x) <- log10(values(raster_x))
-    ?plotKML
+#     ?plotKML
     plotKML(raster_x, file = paste("raster_hg_", device_id, "_all.kml", sep = ""),
             min.png.width = (20*612),
             colour_scale = SAGA_pal[[1]])
@@ -267,6 +350,12 @@ make.raster(6149)
 make.raster(6150)
 make.raster(6151)
 make.raster(6156)
+
+# For each CG -----
+make.raster(2090)
+make.raster(2082)
+make.raster(2095)
+
 
 
 # Output raster layers to kml files -----
