@@ -9,6 +9,9 @@ color_legend_png <- function(legend.file,pointsize = 14,
   require(shape)
       
   z.min <- 10^(min(ras.val, na.rm = TRUE) - 0.1)
+  if(z.min == 0){
+    z.min <- 0.0001
+  }
   z.max <- 10^(max(ras.val, na.rm = TRUE) + 0.1)
   
   colorlegend.c <- function (col = femmecol(100), zlim, zlevels = 5, dz = NULL, 
