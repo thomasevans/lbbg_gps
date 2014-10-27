@@ -33,9 +33,22 @@ hg.points$date_time <-  as.POSIXct(strptime(hg.points$date_time,
                                         tz = "UTC"))
 
 
+
+# For GBBG data - correct data format
+hg.points$latitude <- as.numeric(as.character(hg.points$latitude))
+hg.points$longitude <- as.numeric(as.character(hg.points$longitude))
+hg.points$speed     <- as.numeric(as.character(hg.points$speed))
+
+str(hg.points)
+
 # Sort data-frame by device_info_serial, then by date_time
 hg.points <- hg.points[order(hg.points$device_info_serial,
                                     hg.points$date_time), ]
+
+# For GBBG data specifically, retain only 2014 data
+date.min <- as.POSIXct("2014-05-15 00:00:00", tz = "UTC")
+hg.points <- hg.points[!is.na(hg.points$speed),]
+hg.points <- hg.points[hg.points$date_time > date.min, ]
 
 
 # Calculate time intervals ------
@@ -70,6 +83,8 @@ t_diff[id_test == 0] <- NA
 hist(t_diff)
 range(t_diff, na.rm = TRUE)
 
+
+
 # median(t_diff, na.rm = TRUE)
 
 
@@ -81,7 +96,8 @@ range(t_diff, na.rm = TRUE)
 sort(t_diff, decreasing = TRUE)[1:100]
 time_interval <- t_diff
 time_interval[t_diff > 1850] <- NA
-
+summary(time_interval)
+length(time_interval)
 hist(time_interval)
 
 
@@ -128,6 +144,7 @@ g[i,] <- sqlQuery(gps.db,
 
 close(gps.db)
 
+# g
 # s_long <- as.numeric(g$start_longitude[1])
 # s_lat  <- as.numeric(g$start_latitude[1])
 
@@ -147,21 +164,25 @@ bird.dist <- function(device_id,lat,long, z, ...){
 # str(as.data.frame(x[1]))
 col.dist <- NULL
 # str(col.dist)
-col.dist <- mapply(bird.dist, lat = hg.points$latitude,
-                   long = hg.points$longitude,
-                   device_id = hg.points$device_info_serial,
-                   MoreArgs = (list(z = list(g)))
-                   )
+# col.dist <- mapply(bird.dist, lat = hg.points$latitude,
+#                    long = hg.points$longitude,
+#                    device_id = hg.points$device_info_serial,
+#                    MoreArgs = (list(z = list(g)))
+#                    )
 # head(col.dist)
 # str(col.dist)
-bird.dist(lat = hg.points$latitude[1],
-          long = hg.points$longitude[1],
-          device_id = hg.points$device_info_serial[1],
-          z = list(g))
+# bird.dist(lat = as.numeric(hg.points$latitude[1]),
+#           long = as.numeric(hg.points$longitude[1]),
+#           device_id = hg.points$device_info_serial[1],
+#           z = list(g))
 
-col.dist <- mapply(col.dist.fun, lat = hg.points$latitude,
-                   long = hg.points$longitude,
-                   device_info_serial = hg.points$device_info_serial)
+# [1:100]
+
+col.dist <- mapply(bird.dist,
+                   lat = as.numeric(hg.points$latitude),
+                   long = as.numeric(hg.points$longitude),
+                   device_id = hg.points$device_info_serial,
+                   MoreArgs = (list(z = list(g))))
 
 
 # Run for all points
@@ -192,8 +213,10 @@ speed <- as.numeric(as.character(hg.points$speed))
 
 
 # Non-flight and not-colony
-summary(speed)
+# summary(speed)
 f <- (speed < 4) & (col.dist > 1000)
+# summary(speed < 4)
+# summary(col.dist > 1000)
 f[is.na(f)] <- FALSE
 
 obs.xy.for <- obs.xy[f,]
@@ -214,6 +237,11 @@ point_raster_forage <- rasterize(obs.xy.for,
                                  base_raster,
                                  time.weight.hg.all.for,
                                  fun = sum)
+
+# summary(is.na(values(point_raster_forage)))
+
+x <- values(point_raster_forage)[!is.na(values(point_raster_forage))]
+head(x)
 
 range(values(point_raster_forage), na.rm = TRUE)
 hist(values(point_raster_forage), breaks = 100,
@@ -243,7 +271,7 @@ z.max <- 10^(max(values(point_raster_forage), na.rm = TRUE) + 0.1)
 
 color_legend_png(legend.file = "layer_legend.png",
                  ras.val = (values(point_raster_forage)),
-                 zval = c(0.001,0.01,0.1,1,5,10,22
+                 zval = c(0.001,0.01,0.1,1,5,10,17
                  ), dig = 3)
 
 # Top 100
@@ -261,8 +289,8 @@ plotKML(point_raster_forage_100, file = "point_raster_forage_percent_100.kml",
 # Improve colour scale
 color_legend_png(legend.file = "layer_legend.png",
                  ras.val = values(point_raster_forage_100),
-                 zval = c(0.1,0.5,1,2,5,10,15,22
-                          ), dig = 1)
+                 zval = c(0.05,0.1,0.5,1,2,5,10,17
+                          ), dig = 2)
 
 hist(values(10^point_raster_forage_100), breaks = 40)
 sum(10^values(point_raster_forage_100), na.rm = TRUE)
@@ -355,6 +383,12 @@ make.raster(6156)
 make.raster(2090)
 make.raster(2082)
 make.raster(2095)
+
+# For each GBBG -----
+make.raster(6121)
+make.raster(821)
+make.raster(6155)
+
 
 
 
