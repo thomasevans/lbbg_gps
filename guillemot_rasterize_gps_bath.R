@@ -177,6 +177,20 @@ points.2009.non_col <- subset(points.2009.all, coldist > 1000)
 points.2009.surface <- subset(points.2009.all, (coldist > 1000) & (
   speed_ms < 5))
 
+# Custom base raster ------
+# 2km squares
+base_raster <- raster(nrows = 78, ncols = 60,
+                      xmn = 16.5, xmx = 18.5,
+                      ymn = 56.6, ymx = 58.0,
+)
+
+# 5km squares
+78*(2/5)
+60*(2/5)
+base_raster <- raster(nrows = 31, ncols = 24,
+                      xmn = 16.5, xmx = 18.5,
+                      ymn = 56.6, ymx = 58.0,
+)
 
 # Prepare raster layers for GPS point subsets -----
 # 2014 + surface points
@@ -200,7 +214,8 @@ time.weight.2014.surface.prop <- 100*time.weight.2014.surface /
 # 2014 surface points raster layer
 # rasterize(xy_coords, raster_parent, weight_vector, function_for_weight_vector)
 time.weight.2014.surface.raster <- rasterize(xy.2014.surface,
-                                     bsbd_raster,
+#                                      bsbd_raster,
+                                     base_raster,
                                      time.weight.2014.surface.prop,
                                      fun = sum)
 
@@ -235,7 +250,8 @@ time.weight.2009.surface.prop <- (100*time.weight.2009.surface
 # 2009 surface points raster layer
 # rasterize(xy_coords, raster_parent, weight_vector, function_for_weight_vector)
 time.weight.2009.surface.raster <- rasterize(xy.2009.surface,
-                                             bsbd_raster,
+#                                              bsbd_raster,
+                                             base_raster,
                                              time.weight.2009.surface.prop,
                                              fun = sum)
 
@@ -320,6 +336,8 @@ dev.off()
 pdf("guillemots_2014_bsbd-0.9.3.pdf")
 # win.metafile("guillemots_2014_bsbd-0.9.3.wmf")
 png("guillemots_2014_bsbd-0.9.3.png", width = 1500, height = 1500, res = 200)
+png("guillemots_2014_new_raster.png", width = 1500, height = 1500, res = 200)
+
 # Plot base map
 break.points <- c(seq(0,2,0.25),2.5)
 par(mfrow=c(1,1))
@@ -351,6 +369,66 @@ mtext("Depth (m)",
       las = 2,
       at = 57.5)
 dev.off()
+
+
+
+
+# Output to KMZ file ------
+# For alternative colour palette
+data(SAGA_pal)
+source("color_legend_png_fun.R")
+library("plotKML")
+
+time.weight.2014.surface.raster.log <- time.weight.2014.surface.raster
+
+values(time.weight.2014.surface.raster.log) <- log10(values(time.weight.2014.surface.raster.log))
+
+
+plotKML(time.weight.2014.surface.raster, file = "raster_guillemot_2014_log.kml",
+        min.png.width = (20*612),
+        colour_scale = SAGA_pal[[1]])
+
+source("color_legend_png_fun.R")
+
+
+
+# Improve colour scale
+10^(range(values(time.weight.2014.surface.raster.log),na.rm = TRUE))
+# min(10^(range(values(time.weight.2014.surface.raster.log),na.rm = TRUE)))
+
+color_legend_png(legend.file = "layer_legend.png",
+                 ras.val = (values(time.weight.2014.surface.raster.log)),
+                 zval = c(0.02,0.1,0.5,1,2,5
+                 ), dig = 4)
+
+
+
+bath_raster_2 <- bath_raster
+bath_raster_2
+crs(bath_raster_2) <- crs(time.weight.2014.surface.raster.log)
+
+
+# xmn = 16.5, xmx = 18.5,
+# ymn = 56.6, ymx = 58.0,
+
+e <- extent(16.5, 18.5, 56.6, 58.0)
+bath_raster_3 <- crop(bath_raster_2, e) 
+
+
+bath_raster_4  <- bath_raster_3
+values(bath_raster_4)[values(bath_raster_4) < -100] <- -100
+
+
+
+plotKML(bath_raster_4, file = "bath_raster.kml",
+#         min.png.width = (20*612),
+        colour_scale = bath.col)
+
+str(time.weight.2014.surface.raster.log)
+str(bath_raster_2)
+
+
+
 
 
 
