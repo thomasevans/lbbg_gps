@@ -333,16 +333,21 @@ dev.off()
 
 
 # Map for 2014 data -----
-pdf("guillemots_2014_5km_grid.pdf")
+pdf("guillemots_2014_5km_grid_3.pdf")
 # win.metafile("guillemots_2014_bsbd-0.9.3.wmf")
+png("guillemots_2014_2km_grid.png", width = 1500, height = 1500, res = 200)
+
 png("guillemots_2014_bsbd-0.9.3.png", width = 1500, height = 1500, res = 200)
 png("guillemots_2014_new_raster.png", width = 1500, height = 1500, res = 200)
 range(values(time.weight.2014.surface.raster), na.rm = TRUE)
 # Plot base map
-break.points <- c(seq(0,2,0.25),2.5)
+break.points <- c(seq(0,2,0.25),3)
 
 # Alternative if using large cell size - this was for 5km squares
+# break.points <- c(seq(0,1,0.25),seq(1.5,6,0.5))
 # break.points <- c(seq(0,1,0.25),seq(1.5,3,0.5),6)
+
+
 
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
@@ -388,13 +393,14 @@ time.weight.2014.surface.raster.log <- time.weight.2014.surface.raster
 values(time.weight.2014.surface.raster.log) <- log10(values(time.weight.2014.surface.raster.log))
 
 
-plotKML(time.weight.2014.surface.raster, file = "raster_guillemot_2014_log.kml",
+plotKML(time.weight.2014.surface.raster.log, file = "raster_guillemot_2014_log.kml",
         min.png.width = (20*612),
-        colour_scale = SAGA_pal[[1]])
-
+        colour_scale = SAGA_pal$SG_COLORS_BLUE_RED
+)
+?SAGA_pal
 source("color_legend_png_fun.R")
-
-
+SAGA_pal$SG_COLORS_BLUE_GREY_RED
+str(SAGA_pal)
 
 # Improve colour scale
 10^(range(values(time.weight.2014.surface.raster.log),na.rm = TRUE))
