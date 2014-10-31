@@ -333,18 +333,22 @@ dev.off()
 
 
 # Map for 2014 data -----
-pdf("guillemots_2014_bsbd-0.9.3.pdf")
+pdf("guillemots_2014_5km_grid.pdf")
 # win.metafile("guillemots_2014_bsbd-0.9.3.wmf")
 png("guillemots_2014_bsbd-0.9.3.png", width = 1500, height = 1500, res = 200)
 png("guillemots_2014_new_raster.png", width = 1500, height = 1500, res = 200)
-
+range(values(time.weight.2014.surface.raster), na.rm = TRUE)
 # Plot base map
 break.points <- c(seq(0,2,0.25),2.5)
+
+# Alternative if using large cell size - this was for 5km squares
+# break.points <- c(seq(0,1,0.25),seq(1.5,3,0.5),6)
+
 par(mfrow=c(1,1))
 par( mar = c(5, 4, 4, 5))
 plot(gadm, col=NA, bg = NA,xlim = c(16.9, 18.1),
      ylim = c(56.8, 57.65))
-plot(bath_raster, colNA = "green", col = bath.col,
+plot(bath_raster, colNA = "black", col = bath.col,
      add = TRUE , breaks = bath.break.points,
      xlim = c(16.8, 18.3), ylim = c(56.8, 57.8))
 
