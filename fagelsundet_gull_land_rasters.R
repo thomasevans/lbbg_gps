@@ -192,6 +192,7 @@ col.dist <- 1000*deg.dist(col_loc[1],col_loc[2],
 
 
 col.dist <- col.dist*1000
+hist(col.dist)
 
 # Set-up base-raster layer -----
 # Encompases most of range of GPS points
@@ -244,6 +245,41 @@ x <- values(point_raster_forage)[!is.na(values(point_raster_forage))]
 head(x)
 
 range(values(point_raster_forage), na.rm = TRUE)
+
+# Cumulative thing
+val.sort <- sort(values(point_raster_forage), decreasing = TRUE)
+head(val.sort)
+plot(val.sort)
+val.cumsum <- cumsum(val.sort)
+
+ob.num <- c(1:length(val.cumsum))
+# Cumulative percentage plot
+plot(val.cumsum ~ ob.num, ylim = c(0,100),
+     ylab = "Foraging time (%)",
+     xlab = "Number of grid squares",
+     las = 1)
+# Colour points that are less than 75%
+points(val.cumsum[val.cumsum > 75]~ ob.num[val.cumsum > 75], col = "red")
+abline(h = 75, lwd = 2, lty = 2)
+n_loc <- length(val.cumsum[val.cumsum < 75])
+mtext(paste(n_loc, " locations represent 75 % of foraging time", sep = ""),
+      side = 3, line = 2)
+
+plot(val.cumsum ~ ob.num, ylim = c(0,100),
+     xlim = c(0,n_loc + 20),
+     ylab = "Foraging time (%)",
+     xlab = "Number of grid squares",
+     las = 1)
+points(val.cumsum[val.cumsum > 75]~ ob.num[val.cumsum > 75], col = "red")
+abline(h = 75, lwd = 2, lty = 2)
+
+# ?mtext
+# val.cumsum
+
+
+
+
+
 hist(values(point_raster_forage), breaks = 100,
      col = "dark grey")
 hist(values(point_raster_forage), breaks = 100,
