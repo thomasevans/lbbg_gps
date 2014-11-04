@@ -417,3 +417,39 @@ kml_layer.Raster(stacked.ras, file = "test_stack.kml",
         colour= "black")
 
 # plot(stacked.ras)
+
+
+
+
+# Comulative values
+x <- c(0:100)
+plot(x)
+x.ran <- sample(x,100)
+plot(x.ran)
+
+x.sort <- sort(x.ran)
+plot(x.sort)
+
+?cumsum
+x.cumsum <- cumsum(x.sort)
+
+plot(x.cumsum)
+
+f <- x.cumsum < 100
+f
+# Number of true values
+sum(f)
+
+# Then can filter vector by:
+x < x.sort[sum(f)]
+
+
+# Plot of cumulative % for all sites
+plot(x.cumsum)
+# Colour points that are less than 75%
+points(x.cumsum[x.cumsum > 100], col = "red")
+abline(h = 100, lwd = 2, lty = 2)
+
+
+# Only 75% top sites
+plot(x.cumsum[x.cumsum < 100])
