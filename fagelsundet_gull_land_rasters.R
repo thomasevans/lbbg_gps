@@ -246,35 +246,7 @@ head(x)
 
 range(values(point_raster_forage), na.rm = TRUE)
 
-# Cumulative thing
-val.sort <- sort(values(point_raster_forage), decreasing = TRUE)
-head(val.sort)
-plot(val.sort)
-val.cumsum <- cumsum(val.sort)
 
-ob.num <- c(1:length(val.cumsum))
-# Cumulative percentage plot
-plot(val.cumsum ~ ob.num, ylim = c(0,100),
-     ylab = "Foraging time (%)",
-     xlab = "Number of grid squares",
-     las = 1)
-# Colour points that are less than 75%
-points(val.cumsum[val.cumsum > 75]~ ob.num[val.cumsum > 75], col = "red")
-abline(h = 75, lwd = 2, lty = 2)
-n_loc <- length(val.cumsum[val.cumsum < 75])
-mtext(paste(n_loc, " locations represent 75 % of foraging time", sep = ""),
-      side = 3, line = 2)
-
-plot(val.cumsum ~ ob.num, ylim = c(0,100),
-     xlim = c(0,n_loc + 20),
-     ylab = "Foraging time (%)",
-     xlab = "Number of grid squares",
-     las = 1)
-points(val.cumsum[val.cumsum > 75]~ ob.num[val.cumsum > 75], col = "red")
-abline(h = 75, lwd = 2, lty = 2)
-
-# ?mtext
-# val.cumsum
 
 
 
@@ -489,3 +461,54 @@ abline(h = 100, lwd = 2, lty = 2)
 
 # Only 75% top sites
 plot(x.cumsum[x.cumsum < 100])
+
+
+
+
+
+# Making plots of cumulative percentage -------
+# Cumulative thing
+val.sort <- sort(values(point_raster_forage), decreasing = TRUE)
+head(val.sort)
+plot(val.sort)
+val.cumsum <- c(0,cumsum(val.sort))
+
+ob.num <- c(0:(length(val.cumsum)-1))
+# Cumulative percentage plot
+plot(val.cumsum ~ ob.num, ylim = c(0,100),
+     ylab = "Foraging time (%)",
+     xlab = "Number of grid squares",
+     las = 1)
+# length(ob.num)
+# length(val.cumsum)
+# Colour points that are less than 75%
+points(val.cumsum[val.cumsum > 75]~ ob.num[val.cumsum > 75], col = "red")
+abline(h = 75, lwd = 2, lty = 2)
+n_loc <- length(val.cumsum[val.cumsum < 75])
+mtext(paste(n_loc, " locations represent 75 % of foraging time", sep = ""),
+      side = 3, line = 2)
+
+plot(val.cumsum[val.cumsum < 75]~ ob.num[val.cumsum < 75], ylim = c(0,100),
+     xlim = c(0,50),
+     ylab = "Foraging time (%)",
+     xlab = "Number of grid squares",
+     las = 1,
+     type = "s")
+lines(val.cumsum[val.cumsum > 75]~ ob.num[val.cumsum > 75],
+      type = "s", lty = 3)
+abline(h = 75, lwd = 1.5, lty = 2)
+
+
+plot(val.cumsum[val.cumsum < 75]~ ob.num[val.cumsum < 75], ylim = c(0,100),
+     xlim = c(0,length(val.cumsum)),
+     ylab = "Foraging time (%)",
+     xlab = "Number of grid squares",
+     las = 1,
+     type = "s")
+lines(val.cumsum[val.cumsum > 75]~ ob.num[val.cumsum > 75],
+      type = "s", lty = 3)
+abline(h = 75, lwd = 1.5, lty = 2)
+
+
+# ?mtext
+# val.cumsum
