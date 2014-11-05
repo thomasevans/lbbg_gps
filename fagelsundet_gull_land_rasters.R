@@ -512,3 +512,197 @@ abline(h = 75, lwd = 1.5, lty = 2)
 
 # ?mtext
 # val.cumsum
+
+# Cumsum thing -------
+
+
+# Code for transparent colours ----
+# Code from https://github.com/mylesmharrison/colorRampPaletteAlpha/blob/master/colorRampPaletteAlpha.R
+# Hight-lighted by blog post: http://www.everydayanalytics.ca/2014/03/colorRampPalette-alpha-in-R.html
+addalpha <- function(colors, alpha=1.0) {
+  r <- col2rgb(colors, alpha=T)
+  # Apply alpha
+  r[4,] <- alpha*255
+  r <- r/255.0
+  return(rgb(r[1,], r[2,], r[3,], r[4,]))
+}
+
+
+
+
+
+# Extract XY location data
+obs.xy <- cbind(hg.points$longitude, hg.points$latitude)
+
+# Make speed into numeric vector
+speed <- as.numeric(as.character(hg.points$speed))
+
+# xmn = 15, xmx = 20.5,
+# ymn = 59.5, ymx = 61.0
+# Non-flight and not-colony
+f <- ((speed < 4) & (col.dist > 1000) & ((hg.points$longitude > 15) &
+                                          (hg.points$longitude < 20.5)) & 
+                                  ((hg.points$latitude > 59.5) &
+                                  (hg.points$longitude < 61.0)))
+f[is.na(f)] <- FALSE
+
+
+# Make rasters for each bird:
+birds <- unique(hg.points$device_info_serial)
+
+# Raster for all first
+obs.xy.for <- obs.xy[f,]
+
+time.weight.hg.all.for <- 100*((time_interval_narm[f]) /
+                                 (sum(time_interval_narm[f])))
+
+point_raster_forage <- rasterize(obs.xy.for,
+                                 base_raster,
+                                 time.weight.hg.all.for,
+                                 fun = sum)
+ras_birds <- list()
+
+# Raster for each bird
+# i <- 8
+# 
+# sum.na <- function(x){
+#   x.new <- x[!is.na(x)]
+#   sum(x.new)
+# }
+
+for(i in 1:length(birds)){
+  bird_id <- birds[i]
+  f2 <- f & (hg.points$device_info_serial == bird_id)
+  obs.xy.for <- obs.xy[f2,]
+  time.weight <- 100*((time_interval_narm[f2]) /
+                                   (sum(time_interval_narm[f2])))
+  sum(time.weight)
+  ras_birds[i] <- rasterize(obs.xy.for,
+                                   base_raster,
+                                   time.weight,
+                                   fun = sum)
+}
+# str(ras_birds)
+# ?rasterize
+# length(time.weight)
+
+# sum(values(ras_birds[[i]]), na.rm = TRUE)
+# ?sum
+values_birds <- list()
+
+for(i in 1:length(birds)){
+  values_birds[i] <- list(values(ras_birds[[i]]))
+}
+
+values_birds_order <- list()
+for(i in 1:length(birds)){
+  values_birds_order[i] <- list(sort(values_birds[[i]], decreasing = TRUE))
+}
+
+# values_birds_order[[1]][1:100]
+
+values_birds_order_cumsum <- list()
+for(i in 1:length(birds)){
+  values_birds_order_cumsum[i] <- list(cumsum(values_birds_order[[i]]))
+}
+# values_birds_order_cumsum[[1]][1:100]
+
+
+
+val.sort <- sort(values(point_raster_forage), decreasing = TRUE)
+val.cumsum <- cumsum(val.sort)
+
+
+# Plots
+# pdf("GBBG_cumsum.pdf")
+png("GBBG_cumsum.png",  width = 2000, height = 1200, res = 200)
+par(mfrow = c(1,2))
+
+ob.num <- c(1:length(val.cumsum))
+
+plot(val.cumsum~ ob.num, ylim = c(0,100),
+     xlim = c(0,50),
+     ylab = "Foraging time (%)",
+     xlab = "Number of grid squares",
+     las = 1,
+     type = "n")
+
+# ?rainbow
+cols <- rainbow(length(birds))
+col.obs.transp <- addalpha(cols, alpha = 0.50)
+
+for(i in 1:length(birds)){
+  ob.num <- c(1:length(values_birds_order_cumsum[[i]]))
+  x <- c(0,ob.num)
+  y <- c(0,values_birds_order_cumsum[[i]])
+  colx <- cols[i]
+  lines( y ~ x ,
+        type = "l",
+        col = col.obs.transp[i],
+        lwd = 2)
+}
+
+ob.num <- c(1:length(val.cumsum))
+lines(c(0,val.cumsum) ~ c(0,ob.num),
+      type = "l", lty = 1, lwd = 2,
+      col = addalpha("black", alpha = 0.60))
+# ??color
+abline(h = 75, lwd = 2, lty = 2)
+
+
+# 2nd plot
+ob.num <- c(1:length(val.cumsum))
+
+plot(val.cumsum~ ob.num, ylim = c(0,100),
+     xlim = c(0,1000),
+     ylab = "Foraging time (%)",
+     xlab = "Number of grid squares",
+     las = 1,
+     type = "n")
+
+# ?rainbow
+cols <- rainbow(length(birds))
+col.obs.transp <- addalpha(cols, alpha = 0.50)
+
+for(i in 1:length(birds)){
+  ob.num <- c(1:length(values_birds_order_cumsum[[i]]))
+  x <- c(0,ob.num)
+  y <- c(0,values_birds_order_cumsum[[i]])
+  colx <- cols[i]
+  lines( y ~ x ,
+         type = "l",
+         col = col.obs.transp[i],
+         lwd = 2)
+}
+
+ob.num <- c(1:length(val.cumsum))
+lines(c(0,val.cumsum) ~ c(0,ob.num),
+      type = "l", lty = 1, lwd = 2,
+      col = addalpha("black", alpha = 0.60))
+# ??color
+abline(h = 75, lwd = 2, lty = 2)
+
+legend(x = 500, y = 73,
+       legend = c("All",(as.character(birds))),
+#        cex = 0.5,
+       lty = 1,
+       col = c("black",col.obs.transp),
+       lwd = 3)
+
+dev.off()
+
+
+
+
+
+plot(val.cumsum[val.cumsum < 75]~ ob.num[val.cumsum < 75], ylim = c(0,100),
+     xlim = c(0,length(val.cumsum)),
+     ylab = "Foraging time (%)",
+     xlab = "Number of grid squares",
+     las = 1,
+     type = "n")
+lines(val.cumsum ~ ob.num,
+      type = "s", lty = 1)
+abline(h = 75, lwd = 1.5, lty = 2)
+
+
