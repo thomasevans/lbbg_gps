@@ -34,9 +34,11 @@ hg.points$date_time <-  as.POSIXct(strptime(hg.points$date_time,
 
 
 
-# For GBBG data - correct data format
 hg.points$latitude <- as.numeric(as.character(hg.points$latitude))
 hg.points$longitude <- as.numeric(as.character(hg.points$longitude))
+
+# For GBBG data - correct data format
+
 hg.points$speed     <- as.numeric(as.character(hg.points$speed))
 
 str(hg.points)
@@ -706,3 +708,87 @@ lines(val.cumsum ~ ob.num,
 abline(h = 75, lwd = 1.5, lty = 2)
 
 
+# Determine whether points are on land or at sea -----
+
+# Get coastline data for Sweden
+load("SWE_adm0.RData")
+
+
+# as.num <- function(x){as.numeric(as.character(x))}
+
+library("sp")
+library("raster")
+bath_raster <- raster("bsbd-0.9.3_full.grd")
+
+pnts <- cbind(hg.points$longitude, hg.points$latitude)
+# pnts <- as.data.frame(pnts)
+# pnts <- SpatialPoints(pnts, proj4string = CRS("+proj=longlat +datum=WGS84"))
+# str(gadm)
+?over
+gps.bath <- extract(bath_raster,xy.gps)
+plot(bath_raster)
+test.1 <- extract(bath_raster, pnts)
+hist(test.1)
+head(test.1)
+summary(is.na(test.1))
+
+pdf("test.map.2.pdf")
+plot(bath_raster, xlim = c(17,20), ylim = c(59.5,62))
+plot(gadm, col=NA, bg = NA, add = T)
+# ?plot
+plot(coast_line, col = NA, bg = NA, add = TRUE)
+dev.off()
+# ogrDrivers()
+str(coast_line)
+library("rgdal")
+coast_line <- readOGR("D:/Dropbox/R_projects/lbbg_gps/land_poly",
+                      "land_polygons")
+# names(coast_line)
+# ?read.shapefile
+# SpatialPolygonsDataFrame
+# head(coast_line)
+
+# Specify range overwhich we want coastline data
+range.poly <- cbind(c(10,30), c(53,66))
+
+save(coast_line, file = "coast_line_openstreetmap_world.RData")
+
+
+# Get position of centre of polygons
+# Very slow opperation!!!
+centroids <- coordinates(coast_line)
+
+
+coast_line.baltic <- coast_line[centroids[,1] > range.poly[1,1] &
+                      centroids[,1] < range.poly[2,1] &
+                      centroids[,2] > range.poly[1,2] &
+                      centroids[,2] < range.poly[2,2],]
+plot(coast_line.baltic)
+
+summary(coast_line.baltic)
+
+
+library("rgeos")
+?gDistance
+?gBuffer
+# See: http://www.maths.lancs.ac.uk/~rowlings/Teaching/Sheffield2013/spatialops.html
+# Following is probably best way to see if inside polygon
+over(points,polys)
+
+
+test.point <- cbind(17.6, 60.425)
+test.point.sp <- SpatialPoints(test.point)
+
+
+# Open streetmap coastline data
+# Can download from: http://openstreetmapdata.com/data
+
+
+
+
+
+
+
+
+
+# End ----
