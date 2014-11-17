@@ -10,3 +10,29 @@
 # Then output this data to DB with combined primary key of
 # device_info_serial and date_time
 
+# Required packages ------
+library("RODBC")
+
+
+# Read in data from DB -----
+# GPS data
+
+# Nest location data (combine device_info_serial with ring_number)
+
+# Calculate various paramaters ----
+
+# Distance from nest -----
+
+# Whether on trip (distance threshold) ----
+
+# Type of point (flight/ non-flight, speed threshold) ----
+
+# Distance from coast -----
+
+# On land/ sea -----
+
+# Signed distance from coast ----
+
+# Combine into data frame ------
+
+# Output to Database ------
