@@ -2,6 +2,7 @@
 # then crops this to the spatial extent appropriate
 # for the Fågelsundet gull dataset
 
+# See note at bottom of script for origin of coastline data used here
 
 # Required packages ----
 library("rgdal")
@@ -54,3 +55,21 @@ plot(openstreetmap_coast_polyline, col = "red", lty = 2, add = TRUE)
 # * Save to R binnary -----
 save(openstreetmap_coast_polygon,
      file = "openstreetmap_coast_polygon.RData")
+
+
+# OpenStreetMap data attribution ------
+# Info from README file:
+
+# This data was downloaded from openstreetmapdata.com which offers
+# extracts of OpenStreetMap data.
+# 
+# See http://openstreetmapdata.com/data for details.
+# 
+# LICENSE
+# =======
+#   
+#   This data is Copyright 2012 OpenStreetMap contributors. It is
+# available under the Open Database License (ODbL).
+# 
+# For more information see http://www.openstreetmap.org/copyright
+
