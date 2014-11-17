@@ -12,7 +12,10 @@
 
 # Required packages ------
 library("RODBC")
-
+library("sp")
+library("rgdal")
+library("rgeos")
+library("raster")
 
 # Read in data from DB -----
 # Make connection to DB
@@ -35,6 +38,7 @@ hist(gps.points$altitude, breaks = 4000, xlim = c(-200,500))
 gps.points$date_time <-  as.POSIXct(strptime(gps.points$date_time,
                                             format = "%Y-%m-%d %H:%M:%S",
                                             tz = "UTC"))
+
 
 
 # Nest location data (combine device_info_serial with ring_number)
@@ -83,6 +87,9 @@ col.dist <- mapply(bird.dist,
 # Convert to metres
 col.dist <- col.dist*1000
 
+
+
+
 # Check that this looks ok
 # head(col.dist)
 # sample(col.dist, 10)
@@ -102,17 +109,19 @@ trip.fun <- function(x, threshold = 200){
   a <- NULL
   if(is.na(x)) {a <- NA} else{
     if(x < threshold){
-      a <- "nest"
-    } else a <- "trip"
+      a <- FALSE
+    } else a <- TRUE
   }
   return(a)
 }
 
 on.trip <- sapply(col.dist, trip.fun)
-on.trip <- as.factor(on.trip)
+# on.trip <- as.factor(on.trip)
 
 # See how this looks
 summary(on.trip)
+
+
 
 
 # Time intervals (time from last point) -----
@@ -143,6 +152,9 @@ id_test <- c(0,id_test)
 t_diff[id_test == 0] <- NA
 
 
+
+
+
 # See how this looks
 head(t_diff)
 sample(t_diff, 100)
@@ -150,12 +162,16 @@ hist(t_diff)
 hist(t_diff[t_diff < 1000])
 range(t_diff, na.rm = TRUE)
 
+
+
 # Label species -----
 
 gps.ind.comb <- merge(gps.points, nest.info, by = "device_info_serial")
 
 sp.lat <- as.factor(gps.ind.comb$species)
 summary(sp.lat)
+
+
 
 # Type of point (flight/ non-flight, speed threshold) ----
 names(gps.points)
@@ -215,37 +231,95 @@ flight.fun <- function(speed, sp){
       }
     }
     
-    if(speed < thresh) return("not flight") else return("flight")  
+    if(speed < thresh) return(FALSE) else return(TRUE)  
   }
 }
 
-point.type <- mapply(FUN = flight.fun, speed = gps.points$speed, sp = sp.lat)
+flight.point <- mapply(FUN = flight.fun, speed = gps.points$speed, sp = sp.lat)
 
-point.type <- as.factor(point.type)
+# point.type <- as.factor(point.type)
+
 
 
 # Distance from coast -----
 # Load coast-line data
+load("openstreetmap_coast_polyline.RData")
 
 # Re-project coast-line
+# Transform points and coastline to Swedish map projection ()
+openstreetmap_polyline_SWEREF_99 <- spTransform(openstreetmap_polyline, CRS("+proj=tmerc +lat_0=0 +lon_0=15.8062845294444 +k=1.00000561024 +x_0=1500064.274 +y_0=-667.711 +ellps=GRS80 +pm=15.8062845294444 +units=m +no_defs"))
+
+
+
+# Make points object
+xy.loc <- cbind(gps.points$longitude,
+                gps.points$latitude)
+
+# Make spatial points object from xy locations
+xy.sp.points <- SpatialPoints(xy.loc,
+                              proj4string = CRS(
+                                "+proj=longlat +datum=WGS84"))
 
 # Re-project point data
+xy.sp.points_SWEREF_99 <- spTransform(xy.sp.points, CRS("+proj=tmerc +lat_0=0 +lon_0=15.8062845294444 +k=1.00000561024 +x_0=1500064.274 +y_0=-667.711 +ellps=GRS80 +pm=15.8062845294444 +units=m +no_defs"))
+
 
 # Calculate distances
+
+coast.dist <- NA
+
+for(i in 1:n){
+  # Distance calculated in metres
+  coast.dist[i] <- gDistance(xy.sp.points_SWEREF_99[i,],
+                         spgeom2 = coast_line_local_2_SWEREF_99,
+                         byid = FALSE, hausdorff = FALSE,
+                         densifyFrac = NULL)
+}
+
+
 
 
 # On land/ sea -----
 # Load coast-line data
+load("openstreetmap_coast_polygon.RData")
 
 # Re-project coast-line polygon
+# Transform points and coastline to Swedish map projection ()
+openstreetmap_polygon_SWEREF_99 <- spTransform(openstreetmap_coast_polygon, CRS("+proj=tmerc +lat_0=0 +lon_0=15.8062845294444 +k=1.00000561024 +x_0=1500064.274 +y_0=-667.711 +ellps=GRS80 +pm=15.8062845294444 +units=m +no_defs"))
+
 
 # Calculate if in polygon
+# Useing package 'sp'
+points.on.land <- over(xy.sp.points_SWEREF_99,
+                       openstreetmap_polygon_SWEREF_99,
+                       returnList = FALSE, fn = NULL)
+
+
 
 # Label 'land' or 'sea' depending on above output
+on_land <- !is.na(points.on.land)
+summary(on_land)
+
+
+
 
 
 # Signed distance from coast ----
+sign.dist <- (1 - 2*on_land)*coast.dist
 
 # Combine into data frame ------
+db.tab <- cbind(gps.points$device_info_serial,
+                gps.points$date_time,
+                col.dist,
+                on.trip,
+                t_diff,
+                sp.lat,
+                flight.point,
+                coast.dist,
+                on_land,
+                sign.dist
+                
+)
+
 
 # Output to Database ------
