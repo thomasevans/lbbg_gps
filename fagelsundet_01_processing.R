@@ -16,6 +16,7 @@ library("sp")
 library("rgdal")
 library("rgeos")
 library("raster")
+library("compiler")
 
 # Read in data from DB -----
 # Make connection to DB
@@ -96,11 +97,11 @@ col.dist <- col.dist*1000
 
 # Whether on trip (distance threshold) ----
 # have a look at the distribution of points close to the nest.
-hist(col.dist[col.dist < 3000], breaks = 400)
-hist(col.dist[col.dist < 1000], breaks = 200)
+# hist(col.dist[col.dist < 3000], breaks = 400)
+# hist(col.dist[col.dist < 1000], breaks = 200)
 
 # Threshold of ca. 200 m?
-summary(col.dist < 200)
+# summary(col.dist < 200)
 # More on trip than at nest - but this makes sense as at least
 # for some cases a fence was used to gain higher resolution data
 # when the bird was away from the island.
@@ -174,44 +175,44 @@ summary(sp.lat)
 
 
 # Type of point (flight/ non-flight, speed threshold) ----
-names(gps.points)
-hist(gps.points$speed)
-hist(gps.points$speed[gps.points$speed < 20], ylim = c(0,50000),
-     breaks = 40)
-
-sp <- sp.lat == "Larus marinus"
-hist(gps.points$speed[gps.points$speed < 20 & sp], ylim = c(0,10000),
-     breaks = 40)
-sp <- sp.lat == "Larus canus"
-hist(gps.points$speed[gps.points$speed < 20 & sp], ylim = c(0,5000),
-     breaks = 40)
-sp <- sp.lat == "Larus argentatus"
-hist(gps.points$speed[gps.points$speed < 20 & sp], ylim = c(0,10000),
-     breaks = 40)
-
-# Three combined
-hist(gps.points$speed[gps.points$speed < 20], ylim = c(0,2000),
-     border = "dark grey", breaks = 80)
-sp <- sp.lat == "Larus argentatus"
-hist(gps.points$speed[gps.points$speed < 20 & sp],
-     add = TRUE,
-     breaks = 80)
-sp <- sp.lat == "Larus canus"
-hist(gps.points$speed[gps.points$speed < 20 & sp], add = TRUE,
-     border = "red", breaks = 80)
-sp <- sp.lat == "Larus marinus"
-hist(gps.points$speed[gps.points$speed < 20 & sp], add = TRUE,
-     border = "blue", breaks = 80)
-abline(v=3, lty = 2)
-abline(v=3.5, lty = 3)
-abline(v=4, lty = 4)
-
-# Look closer at common gulls
-sp <- sp.lat == "Larus canus"
-hist(gps.points$speed[gps.points$speed < 20 & sp], add = FALSE,
-     border = "red", breaks = 80,
-     ylim = c(0,300))
-abline(v=c(3,3.5,4,4.5,5), lty = c(2:5))
+# names(gps.points)
+# hist(gps.points$speed)
+# hist(gps.points$speed[gps.points$speed < 20], ylim = c(0,50000),
+#      breaks = 40)
+# 
+# sp <- sp.lat == "Larus marinus"
+# hist(gps.points$speed[gps.points$speed < 20 & sp], ylim = c(0,10000),
+#      breaks = 40)
+# sp <- sp.lat == "Larus canus"
+# hist(gps.points$speed[gps.points$speed < 20 & sp], ylim = c(0,5000),
+#      breaks = 40)
+# sp <- sp.lat == "Larus argentatus"
+# hist(gps.points$speed[gps.points$speed < 20 & sp], ylim = c(0,10000),
+#      breaks = 40)
+# 
+# # Three combined
+# hist(gps.points$speed[gps.points$speed < 20], ylim = c(0,2000),
+#      border = "dark grey", breaks = 80)
+# sp <- sp.lat == "Larus argentatus"
+# hist(gps.points$speed[gps.points$speed < 20 & sp],
+#      add = TRUE,
+#      breaks = 80)
+# sp <- sp.lat == "Larus canus"
+# hist(gps.points$speed[gps.points$speed < 20 & sp], add = TRUE,
+#      border = "red", breaks = 80)
+# sp <- sp.lat == "Larus marinus"
+# hist(gps.points$speed[gps.points$speed < 20 & sp], add = TRUE,
+#      border = "blue", breaks = 80)
+# abline(v=3, lty = 2)
+# abline(v=3.5, lty = 3)
+# abline(v=4, lty = 4)
+# 
+# # Look closer at common gulls
+# sp <- sp.lat == "Larus canus"
+# hist(gps.points$speed[gps.points$speed < 20 & sp], add = FALSE,
+#      border = "red", breaks = 80,
+#      ylim = c(0,300))
+# abline(v=c(3,3.5,4,4.5,5), lty = c(2:5))
 
 
 # Problematic, as although bimodal, there is apparently quite
@@ -267,6 +268,15 @@ xy.sp.points_SWEREF_99 <- spTransform(xy.sp.points, CRS("+proj=tmerc +lat_0=0 +l
 # coast.dist.orig <- coast.dist
 # Calculate distances
 
+
+
+# *******Resume from here -------
+load("20141118_temp.RData")
+
+
+
+
+
 coast.dist <- NA
 # Ran for ca. 10 h and had only completed 81000 out of 660000!
 system.time(
@@ -307,22 +317,59 @@ gDistance(p1,p2, byid = TRUE)
 ?rowSums
 
 
-rowMin <- function(x) {
-  n <- nrow(x)
-  r <- numeric(n)
-  for (i in 1:n) r[i] <- min(x[i,])
-  r}
+
 
 
 system.time(
-test <- gDistance(openstreetmap_polyline_SWEREF_99,
+test <- rowMin(gDistance(openstreetmap_polyline_SWEREF_99,
           spgeom2 = xy.sp.points_SWEREF_99[1:100],
           byid = TRUE, hausdorff = FALSE,
-          densifyFrac = NULL)
+          densifyFrac = NULL))
 )
 
 x <- rowMin(test)
 
+
+# Compiled
+
+openstreetmap_polyline_SWEREF_99
+xy.sp.points_SWEREF_99[1:100]
+
+
+gDist.fun <- function(points,coast){
+    rowMin <- function(x) {
+      n <- nrow(x)
+      r <- numeric(n)
+      for (i in 1:n) r[i] <- min(x[i,])
+      r}
+    
+  rowMin(gDistance(coast,
+                   spgeom2 = points,
+                   byid = TRUE, hausdorff = FALSE,
+                   densifyFrac = NULL))  
+}
+
+
+gDist.fun.comp <- cmpfun(gDist.fun)
+
+
+
+
+system.time(
+x <- gDist.fun(points = xy.sp.points_SWEREF_99[1:100],
+          coast = openstreetmap_polyline_SWEREF_99)
+)
+
+system.time(
+  x <- gDist.fun.comp(points = xy.sp.points_SWEREF_99,
+                 coast = openstreetmap_polyline_SWEREF_99)
+)
+
+# Look like it would take ca. 1 day to run!
+t <- 13*658474/100
+t/60/60
+
+?system.time
 dim(test)
 
 
