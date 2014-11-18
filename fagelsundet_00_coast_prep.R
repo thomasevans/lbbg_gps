@@ -21,8 +21,8 @@ coast_line <- readOGR("D:/Dropbox/R_projects/lbbg_gps/coastline_polyline/coastli
 
 # * Clip coastline data to smaller spatial extent -----
 # - crop an area
-crop.ext <- extent(raster(xmn = 14, xmx = 22,
-                          ymn = 58, ymx = 62.5))
+crop.ext <- extent(raster(xmn = 14, xmx = 20.5,
+                          ymn = 58, ymx = 62))
 
 
 openstreetmap_coast_polyline <-  crop(coast_line, crop.ext)
