@@ -32,7 +32,7 @@ gps.points <- sqlQuery(gps.db,
 # Check data structure
 str(gps.points)
 
-hist(gps.points$altitude, breaks = 4000, xlim = c(-200,500))
+# hist(gps.points$altitude, breaks = 4000, xlim = c(-200,500))
 
 # Fix date_time
 gps.points$date_time <-  as.POSIXct(strptime(gps.points$date_time,
@@ -218,10 +218,10 @@ abline(v=c(3,3.5,4,4.5,5), lty = c(2:5))
 # a lot of overlap. A cut-off around 4.5 looks 'ok', though
 # will have quite high levels of mis-clasification
 
-
-hg.thresh <- 3.25
-gbbg.thresh <- 4.25
-cg.thresh <- 4.5
+# Label if in flight -----
+# hg.thresh <- 3.25
+# gbbg.thresh <- 4.25
+# cg.thresh <- 4.5
 
 flight.fun <- function(speed, sp){
    if(is.na(sp)|is.na(speed)) return(NA) else{
@@ -239,6 +239,7 @@ flight.point <- mapply(FUN = flight.fun, speed = gps.points$speed, sp = sp.lat)
 
 # point.type <- as.factor(point.type)
 
+summary(flight.point)
 
 
 # Distance from coast -----
@@ -247,7 +248,7 @@ load("openstreetmap_coast_polyline.RData")
 
 # Re-project coast-line
 # Transform points and coastline to Swedish map projection ()
-openstreetmap_polyline_SWEREF_99 <- spTransform(openstreetmap_polyline, CRS("+proj=tmerc +lat_0=0 +lon_0=15.8062845294444 +k=1.00000561024 +x_0=1500064.274 +y_0=-667.711 +ellps=GRS80 +pm=15.8062845294444 +units=m +no_defs"))
+openstreetmap_polyline_SWEREF_99 <- spTransform(openstreetmap_coast_polyline, CRS("+proj=tmerc +lat_0=0 +lon_0=15.8062845294444 +k=1.00000561024 +x_0=1500064.274 +y_0=-667.711 +ellps=GRS80 +pm=15.8062845294444 +units=m +no_defs"))
 
 
 
@@ -263,19 +264,66 @@ xy.sp.points <- SpatialPoints(xy.loc,
 # Re-project point data
 xy.sp.points_SWEREF_99 <- spTransform(xy.sp.points, CRS("+proj=tmerc +lat_0=0 +lon_0=15.8062845294444 +k=1.00000561024 +x_0=1500064.274 +y_0=-667.711 +ellps=GRS80 +pm=15.8062845294444 +units=m +no_defs"))
 
-
+# coast.dist.orig <- coast.dist
 # Calculate distances
 
 coast.dist <- NA
-
-for(i in 1:n){
+# Ran for ca. 10 h and had only completed 81000 out of 660000!
+system.time(
+for(i in 1:100){
   # Distance calculated in metres
   coast.dist[i] <- gDistance(xy.sp.points_SWEREF_99[i,],
-                         spgeom2 = coast_line_local_2_SWEREF_99,
+                         spgeom2 = openstreetmap_polyline_SWEREF_99,
                          byid = FALSE, hausdorff = FALSE,
                          densifyFrac = NULL)
 }
+)
 
+
+pdf("test.map.pdf")
+plot(openstreetmap_polyline_SWEREF_99)
+points(xy.sp.points_SWEREF_99, col = "red")
+dev.off()
+
+# save(coast.dist, file = "coast.dist.temp.RData")
+hist(coast.dist/1000)
+
+hist(coast.dist[coast.dist < 1000])
+
+?gDistance
+
+
+pt1 = readWKT("POINT(0.5 0.5)")
+pt2 = readWKT("POINT(2 2)")
+
+p1 = readWKT("POLYGON((0 0,1 0,1 1,0 1,0 0))")
+p2 = readWKT("POLYGON((2 0,3 1,4 0,2 0))")
+
+gDistance(pt1,pt2, byid = TRUE)
+gDistance(p1,pt1)
+gDistance(pt2,p1,byid = TRUE)
+gDistance(p1,p2, byid = TRUE)
+
+?rowSums
+
+
+rowMin <- function(x) {
+  n <- nrow(x)
+  r <- numeric(n)
+  for (i in 1:n) r[i] <- min(x[i,])
+  r}
+
+
+system.time(
+test <- gDistance(openstreetmap_polyline_SWEREF_99,
+          spgeom2 = xy.sp.points_SWEREF_99[1:100],
+          byid = TRUE, hausdorff = FALSE,
+          densifyFrac = NULL)
+)
+
+x <- rowMin(test)
+
+dim(test)
 
 
 
