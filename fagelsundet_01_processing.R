@@ -278,9 +278,10 @@ load("20141118_temp.RData")
 
 
 coast.dist <- NA
-# Ran for ca. 10 h and had only completed 81000 out of 660000!
+# Eventuall ran the following on Amazon EC2 (cloud)
+# instance of RStudio, which completed in ca. 20 hours
 system.time(
-for(i in 1:100){
+for(i in 1:n){
   # Distance calculated in metres
   coast.dist[i] <- gDistance(xy.sp.points_SWEREF_99[i,],
                          spgeom2 = openstreetmap_polyline_SWEREF_99,
@@ -288,89 +289,16 @@ for(i in 1:100){
                          densifyFrac = NULL)
 }
 )
-
-
-pdf("test.map.pdf")
-plot(openstreetmap_polyline_SWEREF_99)
-points(xy.sp.points_SWEREF_99, col = "red")
-dev.off()
-
-# save(coast.dist, file = "coast.dist.temp.RData")
-hist(coast.dist/1000)
-
-hist(coast.dist[coast.dist < 1000])
-
-?gDistance
-
-
-pt1 = readWKT("POINT(0.5 0.5)")
-pt2 = readWKT("POINT(2 2)")
-
-p1 = readWKT("POLYGON((0 0,1 0,1 1,0 1,0 0))")
-p2 = readWKT("POLYGON((2 0,3 1,4 0,2 0))")
-
-gDistance(pt1,pt2, byid = TRUE)
-gDistance(p1,pt1)
-gDistance(pt2,p1,byid = TRUE)
-gDistance(p1,p2, byid = TRUE)
-
-?rowSums
+# 
 
 
 
 
-
-system.time(
-test <- rowMin(gDistance(openstreetmap_polyline_SWEREF_99,
-          spgeom2 = xy.sp.points_SWEREF_99[1:100],
-          byid = TRUE, hausdorff = FALSE,
-          densifyFrac = NULL))
-)
-
-x <- rowMin(test)
-
-
-# Compiled
-
-openstreetmap_polyline_SWEREF_99
-xy.sp.points_SWEREF_99[1:100]
-
-
-gDist.fun <- function(points,coast){
-    rowMin <- function(x) {
-      n <- nrow(x)
-      r <- numeric(n)
-      for (i in 1:n) r[i] <- min(x[i,])
-      r}
-    
-  rowMin(gDistance(coast,
-                   spgeom2 = points,
-                   byid = TRUE, hausdorff = FALSE,
-                   densifyFrac = NULL))  
-}
-
-
-gDist.fun.comp <- cmpfun(gDist.fun)
-
-
-
-
-system.time(
-x <- gDist.fun(points = xy.sp.points_SWEREF_99[1:100],
-          coast = openstreetmap_polyline_SWEREF_99)
-)
-
-system.time(
-  x <- gDist.fun.comp(points = xy.sp.points_SWEREF_99,
-                 coast = openstreetmap_polyline_SWEREF_99)
-)
-
-# Look like it would take ca. 1 day to run!
-t <- 13*658474/100
-t/60/60
-
-?system.time
-dim(test)
+# # Make a map to see how this looks
+# pdf("test.map.pdf")
+# plot(openstreetmap_polyline_SWEREF_99)
+# points(xy.sp.points_SWEREF_99, col = "red")
+# dev.off()
 
 
 
@@ -402,8 +330,15 @@ summary(on_land)
 # Signed distance from coast ----
 sign.dist <- (1 - 2*on_land)*coast.dist
 
+
+
+# Load data processed on Amazon EC2 cloud machine -----
+load("coast.dist.RData")
+load("sign.dist.RData")
+load("on_land.RData")
+
 # Combine into data frame ------
-db.tab <- cbind(gps.points$device_info_serial,
+db.tab <- data.frame(gps.points$device_info_serial,
                 gps.points$date_time,
                 col.dist,
                 on.trip,
@@ -412,9 +347,18 @@ db.tab <- cbind(gps.points$device_info_serial,
                 flight.point,
                 coast.dist,
                 on_land,
-                sign.dist
-                
+                sign.dist            
 )
 
+names(db.tab) <- c("device_info_serial",
+                   "date_time",
+                   "col_dist",
+                   "on_trip",
+                   "t_diff",
+                   "sp_lat",
+                   "flight_point",
+                   "coast_dist",
+                   "on_land",
+                   "coast_dist_sign")
 
 # Output to Database ------
