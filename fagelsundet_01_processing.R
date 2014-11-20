@@ -332,6 +332,11 @@ sign.dist <- (1 - 2*on_land)*coast.dist
 
 
 
+# Get bathymetry data ------
+# Currently missing
+
+
+
 # Load data processed on Amazon EC2 cloud machine -----
 load("coast.dist.RData")
 load("sign.dist.RData")
