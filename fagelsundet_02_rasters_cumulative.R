@@ -89,8 +89,134 @@ base_raster <- raster(nrows = num.rows, ncols = num.cols,
                       xmn = 14, xmx = 20.5,
                       ymn = 58, ymx = 62
 )
+names(gps.2014)
+
 
 # Filters for individuals + species ----
-device_ids <- unique(gps.2014$device_info_serial)
+# First make dataframe of devices and species present in the data set
+devices_unique_df <- unique(data.frame(gps.2014$device_info_serial, gps.2014$sp_lat))
+row.names(devices_unique_df) <- NULL
+names(devices_unique_df) <- c("device_info_serial", "sp_lat")
 
 
+# Individual filters ------
+filter_devices <- list()
+n <- length(unique(devices_unique_df$device_info_serial))
+for(i in 1:n){
+  filter_devices[[i]] <- (gps.2014$device_info_serial == devices_unique_df$device_info_serial[i]) & (gps.2014$on_trip == TRUE) & (gps.2014$flight_point == FALSE)  
+}
+
+str(filter_devices[[c(1,5)]])
+test <- filter_devices[[1]] | filter_devices[[3]]
+summary(test)
+
+
+
+
+# Species filters ------
+
+idx <- c(1:length(devices_unique_df$device_info_serial))
+
+# HG - all
+hgs <- idx[devices_unique_df$sp_lat == "Larus argentatus"]
+
+hg.filter <- filter_devices[[hgs[1]]]
+for(i in 2:length(hgs)){
+  hg.filter <- hg.filter | filter_devices[[hgs[i]]]
+}
+summary(hg.filter)
+
+# CG - all
+cgs <- idx[devices_unique_df$sp_lat == "Larus canus"]
+
+cg.filter <- filter_devices[[cgs[1]]]
+for(i in 2:length(cgs)){
+  cg.filter <- cg.filter | filter_devices[[cgs[i]]]
+}
+summary(cg.filter)
+
+# GBBG - all
+ggs <- idx[devices_unique_df$sp_lat == "Larus marinus"]
+
+gg.filter <- filter_devices[[ggs[1]]]
+for(i in 2:length(ggs)){
+  gg.filter <- gg.filter | filter_devices[[ggs[i]]]
+}
+summary(gg.filter)
+
+
+
+# Period filters ------
+# Can combine with any of the above
+# Dates
+period.date <- as.POSIXct(strptime(c("2014-05-15 00:00:00",
+                                     "2014-06-01 00:00:00",
+                                     "2014-06-15 00:00:00",
+                                     "2014-07-01 00:00:00",
+                                     "2014-07-15 00:00:00"),
+                              format = "%Y-%m-%d %H:%M:%S"),
+                     tz = "UTC")
+# Filter data by these criteria
+period.filters <- list()
+for(i in 1:4){
+  period.filters[[i]] <- (gps.2014$date_time > period.date[i]) & (
+    gps.2014$date_time < period.date[i+1])
+}
+period.names <- c("May 2", "June 1", "June 2", "July 1")
+
+names(gps.2014)
+# Produce rasters ------
+
+make.raster <- function(filter, file.name, gps.data = gps.2014, base_raster = base_raster){
+  require("plotKML")
+  data(SAGA_pal)
+  source("color_legend_png_fun.R")
+  gps.f <- gps.data[filter,]
+  
+  obs.xy <- cbind(gps.f$longitude, gps.f$latitude)
+  
+  
+  # Replace long time intervals with NA values
+  time_interval_narm <- gps.f$t_diff
+  time_interval_narm[gps.f$t_diff > 1850] <- NA
+  
+  # Replace NAs with 0 (i.e. zero weight)
+  time_interval_narm[is.na(time_interval_narm)] <- 0
+  
+  
+
+  
+  time.weight <- 100*(time_interval_narm /
+                        (sum(time_interval_narm)))
+  
+  raster_x <- rasterize(obs.xy,
+                        base_raster,
+                        time.weight,
+                        fun = sum)
+  
+  
+  values(raster_x) <- log10(values(raster_x))
+
+  plotKML(raster_x, file = paste(file.name, ".kml", sep = ""),
+          min.png.width = (20*612),
+          colour_scale = SAGA_pal[[1]])
+  # sort(time.weight.hg.all.for, decreasing = TRUE)[1:100]
+  
+  # Improve colour scale
+  #     10^(range(values(raster_x),na.rm = TRUE))
+  top.val <- floor(10^max(values(raster_x),na.rm = TRUE))
+  
+  color_legend_png(legend.file = "layer_legend.png",
+                   ras.val = values(raster_x),
+                   zval = c(0.001,0.01,0.1,1,5,top.val
+                   ), dig = 3)
+  
+  png(paste(file.name, "_hist", ".png", sep = ""))
+  hist(values(10^raster_x), breaks = 40, ylim = c(0,50),
+       col = "dark grey", main = file.name
+  )
+  dev.off()
+}   
+
+
+make.raster(filter = gg.filter, file.name = "GBBG_all")
