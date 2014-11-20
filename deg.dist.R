@@ -14,7 +14,7 @@ deg.dist <- function (long1, lat1, long2, lat2, km = TRUE)
   c <- 2 * atan2(sqrt(a), sqrt(1 - a))
   R <- 40041.47/(2 * pi)
   d <- R * c
-#   if(km == FALSE){d <- (d*1000)}
+  if(km == FALSE){d <- (d*1000)}
   
   return(d)
 }
