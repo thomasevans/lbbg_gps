@@ -167,6 +167,9 @@ period.names <- c("May 2", "June 1", "June 2", "July 1")
 names(gps.2014)
 # Produce rasters ------
 
+
+# Need to de-bug!!!!
+#
 make.raster <- function(filter, file.name, gps.data = gps.2014, base_raster = base_raster){
   require("plotKML")
   data(SAGA_pal)
@@ -220,3 +223,23 @@ make.raster <- function(filter, file.name, gps.data = gps.2014, base_raster = ba
 
 
 make.raster(filter = gg.filter, file.name = "GBBG_all")
+
+
+# Cumulative % by period and individual -------
+
+# Function to get cumulative percentages
+# Take in lat-long data and time intervals
+# Output ordered vector of cell values
+
+
+# Loop through all individuals
+# For each individual, and each period within individual run
+# the cumulative % thing and output to a list
+
+
+# Plots for cumulative % thing ------
+
+
+
+
+
