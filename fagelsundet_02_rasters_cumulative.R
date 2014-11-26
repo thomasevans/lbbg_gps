@@ -68,7 +68,7 @@ gps.2014 <- gps.points[f,]
 # Distance function
 source("deg.dist.R")
 
-# Distances (to calculate number of rows and columns)
+# Raster extent (to calculate number of rows and columns)
 x1 <- 14
 x2 <- 20.5
 y1 <- 58
