@@ -1,29 +1,23 @@
-#Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
-#You are welcome to use parts of this code, but please give credit when using it extensively.
-
-# Alternative working directory for when also running another script from same directory.
-# setwd("D:/Dropbox/R_projects/lbbg_gps/workspace_alternative")
-
-# summary(flights$thermal_upliftmean)
-# hist(flights$thermal_upliftmean)
-
-#Description#######
-#In this script we produce various figures and summary statistics to compare outward and inward commuting flights.
-#These were originally prepared for a meeting with Susanne and Anders on 2013-01-17
+# Primarily developed by Tom Evans at Lund University: tom.evans@biol.lu.se
+# You are welcome to use parts of this code, but please give credit when using it extensively.
 
 
-#Datbase functions#########
-#Get the flight data from the db.
+# Description ------
+# Produce table for inward flights - flights to be used in the analysis
+
+
+# Datbase functions ------
+# Required library
 library(RODBC)
 
-#Establish a connection to the database
+# Establish a connection to the database
 gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 
 #See what tables are available
 #sqlTables(gps.db)
 
 
-#Get a copy of the flights DB table.
+# Get a copy of the flights DB table. -------
 # WHOLE FLIGHT
 flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*, l.trip_flight_n,l.trip_id, l.trip_flight_type, w.* 
                     FROM lund_flights_commuting_par AS f, lund_flights as l, lund_flight_com_wind_par_ecmwf AS w
@@ -31,41 +25,10 @@ flights <- sqlQuery(gps.db, query="SELECT DISTINCT f.*, l.trip_flight_n,l.trip_i
                     AND f.flight_id = w.flight_id
                     ORDER BY f.flight_id ASC;")
 
-# First half
-flights.half <- sqlQuery(gps.db, query="SELECT DISTINCT f.*, l.trip_flight_n,l.trip_id, l.trip_flight_type, w.* 
-                         FROM lund_flights_commuting_par AS f, lund_flights as l, lund_flight_com_wind_par_half1 AS w
-                         WHERE f.flight_id = l.flight_id
-                         AND f.flight_id = w.flight_id
-                         ORDER BY f.flight_id ASC;")
 
-#  str(flights)
+str(flights)  #check structure
 
-# Hack to set time zone back to UTC rather than system locale.
-# See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
-# 
-# tm <- as.POSIXlt(flights$start_time)
-# # tm[1:10]
-# attr(tm,"tzone") <- "UTC"
-# # tm[1:10]
-# flights$start_time <- tm
-# 
-# tm <- as.POSIXlt(flights$end_time)
-# # tm[1:10]
-# attr(tm,"tzone") <- "UTC"
-# # tm[1:10]
-# flights$end_time <- tm
-# 
-# str(flights)
-# 
-# tm <- as.POSIXlt(flights$mid_dist_time)
-# # tm[1:10]
-# attr(tm,"tzone") <- "UTC"
-# # tm[1:10]
-# flights$mid_dist_time <- tm
-
-# flights$start_time[1:10]
-
-#str(flights)  #check structure
+# Get a copy of the weather DB table. -------
 
 q1 <- "SELECT DISTINCT f.*
 FROM lund_flights_weather AS f
@@ -75,7 +38,7 @@ fun <- function(x){
   x <- as.numeric(as.character(x))
   paste(" ", x, ",", sep = "")
 }
-# ?paste
+
 q2 <- paste(sapply(flights$flight_id,fun), collapse = "")                            
 q3 <- ")
 ORDER BY f.flight_id ASC;"
@@ -85,8 +48,13 @@ flights.weather <- sqlQuery(gps.db, query =
                               gsub("\n", " ",
                                    paste(q1, q2, q3, sep="")),
                             as.is = TRUE)
-# str(flights.weather)
-# Hack to set time zone back to UTC rather than system locale.
+
+# Check structure of this
+str(flights.weather)
+
+
+
+# Fix date-time structure
 # See: http://stackoverflow.com/questions/7484880/how-to-read-utc-timestamps-from-sql-server-using-rodbc-in-r
 tm <- NULL
 tm <- as.POSIXlt(flights.weather$start_time)
@@ -99,17 +67,19 @@ attr(tm, "tzone") <- "UTC"
 flights.weather$start_time <- tm
 
 
+# Get a copy of the trips DB table. -------
+
 #Query the gull db to extract bird_id, nest_id, and nest locations
 trips <- sqlQuery(gps.db, query="SELECT DISTINCT t.*
                   FROM lund_trips AS t
                   ORDER BY t.trip_id ASC;")
 
-#str(trips)
+str(trips)
+
+# Fix date-time structure
 tm <- NULL
 tm <- as.POSIXlt(trips$start_time)
-# tm[1:10]
 attr(tm,"tzone") <- "UTC"
-# tm[1:10]
 trips$start_time <- tm
 
 tm <- NULL
