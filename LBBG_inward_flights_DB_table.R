@@ -84,14 +84,12 @@ trips$start_time <- tm
 
 tm <- NULL
 tm <- as.POSIXlt(trips$end_time)
-# tm[1:10]
 attr(tm,"tzone") <- "UTC"
-# tm[1:10]
 trips$end_time <- tm
 
 
-#Edited this to reference 'lund_flight_paramaters' rather than 'lund_flight_characteristics' as table name changed.
-# Later to 'lund_flight_com_weather_par'
+
+# Get a copy of the flight movement paramaters DB table. -------
 flights.characteristics <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
                                     FROM lund_flight_com_weather_par AS f
                                     ORDER BY f.flight_id ASC;")
@@ -99,15 +97,16 @@ flights.characteristics <- sqlQuery(gps.db, query="SELECT DISTINCT f.*
 
 
 
-#Trip type and duration#######
-trip_type <- 0
-trip_duration <- 0
-trip_gotland <- 0
-trip_distmax <- 0
+# Trip type and duration ------
+# For each flight get info on type of trip, duration etc.
+# Variables later used for filtering
 
-# names(trips)
-# str(flights)
-# i <- 5
+trip_type     <- 0
+trip_duration <- 0
+trip_gotland  <- 0
+trip_distmax  <- 0
+
+
 for(i in seq(along = flights$trip_id)){
   trip_type[i] <- trips$trip_type[trips$trip_id ==
                                     flights$trip_id[i]][1]
@@ -119,67 +118,110 @@ for(i in seq(along = flights$trip_id)){
                                       flights$trip_id[i]][1]
 }
 
-# head(trip_distmax)
-
-
-# Add some more paramaters to filter
-# Non full trips (i.e. where there is a gap of > 25 minutes?)
-# Trips to Gotland
-# 
-# Might be better to create new columns and label trips by these info.
-
+# Change to factor
 trip_gotland <- as.factor(trip_gotland)
-# summary(trip_gotland)
-#filters####
-# hist(trip_distmax[outward])
+summary(trip_gotland)
 
+
+
+# filters -------
 par(mfrow = c(1,1))
-hist(trip_distmax[trip_distmax < 1000])
+hist(trip_distmax[trip_distmax < 1000], breaks = 100)
+hist(trip_distmax[trip_distmax < 100], breaks = 100,
+     xlim = c(0,100))
+
+# Includes migratory 'trips'
+# range(trip_distmax)
 names(flights)
 
-par(mfrow = c(1,2))
 
 summary(flights$trip_flight_type)
 summary(trip_gotland)
 
-outward <- (flights$trip_flight_type == "outward") & trip_gotland == 0 & (flights$interval_mean < 800) & (trip_distmax > 4) & (trip_distmax < 400) & flights$points > 4 & flights$dist_a_b > 2000 & flights$points > 3
-hist(flights$dist_a_b[outward]/1000, breaks = 20, main = "out", xlab = "Distance (km)", xlim = c(0,120))
+outward <- ((flights$trip_flight_type == "outward") &
+  trip_gotland == 0 & (flights$interval_mean < 800) &
+  (trip_distmax > 4) & (trip_distmax < 400) &
+  flights$points > 4 & flights$dist_a_b > 2000 &
+  flights$points > 3)
+
 summary(outward)
 
-inward  <- (flights$trip_flight_type == "inward")  & (trip_gotland == 0) & (flights$interval_mean < 800) & (trip_distmax > 4) & (trip_distmax < 400) & flights$points > 4  & flights$dist_a_b > 2000 & flights$points > 3
+hist(flights$dist_a_b[outward]/1000, breaks = 20,
+     main = "Out", xlab = "Distance (km)")
+summary(outward)
+
+inward  <- ((flights$trip_flight_type == "inward")  &
+  (trip_gotland == 0) & (flights$interval_mean < 800) &
+  (trip_distmax > 4) & (trip_distmax < 400) &
+  flights$points > 4  & flights$dist_a_b > 2000 &
+  flights$points > 3)
+
+summary(inward)
+
 hist(flights$dist_a_b[inward]/1000, breaks = 40, main = "in", xlab = "Distance (km)", xlim = c(0,120))
 
 # flights$n[1:10]
 summary(inward)
 summary(outward)
 
-# hist(flights$interval_mean[outward])
-# length(flights$interval_mean[outward])
 
 
 
-*********************
-  # Paired data comparisons ####
-
-# Angle with respect to wind
+# Calculate angle with respect to wind ------
 dif.angle <- flights$bearing_a_b - flights.characteristics$winddir
-# hist(dif.angle)
 dif.angle <- abs(dif.angle)
-# hist(dif.angle)
-# hist(dif.angle[outward] %% 180)
-# hist(dif.angle[inward] %% 180)
-# dif.angle <- dif.angle %% 180
+
 cor.ang <- function(x){
   if(x > 180){ y <- 180 - (x - 180)}
   else y <- x
   return(y)
 }
-# cor.ang(181)
+
 dif.angle <- sapply(dif.angle, cor.ang)
-#  hist(dif.angle)
+hist(dif.angle)
 
 
-# Paired data   ####
+
+# Inward flights only (not paired) -----
+flights.inward <- cbind(flights[inward,],
+                    flights.characteristics[inward,],
+                    flights.weather[inward,],
+                    dif.angle[inward])
+
+
+
+
+
+# Output to DB table ------
+
+out.table <- flights.inward
+row.names(out.table) <- NULL
+
+# Drop some columns
+names(out.table)[109] <- "dif_angle"
+
+names(out.table)
+
+out.table.f <- out.table[,-c(35, 79, 80, 81, 88, 89, 90)]
+
+x <- duplicated(names(out.table.f))
+summary(x)
+
+#Output weather data to database #####
+#will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
+sqlSave(gps.db, out.table.f, tablename = "lund_flight_com_lbbg",
+        append = FALSE, rownames = FALSE, colnames = FALSE,
+        verbose = FALSE, safer = TRUE, addPK = FALSE, fast = TRUE,
+        test = FALSE, nastring = NULL, varTypes = 
+          c(start_time = "datetime", end_time = "datetime")
+)
+
+odbcCloseAll()  # close any database connections
+
+
+
+
+# Paired data ------
 #' Re-arrange the data for paired data comparison
 
 flights.out <- cbind(flights[outward,],flights.characteristics[outward,],flights.weather[outward,],dif.angle[outward])
@@ -189,7 +231,7 @@ flights.in <- cbind(flights[inward,],flights.characteristics[inward,],flights.we
 flights.out  <- flights.out[order(flights.out$trip_id),]
 flights.in   <- flights.in[order(flights.in$trip_id),]
 
-#Find and index those flights for which there is a corresponding outward or inward flight for same trip.
+# Find and index those flights for which there is a corresponding outward or inward flight for same trip.
 x <- NA
 for( i in seq(along = flights.out$trip_id)){
   if(any(flights.out$trip_id[i] == flights.in$trip_id)) x[i] = TRUE else{x[i] = FALSE}
@@ -233,12 +275,11 @@ flights.in$wind.type[flights.in$dif.angle > 90] <- "head"
 names(flights.out)[length(flights.out)-2] <- "dif.angle"
 names(flights.in)[length(flights.in)-2] <- "dif.angle"
 names(flights.out) == names(flights.in)
-# 
-# flights.out[1:10,87]
-# flights.in[1:10,87]
-# names(flights.in[87])
 
 flights.combined <- rbind(flights.out,flights.in)
 
 flights.combined   <- flights.combined[order(flights.combined$trip_id),]
+
+
+
 
