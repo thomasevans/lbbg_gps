@@ -280,6 +280,10 @@ flights.combined   <- flights.combined[order(flights.combined$trip_id),]
 # Some function definitions --------
 
 # Logit transformation   ####
+
+# Look at Warton and Hui 2011 - They suggest adding the minimum non-zero
+# proportion to all values.
+
 logit <- function(x){
   if(x <1.000000000000001 & x > -0.00000000000001){   #Return NAs for values outside of range 0 - 1, with small tollerance either way.
     x.new <- 0.99999999999*x    #Bring all values in slightly, so that values of 1.0 can be processed.
