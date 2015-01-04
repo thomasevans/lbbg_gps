@@ -175,6 +175,17 @@ names(alt_data_df) <- c(
 anyNA(alt_data_df)
 # Already removed - so no need to filter
 
+
+# Check data structure
+str(alt_data_df)
+
+# correct format for device_info_serial
+alt_data_df$device_info_serial <- as.factor(as.character(alt_data_df$device_info_serial))
+
+# Check structure again
+str(alt_data_df)
+
+
 # Model 1 - specification + random effects + autoregressive thing -----
 # Variable list:
 #' dist_km
@@ -213,6 +224,9 @@ mod_02  <-  lme(alt_med_ln ~
                 data = alt_data_df,
                 method = "ML"
 )
+
+
+
 
 
 
@@ -291,10 +305,133 @@ install.packages("glmulti")
 
 # Has some silly java error when ran on my computer - if you get that warning
 # (on windows at least) the following should fix it
-
-
+Sys.setenv(JAVA_HOME="C:\\Program Files\\Java\\jre7\\")
 library(glmulti)
 
+?glmulti
+
+test <- glmulti(mod_01, level = 2, data = alt_data_df,
+                marginality = TRUE,
+                maxsize = 10,
+                method = "g",
+                crit = "aic",
+#                 fitfunc = lme.glmulti)
+                plotty = TRUE,
+                report = TRUE,
+            )
+                
+
+mod_01  <-  lme(alt_med_ln ~
+                  (dist_km_z + head_tail.type + head_tail_abs +
+                     side.type + side_abs +
+                     temp_z + cloud_tot_z)^2,
+                random = ~1|device_info_serial,
+                data = alt_data_df,
+                method = "ML"
+)
+
+
+#########
+library("lme4")
+library("glmulti")
+# dd <- read.table("SO_glmulti.dat",header=TRUE)
+m1 <- lmer(alt_med_ln ~
+             (dist_km_z + head_tail.type + head_tail_abs +
+                side.type + side_abs +
+                temp_z + cloud_tot_z)^2+
+             (1|device_info_serial),
+           data = alt_data_df)
+
+summary(m1)
+r.squaredGLMM(m1)
+aic(m1)
+
+
+
+setMethod('getfit', 'merMod', function(object, ...) {
+  summ <- coef(summary(object))
+  summ1 <- summ[,1:2,drop=FALSE]
+  ## if (length(dimnames(summ)[[1]])==1) {
+  ##     summ1 <- matrix(summ1, nr=1,
+  ##                     dimnames=list(c("(Intercept)"),
+  ##                     c("Estimate","Std. Error")))
+  ## }
+  cbind(summ1, df=rep(10000,length(fixef(object))))
+})
+
+lmer.glmulti<-function(formula,data,random="",...){
+  lmer(paste(deparse(formula),random),data=data,REML=F,...)
+}
+
+
+
+
+glmulti_lmm_10_run_01 <- glmulti(formula(m1,fixed.only=TRUE),
+                       random = "+(1|device_info_serial)",
+                       data = alt_data_df, method = "h",
+                       deltaM = 0.5, 
+                       fitfunc = lmer.glmulti,
+                       intercept = TRUE,
+                       marginality = TRUE,
+                       maxsize = 10,
+                       level = 2)
+
+# ?glmulti
+
+summary(glmulti_lmm_10_run_01)
+weightable(glmulti_lmm_10_run_01)
+
+
+# Takes a long time to run - probably best to run overnight/ on Amazon server
+glmulti_lmm_10_h <- glmulti(formula(m1,fixed.only=TRUE),
+                          random = "+(1|device_info_serial)",
+                          data = alt_data_df,
+                          method = "h",
+#                           deltaM = 0.5, 
+                          fitfunc = lmer.glmulti,
+                          intercept = TRUE,
+                          marginality = TRUE,
+                          minsize = 10,
+                          level = 2)
+
+
+weightable(glmulti_lmm_10_h)
+
+
+
+# glmulti_lmm_10_g_run01 <- glmulti_lmm_10_g
+# aic(glmulti_lmm_10_g_run03)
+glmulti_lmm_10_g_run03 <- glmulti(formula(m1,fixed.only=TRUE),
+                            random = "+(1|device_info_serial)",
+                            data = alt_data_df,
+                            method = "g",
+                            deltaM = 0.5, 
+                            fitfunc = lmer.glmulti,
+                            intercept = TRUE,
+                            marginality = TRUE,
+                            maxsize = 10,
+                            level = 2)
+
+
+summary(glmulti_lmm_10_g_run01)
+
+
+weightable(glmulti_lmm_10_g_run03)
+
+
+glmulti_lmm_8_g_run01 <- glmulti(formula(m1,fixed.only=TRUE),
+                                  random = "+(1|device_info_serial)",
+                                  data = alt_data_df,
+                                  method = "g",
+                                  deltaM = 0.5, 
+                                  fitfunc = lmer.glmulti,
+                                  intercept = TRUE,
+                                  marginality = TRUE,
+                                  maxsize = 8,
+                                  level = 2)
+
+
+str(alt_data_df)
 
 
 # Model 2 - Simplify (drop variables - AIC selection) -----
