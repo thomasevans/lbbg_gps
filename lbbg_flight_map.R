@@ -9,7 +9,7 @@
 # Outputs map
 
 # For testing
-flight.id <- 564
+flight.id <- 25476
 
 # 1. Get GPS data (including wind info)  ########
 
@@ -26,7 +26,7 @@ gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 # Get start date-time and end date-time and device info serial
 flight.info <- sqlQuery(gps.db, as.is = TRUE, query=
     paste("SELECT DISTINCT f.*
-            FROM lund_flights AS f
+            FROM lund_flight_com_lbbg AS f
             WHERE f.flight_id = ",
           flight.id,
           "
@@ -121,36 +121,95 @@ point.size.speed <- (0.6 + ((points$altitude)/40))
 
 # 4. Make map #######
 
+pdf("test_25476.pdf")
+
 # Plot base-map (using axis limits)
 par(mfrow=c(1, 1))
 par( mar = c(5, 4, 4, 5))
-plot(gadm, col= "grey50", bg = NA, xlim = c(16.9, 18.1),
-     ylim = c(56.8, 57.65))
-
 # Plot as proper map to get sensible projection
+plot(gadm, col= "grey50", bg = "grey90", xlim = x.lim,
+     ylim = y.lim
+     )
 
+# Add title indicating which flight it is
+title(main = paste("Flight ID:", flight.id))
 
 # Add track lines
 # Use 'segments', and plot in grey, lwd = 2?
+# ?segments
+n <- length(points$longitude)
+segments(points$longitude[1:n-1],
+         points$latitude[1:n-1],
+         points$longitude[2:n],
+         points$latitude[2:n],
+         lwd = 2,
+#          col = addalpha("blue", alpha = 0.60))
+         col = as.character(col.speed[-1]))
+
 
 # Add filled sybols (showing speed)
 # pch = 21 (filled circle)
 # col = "black" (symbol outline)
 # bg = colour vector (fill - speed)
+points(points$longitude, points$latitude,
+       bg = as.character(col.speed),
+       pch = 21, cex = 0.8*point.size.speed)
 
 # Add scale bar
 # perhaps include alpha channel?
 # distance in km...
-library(maps)
-map.scale(x= 17, y = 56.9, ratio = FALSE)
+# library(maps)
+ax.lim <- par("usr")
+x.len <- ax.lim[2] - ax.lim[1]
+y.len <- ax.lim[4] - ax.lim[3]
+
+map.scale(x = (ax.lim[1]+0.12*x.len),
+          y = (ax.lim[3]+0.12*y.len), ratio = FALSE,
+          col = "grey50")
 
 
 # Add wind arrow
 # Size arrow according to wind speed
 # Place arrow in centre?
 # Include alpha channel
+# ?arrow
+# ?rad
+# install.packages("circular")
+library("circular")
+library("shape")
+unit.length <- sqrt((x.dif*x.dif) + (y.dif*y.dif))/10
 
+Arrows(x0 = (x.lim[1]+0.65*x.dif),
+       y0 = (y.lim[1]+0.65*y.dif),
+       x1 = ((x.lim[1]+0.65*x.dif) +
+               unit.length*(flight.info$uwnd10m/5)),
+       y1 = ((y.lim[1]+0.65*y.dif) +
+               unit.length*(flight.info$vwnd10m/5)),
+       lwd = 2,
+       arr.type = "triangle",
+       arr.length = 0.5,
+       col = addalpha("blue", alpha = 0.8)
+       
+         )
+
+wind.10m <- sqrt((flight.info$uwnd10m*flight.info$uwnd10m) +
+  (flight.info$vwnd10m*flight.info$vwnd10m))
+
+# ?round
+wind.10m <- round(wind.10m, digits = 2)
+
+
+text(x = (x.lim[1]+0.74*x.dif),
+     y = (y.lim[1]+0.68*y.dif),
+labels = bquote(.(wind.10m) ~ ms^-1))
+
+
+
+     
+# ?expression
 # More tidying...
-box(,col="grey50",lwd=2)
-axis(side=(2), las=1, col="grey50", col.axis="grey50")
-axis(side=(3), las=1, col="grey50", col.axis="grey50")
+box(col = "grey50", lwd = 2)
+axis(side = (2), las = 1, col = "grey50", col.axis = "grey50")
+axis(side = (1), las = 1, col = "grey50", col.axis = "grey50")
+
+dev.off()
