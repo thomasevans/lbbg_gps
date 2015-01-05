@@ -184,15 +184,15 @@ map.flight.id <- function(flight.id = 25476){
   
 
 map.scale(x = (ax.lim[1]+0.12*x.len),
-          y = (ax.lim[3]+0.12*y.len), ratio = FALSE)
-
+          y = (ax.lim[3]+0.12*y.len), ratio = FALSE,
+          col = "grey50")
 
 #   ?Arrows
-  Arrows(x0 = (x.lim[1]+0.25*x.len),
-         y0 = (y.lim[1]+0.65*y.len),
-         x1 = ((x.lim[1]+0.25*x.len) +
+  Arrows(x0 = (ax.lim[1]+0.25*x.len),
+         y0 = (ax.lim[3]+0.65*y.len),
+         x1 = ((ax.lim[1]+0.25*x.len) +
                  (x.len/10)*(flight.info$uwnd10m/5)),
-         y1 = ((y.lim[1]+0.65*y.len) +
+         y1 = ((ax.lim[3]+0.65*y.len) +
                  (y.len/10)*(flight.info$vwnd10m/5)),
          lwd = 2,
          arr.type = "simple",
@@ -208,8 +208,8 @@ map.scale(x = (ax.lim[1]+0.12*x.len),
   wind.10m <- round(wind.10m, digits = 2)
   
   
-  text(x = (x.lim[1]+0.27*x.len),
-       y = (y.lim[1]+0.60*y.len),
+  text(x = (ax.lim[1]+0.27*x.len),
+       y = (ax.lim[3]+0.60*y.len),
   labels = bquote(.(wind.10m) ~ ms^-1))
   
   
