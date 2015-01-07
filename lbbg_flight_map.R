@@ -9,7 +9,7 @@
 # Outputs map
 
 # For testing
-flight.id <- 32591
+flight.id <- 16641
 
 map.flight.id <- function(flight.id = 25476){
   
@@ -59,6 +59,8 @@ map.flight.id <- function(flight.id = 25476){
   # Plot quickly to see how this looks
   # plot(points$latitude~points$longitude)
   
+  
+  points <- points[10:40,]
   
   
   # 2. Get base-map data #####
@@ -123,7 +125,7 @@ map.flight.id <- function(flight.id = 25476){
   
   # 4. Make map #######
   
-#   pdf("test_25476.pdf")
+#    pdf("test_16641_3.pdf")
   
   # Plot base-map (using axis limits)
   par(mfrow=c(1, 1))
@@ -153,9 +155,21 @@ map.flight.id <- function(flight.id = 25476){
   # pch = 21 (filled circle)
   # col = "black" (symbol outline)
   # bg = colour vector (fill - speed)
-  points(points$longitude, points$latitude,
-         bg = as.character(col.speed),
-         pch = 21, cex = 1*point.size.speed)
+
+
+  if(flight.info$interval_mean < 20){
+    n <- length(points$longitude)
+    ind <- c(1:n)
+    ind.5 <- ind%%5
+    ind.t <- rep(FALSE,n)
+    ind.t[ind.5 == 1] <- TRUE
+#     points(points$longitude, points$latitude,
+#            bg = as.character(col.speed),
+#            pch = 21, cex = 1*point.size.speed)
+  } else ind.t <- TRUE
+  points(points$longitude[ind.t], points$latitude[ind.t],
+         bg = as.character(col.speed[ind.t]),
+         pch = 21, cex = 1*point.size.speed[ind.t])
   
   # Add scale bar
   # perhaps include alpha channel?
@@ -272,7 +286,16 @@ flight.ids <- c(16570,16740, 32591, 38508, 16231, 29732,
                 33629, 38459, 20442, 5332, 29405,
                 37799, 22953, 19804, 16770, 37713)
 
-pdf("flights_different_conditions_graphs.pdf")
+# high resolution flights
+flight.ids <- c(37471, 29604, 39428,
+                28481, 19804, 39526,
+                23129, 28499, 30870,
+                3060, )
+flight.ids <- c(34145, 31321, 22953, 5034,
+                24234, 24611, 16641, 25568,
+                16606, 38576, 38660, 39016)
+
+pdf("flights_different_conditions_graphs_highres2.pdf")
 for(i in 1:length(flight.ids)){
   map.flight.id(flight.id = flight.ids[i])
 }
