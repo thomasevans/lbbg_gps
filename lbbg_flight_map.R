@@ -26,12 +26,19 @@ map.flight.id <- function(flight.id = 25476){
   
   
   # Get start date-time and end date-time and device info serial
+ 
+  
+  # Analysed section only
+  
+  
+  # Whole flight
   flight.info <- sqlQuery(gps.db, as.is = TRUE, query=
-      paste("SELECT DISTINCT f.*
-              FROM lund_flight_com_lbbg AS f
+      paste("SELECT DISTINCT f.*, t.uwnd10m, t.vwnd10m
+              FROM lund_flights AS f, lund_flight_com_lbbg as t
               WHERE f.flight_id = ",
             flight.id,
             "
+            AND f.flight_id = t.flight_id
             ORDER BY f.flight_id ASC;", sep = ""))
   
   
@@ -60,7 +67,7 @@ map.flight.id <- function(flight.id = 25476){
   # plot(points$latitude~points$longitude)
   
   
-  points <- points[10:40,]
+#   points <- points[10:40,]
   
   
   # 2. Get base-map data #####
@@ -197,9 +204,9 @@ map.flight.id <- function(flight.id = 25476){
   
   
 
-map.scale(x = (ax.lim[1]+0.12*x.len),
-          y = (ax.lim[3]+0.12*y.len), ratio = FALSE,
-          col = "grey50")
+# map.scale(x = (ax.lim[1]+0.12*x.len),
+#           y = (ax.lim[3]+0.12*y.len), ratio = FALSE,
+#           col = "grey50")
 
 #   ?Arrows
   Arrows(x0 = (ax.lim[1]+0.25*x.len),
@@ -295,7 +302,7 @@ flight.ids <- c(34145, 31321, 22953, 5034,
                 24234, 24611, 16641, 25568,
                 16606, 38576, 38660, 39016)
 
-pdf("flights_different_conditions_graphs_highres2.pdf")
+pdf("flights_different_conditions_graphs_highres2_whole.pdf")
 for(i in 1:length(flight.ids)){
   map.flight.id(flight.id = flight.ids[i])
 }
