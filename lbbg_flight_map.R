@@ -29,7 +29,15 @@ map.flight.id <- function(flight.id = 25476){
  
   
   # Analysed section only
-  
+  flight.info <- sqlQuery(gps.db, as.is = TRUE, query=
+                            paste("SELECT DISTINCT f.*
+31
+               FROM lund_flight_com_lbbg AS f
+     WHERE f.flight_id = ",
+                                  flight.id,
+                                  "
+            AND f.flight_id = t.flight_id
+            ORDER BY f.flight_id ASC;", sep = ""))
   
   # Whole flight
   flight.info <- sqlQuery(gps.db, as.is = TRUE, query=
@@ -41,6 +49,8 @@ map.flight.id <- function(flight.id = 25476){
             AND f.flight_id = t.flight_id
             ORDER BY f.flight_id ASC;", sep = ""))
   
+
+
   
   
   device_id <- flight.info$device_info_serial[1]
