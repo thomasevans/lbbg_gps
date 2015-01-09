@@ -308,7 +308,7 @@ install.packages("glmulti")
 Sys.setenv(JAVA_HOME="C:\\Program Files\\Java\\jre7\\")
 library(glmulti)
 
-?glmulti
+# ?glmulti
 
 test <- glmulti(mod_01, level = 2, data = alt_data_df,
                 marginality = TRUE,
@@ -346,6 +346,7 @@ summary(m1)
 r.squaredGLMM(m1)
 aic(m1)
 
+coefplot2(m1)
 
 
 setMethod('getfit', 'merMod', function(object, ...) {
