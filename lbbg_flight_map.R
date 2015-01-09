@@ -277,6 +277,16 @@ par(mar=c(0,4,0,4))
        ylim = c(0,max(speed_2d, na.rm = TRUE) + 1),
        axes = FALSE)
 
+#   ?segments
+# points$speed_accuracy
+  segments(x0 = date_time,
+           x1 = date_time,
+           y0 = speed_2d - points$speed_accuracy,
+           y1 = speed_2d + points$speed_accuracy,
+           lwd = 2,
+           col = "grey70")
+  points(speed_2d ~ date_time, pch = 21, bg = "white")
+  
   axis(4, las = 1)              # y-axis
   box()
   grid()
@@ -292,6 +302,13 @@ par(mar=c(0,4,0,4))         # no top spacing
        ylab = "",
        ylim = c(-20,max(points$altitude , na.rm = TRUE) +1),
        axes = FALSE)
+segments(x0 = date_time,
+         x1 = date_time,
+         y0 = points$altitude - points$v_accuracy,
+         y1 = points$altitude + points$v_accuracy,
+         lwd = 2,
+         col = "grey70")
+points(points$altitude ~ date_time, pch = 21, bg = "white")
   axis(2,las = 1)                # y-axis
   title(ylab = "Height (m)", line = 2.5)
   grid()
