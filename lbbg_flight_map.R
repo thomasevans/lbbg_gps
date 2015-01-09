@@ -29,15 +29,15 @@ map.flight.id <- function(flight.id = 25476){
  
   
   # Analysed section only
-  flight.info <- sqlQuery(gps.db, as.is = TRUE, query=
-                            paste("SELECT DISTINCT f.*
-31
-               FROM lund_flight_com_lbbg AS f
-     WHERE f.flight_id = ",
-                                  flight.id,
-                                  "
-            AND f.flight_id = t.flight_id
-            ORDER BY f.flight_id ASC;", sep = ""))
+#   flight.info <- sqlQuery(gps.db, as.is = TRUE, query=
+#                             paste("SELECT DISTINCT f.*
+# 31
+#                FROM lund_flight_com_lbbg AS f
+#      WHERE f.flight_id = ",
+#                                   flight.id,
+#                                   "
+#             AND f.flight_id = t.flight_id
+#             ORDER BY f.flight_id ASC;", sep = ""))
   
   # Whole flight
   flight.info <- sqlQuery(gps.db, as.is = TRUE, query=
@@ -140,6 +140,9 @@ map.flight.id <- function(flight.id = 25476){
   
   point.size.speed <- (0.6 + ((points$altitude)/40))
   
+
+# points$altitude
+
   # 4. Make map #######
   
 #    pdf("test_16641_3.pdf")
@@ -262,23 +265,87 @@ date_time <- as.POSIXct(points$date_time, tz = "UTC")
 # y.min <- min(c((speed_2d),points$vdown*5))
 # y.max <- max(c((speed_2d),points$vdown*5))
 
-par(mfrow = c(2,1))
+par(mfrow = c(4,1))
+
+par(mar=c(0,4,0,4))         
 
   # Speed over time
   plot(speed_2d~date_time,
-       xlab = "Time",
-       ylab = expression("Speed ms"^{-1}),
-       ylim = c(0,max(speed_2d, na.rm = TRUE) + 1))
-  
-  title(main = paste("Flight ID:", flight.id))
+#        xlab = "Time",
+#        ylab = expression("Speed ms"^{-1}),
+       ylab = "",
+       ylim = c(0,max(speed_2d, na.rm = TRUE) + 1),
+       axes = FALSE)
 
+  axis(4, las = 1)              # y-axis
+  box()
+  grid()
+#   title(main = paste("Flight ID:", flight.id))
+  title(ylab = expression("Speed ms"^{-1}), line = 1)
 #   points(points$vdown*5 ~ date_time,
 #          col = "red")
 
+par(mar=c(0,4,0,4))         # no top spacing
   plot(points$altitude~date_time,
-       xlab = "Time",
-       ylab = "Height (m)",
-       ylim = c(-20,max(points$altitude , na.rm = TRUE) +1))
+#        xlab = "Time",
+#        ylab = "Height (m)",
+       ylab = "",
+       ylim = c(-20,max(points$altitude , na.rm = TRUE) +1),
+       axes = FALSE)
+  axis(2,las = 1)                # y-axis
+  title(ylab = "Height (m)", line = 2.5)
+  grid()
+  box()
+
+vh <- (speed_2d/points$altitude)
+
+par(mar=c(0,4,0,4))         # no top spacing
+plot(vh~date_time,
+#      xlab = "Time",
+#      ylab = "v/h"
+    ylab = "",
+    axes = FALSE)
+axis(4,las = 1)              # y-axis
+title(ylab = "v/h", line = 1)
+box()
+grid()
+par(mar=c(3,4,0,4))         
+
+plot(vh~date_time,
+#      xlab = "Time",
+     ylab = "v/h (log scale)",
+#      ylim = c(-.5,1)
+      log = "y",
+      las = 1
+)
+grid()
+title(xlab = "Time", line = 2)
+
+# par(mfrow = c(1,1))
+# hist(vh[vh > -4 & vh < 4], breaks = 80)
+
+
+# library(ggplot2)
+# library(reshape2)
+# str(points)
+# 
+# points.sub <- cbind.data.frame(date_time,points$altitude,vh,speed_2d)
+# names(points.sub) <- c("date_time", "altitude", "vh", "speed_2d")
+# 
+# # Use melt to reshape data so values and variables are in separate columns
+# dt.df <- melt(points.sub, measure.vars = c("altitude", "vh", "speed_2d"))
+# 
+# ggplot(dt.df, aes(x = date_time, y = value)) +
+#   geom_point(aes(color = variable)) +
+#   facet_grid(variable ~ ., scales = "free_y")
+#   # Suppress the legend since color isn't actually providing any information
+# #   opts(legend.position = "none")
+
+
+
+
+
+# ?plot
 
 #   names(flight.info)
 
@@ -312,7 +379,7 @@ flight.ids <- c(34145, 31321, 22953, 5034,
                 24234, 24611, 16641, 25568,
                 16606, 38576, 38660, 39016)
 
-pdf("flights_different_conditions_graphs_highres2_whole.pdf")
+pdf("flights_different_conditions_graphs_highres2_whole_vh3-log.pdf")
 for(i in 1:length(flight.ids)){
   map.flight.id(flight.id = flight.ids[i])
 }
