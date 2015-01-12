@@ -31,7 +31,7 @@ nest_loc <- sqlQuery(gps.db, query=
   "SELECT DISTINCT n.ring_number, n.nest_id,
   n.latitude, n.longitude, t.device_info_serial
   FROM gps_ee_nest_limited AS n,
-    gps_ee_shared_track_session_limited AS t
+    gps_ee_track_session_limited AS t
   WHERE n.ring_number = t.ring_number
   ORDER BY n.ring_number ASC;")
 
@@ -109,10 +109,10 @@ flight_id <- flight_id[2:f]
 # 
 # t = 5
 
-#   install.packages("circular")
+#   install.packages("fossil")
 
 
-flight.info <- function(t, gps=gps){
+flight.info <- function(t, gps = gps){
   
   library(fossil)   #required for distance calculations
   library(circular) #required for some circular calculations
@@ -168,6 +168,8 @@ flight.info <- function(t, gps=gps){
   end_lat    <-    sub01$latitude[n]
   nest <- lookup_nest(device_info_serial)
 
+  source("deg.dist.R")
+  
   # Distance from nest at start of flight.
   dist_nest_start    <-   1000 * 
     deg.dist(nest[2], nest[1], start_long, start_lat)
@@ -283,7 +285,9 @@ require(foreach)
 require(doParallel)
 
 #use x cores, general solution for any windows machine.
-cl <- makeCluster(parallel::detectCores())     
+# cl <- makeCluster(parallel::detectCores())     
+# Use 6/8 so as not to slow down computer so much!
+cl <- makeCluster(6)     
 
 #start the parellel session of R; the 'slaves', which will run the analysis.
 registerDoParallel(cl)   
