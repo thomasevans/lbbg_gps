@@ -6,7 +6,7 @@
 # A script to analyse each flight, with various
 # paramaters, such as maximum altitude, calculated.
 # First the database will be queried to pull out
-# the data columns we needd for our analysis.
+# the data columns we need for our analysis.
 # Second. Various paramaters and information about
 # the flights will be calculated.
 # Third. This will be ouput to a new database table
@@ -154,6 +154,9 @@ flight.info <- function(t, gps=gps){
   # value.
   interval_min  <- min(sub01$time_interval_s)
   
+  # Max log interval
+  interval_max  <- max(sub01$time_interval_s)
+  
   # Device info serial
   device_info_serial <- sub01$device_info_serial[1]
   
@@ -255,7 +258,8 @@ flight.info <- function(t, gps=gps){
   #make a vector containing all this data
   data.out <- c(t, n, start_time, end_time, duration,
                 dist_max, dist_total, interval_mean,
-                interval_min, device_info_serial,
+                interval_min, interval_max,
+                device_info_serial,
                 start_long, start_lat, end_long,
                 end_lat, dist_nest_start, dist_nest_end,
                 dist_nest_dif, dist_a_b, straigtness,
@@ -324,6 +328,7 @@ names.flights <- c("flight_id",
                    "end_time", "duration",
                    "dist_max", "dist_total",
                    "interval_mean", "interval_min",
+                   "interval_max",
                    "device_info_serial",
                    "start_long", "start_lat",
                    "end_long", "end_lat",
@@ -364,7 +369,7 @@ flights$start_time <- as.POSIXct(
 # For each trip, look at flights, label with number
 # flight per that trip, and whether first or final,
 # or inbetween. 
-# Querry database to get trip information:
+# Query database to get trip information:
 trips <- sqlQuery(gps.db, query="SELECT DISTINCT l.*
   FROM lund_trips AS l
   ORDER BY l.trip_id ASC ;"
@@ -473,7 +478,7 @@ system.time(for(i in seq(along = trips$trip_id)){
 #export trip information to the database
 #will be neccessary to edit table in Access after to define data-types and primary keys and provide descriptions for each variable.
 sqlSave(
-  gps.db, flights, tablename = "lund_flights2",
+  gps.db, flights, tablename = "lund_flights3",
   append = FALSE, rownames = FALSE,
   colnames = FALSE, verbose = FALSE,
   safer = TRUE, addPK = FALSE,
