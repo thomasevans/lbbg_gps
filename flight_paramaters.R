@@ -30,8 +30,8 @@ gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
 nest_loc <- sqlQuery(gps.db, query=
   "SELECT DISTINCT n.ring_number, n.nest_id,
   n.latitude, n.longitude, t.device_info_serial
-  FROM gps_uva_nest_limited AS n,
-    gps_uva_track_session_limited AS t
+  FROM gps_ee_nest_limited AS n,
+    gps_ee_shared_track_session_limited AS t
   WHERE n.ring_number = t.ring_number
   ORDER BY n.ring_number ASC;")
 
