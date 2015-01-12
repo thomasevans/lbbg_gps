@@ -474,6 +474,7 @@ system.time(for(i in seq(along = trips$trip_id)){
 })
 #about 340 s
 
+# warnings()
 
 
 
