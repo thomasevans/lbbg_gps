@@ -31,12 +31,12 @@ flights$end_time <- as.POSIXct(as.character(flights$end_time), tz="UTC",
 # Add flight id as column too, to allow for simple subsetting later on.
 
 
-i <- 1
+# i <- 1
 
 points_all <- NULL
 
 
-for(i in 1:nrows(flights)){
+for(i in 1:nrow(flights)){
 #   for(i in 1:5){
     
     device_id <- flights$device_info_serial[i]
