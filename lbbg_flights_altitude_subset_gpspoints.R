@@ -57,8 +57,8 @@ for(i in 1:nrow(flights)){
     
     # Get GPS location fulfilling above extracted criteria
     points <- sqlQuery(gps.db, as.is = TRUE, query=
-                         paste("SELECT DISTINCT g.*
-                                 FROM gps_uva_tracking_speed_3d_limited AS g
+                         paste("SELECT DISTINCT g.*, m.cloud_cover_low_altitude,m.cloud_cover_total, m.significant_wave_height, m.sun_shine_duration_day, m.surface_roughness, m.temperature_2m, m.wind_u_10m, m.wind_v_10m, m.thermal_uplift, m.sea_level_pressure
+                                 FROM gps_uva_tracking_speed_3d_limited AS g, move_bank_variables_all AS m
                                  WHERE g.device_info_serial = ",
                                device_id,
                                "
@@ -68,6 +68,8 @@ for(i in 1:nrow(flights)){
                                  AND g.date_time < #",
                                datetime.end.new,
                                "#
+                                AND g.date_time = m.date_time
+                                AND g.device_info_serial = m.device_info_serial
                                  ORDER BY g.date_time ASC;", sep = ""))
     
     # add flight id to gps points
