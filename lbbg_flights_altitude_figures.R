@@ -1,90 +1,61 @@
+# Script for plotting figures to look at flight behaviour and activity
+# for the lesser black-backed gulls.
 
 
+# Load data ------
+# Set working directory
+# NB this should be changed to the location where you have
+# saved the data files, and where you want to output any graphic
+# files.
+setwd("D:/Dropbox/LBBG_flight_height/R_files")
 
-# For testing
-flight.id <- 16641
+# Load flight information (meta-data)
+flight.details <- read.csv("flight_subset_altitude.csv",
+                        head = TRUE)
+
+
+#a hack/fix to make the date_time a POSIX object (i.e. R will now recognise this as a date-time object.
+flight.details$start_time <- as.POSIXct(flight.details$start_time, tz="UTC",
+                            format = "%Y-%m-%d %H:%M:%S")
+flight.details$end_time <- as.POSIXct(flight.details$end_time, tz="UTC",
+                                     format = "%Y-%m-%d %H:%M:%S")
+
+
+# If you wish to view the data run the following:
+fix(flight.details)
+# Or use 'View', but this might only work in RStudio
+View(flight.details)
+
+
+# Load GPS point data
+load("flight_subset_altitude_points.RData")
+
+summary((points_all$flight_id == flight.id))
+
+
+sample(points_all$flight_id,100)
+
+# For testing (if de-bugging/ modifying the function 'map.flight.id' below)
+flight.id <- 34145
+points <- points_all[(points_all$flight_id == flight.id),]
+flight.details <- flight.info[(flight.info$flight_id == flight.id),]
 
 # Function to produce map and plots to illustrate
 # flights by lesser black-backed gulls
-map.flight.id <- function(flight.id = 25476){
-  
-  # 1. Get GPS data (including wind info)  ########
-  
-  # Connect to DB
-  library(RODBC)
-  
-  # Establish a connection to the database
-  gps.db <- odbcConnectAccess2007('D:/Dropbox/tracking_db/GPS_db.accdb')
-  
-  #See what tables are available
-  #sqlTables(gps.db)
+map.flight.id <- function(flight.id = NULL,
+                          points = NULL,
+                          flight.details = NULL){
   
   
-  # Get start date-time and end date-time and device info serial
-  
-  
-  # Analysed section only
-  #   flight.info <- sqlQuery(gps.db, as.is = TRUE, query=
-  #                             paste("SELECT DISTINCT f.*
-  # 31
-  #                FROM lund_flight_com_lbbg AS f
-  #      WHERE f.flight_id = ",
-  #                                   flight.id,
-  #                                   "
-  #             AND f.flight_id = t.flight_id
-  #             ORDER BY f.flight_id ASC;", sep = ""))
-  
-  # Whole flight
-  flight.info <- sqlQuery(gps.db, as.is = TRUE, query=
-                            paste("SELECT DISTINCT f.*, t.uwnd10m, t.vwnd10m
-                                  FROM lund_flights AS f, lund_flight_com_lbbg as t
-                                  WHERE f.flight_id = ",
-                                  flight.id,
-                                  "
-                                  AND f.flight_id = t.flight_id
-                                  ORDER BY f.flight_id ASC;", sep = ""))
-  
-  
-  
-  
-  
-  device_id <- flight.info$device_info_serial[1]
-  datetime.start <- flight.info$start_time[1]
-  datetime.end   <- flight.info$end_time[1]
-  
-  # Get GPS location fulfilling above extracted criteria
-  points <- sqlQuery(gps.db, as.is = TRUE, query=
-                       paste("SELECT DISTINCT g.*
-                             FROM gps_uva_tracking_speed_3d_limited AS g
-                             WHERE g.device_info_serial = ",
-                             device_id,
-                             "
-                             AND g.date_time > #",
-                             datetime.start,
-                             "#
-                             AND g.date_time < #",
-                             datetime.end,
-                             "#
-                             ORDER BY g.date_time ASC;", sep = ""))
-  
-  
-  # Plot quickly to see how this looks
-  # plot(points$latitude~points$longitude)
-  
-  
-  #   points <- points[10:40,]
-  
-  
-  # 2. Get base-map data #####
-  # Should be able to use the same one as previously used for guillemot
-  # data.
-  # Swedish coast-line data
+
+  # Swedish coast-line data ######
   load("SWE_adm0.RData")
   
   
-  # 3. Set-up graphic paramaters ######
+  # Set-up graphic paramaters ######
   
-  
+  # Function to add alpha channel to colours, allows use of
+  # transparency in graphics.
   # Code from https://github.com/mylesmharrison/colorRampPaletteAlpha/blob/master/colorRampPaletteAlpha.R
   # Hight-lighted by blog post: http://www.everydayanalytics.ca/2014/03/colorRampPalette-alpha-in-R.html
   addalpha <- function(colors, alpha=1.0) {
@@ -172,7 +143,7 @@ map.flight.id <- function(flight.id = 25476){
   # bg = colour vector (fill - speed)
   
   
-  if(flight.info$interval_mean < 20){
+  if(flight.details$interval_mean < 20){
     n <- length(points$longitude)
     ind <- c(1:n)
     ind.5 <- ind%%5
@@ -220,9 +191,9 @@ map.flight.id <- function(flight.id = 25476){
   Arrows(x0 = (ax.lim[1]+0.25*x.len),
          y0 = (ax.lim[3]+0.65*y.len),
          x1 = ((ax.lim[1]+0.25*x.len) +
-                 (x.len/10)*(flight.info$uwnd10m/5)),
+                 (x.len/10)*(flight.details$uwnd10m/5)),
          y1 = ((ax.lim[3]+0.65*y.len) +
-                 (y.len/10)*(flight.info$vwnd10m/5)),
+                 (y.len/10)*(flight.details$vwnd10m/5)),
          lwd = 2,
          arr.type = "simple",
          arr.length = 0.5,
@@ -230,8 +201,8 @@ map.flight.id <- function(flight.id = 25476){
          
   )
   
-  wind.10m <- sqrt((flight.info$uwnd10m*flight.info$uwnd10m) +
-                     (flight.info$vwnd10m*flight.info$vwnd10m))
+  wind.10m <- sqrt((flight.details$uwnd10m*flight.details$uwnd10m) +
+                     (flight.details$vwnd10m*flight.details$vwnd10m))
   
   # ?round
   wind.10m <- round(wind.10m, digits = 2)
@@ -359,9 +330,9 @@ map.flight.id <- function(flight.id = 25476){
   
   # ?plot
   
-  #   names(flight.info)
+  #   names(flight.details)
   
-  #   abline(h = flight.info$alt_med,
+  #   abline(h = flight.details$alt_med,
   #          )
   
   
