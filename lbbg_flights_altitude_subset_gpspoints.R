@@ -24,7 +24,9 @@ flights$start_time <- as.POSIXct(as.character(flights$start_time), tz="UTC",
 flights$end_time <- as.POSIXct(as.character(flights$end_time), tz="UTC",
                                  format = "%Y-%m-%d %H:%M:%S")
 
-
+# For testing
+# idx <- c(1:nrow(flights))
+# i <- idx[flights$flight_id == 13571]
 
 # For each flight get GPS points data +/- 20% time (min 5 minutes)
 # Make DB querry to perform this.
