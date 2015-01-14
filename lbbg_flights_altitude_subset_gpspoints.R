@@ -4,7 +4,7 @@
 setwd("D:/Dropbox/LBBG_flight_height/R_files")
 
 # Link to database -------
-#To link to database
+# To link to database
 library(RODBC)
 
 #Establish a connection to the database
