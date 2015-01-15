@@ -280,20 +280,7 @@ map.flight.id <- function(flight.id = NULL,
 }
 
 # Some example sub-sets of flights to map
-flight.ids <- c(414,25476,3388,16014,20533,29451,
-                33976, 34550, 35143, 16336)
-
-flight.ids <- c(16570,16740, 32591, 38508, 16231, 29732,
-                8571, 16570, 25010,
-                12721, 33419, 35235, 19451, 5034,
-                33629, 38459, 20442, 5332, 29405,
-                37799, 22953, 19804, 16770, 37713)
-
-# high resolution flights
-flight.ids <- c(37471, 29604, 39428,
-                28481, 19804, 39526,
-                23129, 28499, 30870,
-                3060)
+# high resolution flights (same shown in January meeting)
 flight.ids <- c(34145, 31321, 22953, 5034,
                 24234, 24611, 16641, 25568,
                 16606, 38660, 39016)
@@ -306,7 +293,7 @@ flight.ids <- flight.info$flight_id[flight.info$interval_max < x[26]]
 
 
 # For each flight in the vector 'flight.ids'
-# Make figures and output a PDF file.
+# Make figures and output a PDF file (you can change the name).
 pdf("flights_illustrations_04.pdf")
 for(i in 1:length(flight.ids)){
   f.id <- flight.ids[i]
