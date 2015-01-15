@@ -36,9 +36,9 @@ load("flight_subset_altitude_points.RData")
 
 
 # For testing (if de-bugging/ modifying the function 'map.flight.id' below)
-flight.id <- 34145
-points <- points_all[(points_all$flight_id == flight.id),]
-flight.details <- flight.info[(flight.info$flight_id == flight.id),]
+# flight.id <- 34145
+# points <- points_all[(points_all$flight_id == flight.id),]
+# flight.details <- flight.info[(flight.info$flight_id == flight.id),]
 
 # Function to produce map and plots to illustrate
 # flights by lesser black-backed gulls
@@ -294,7 +294,7 @@ flight.ids <- flight.info$flight_id[flight.info$interval_max < x[26]]
 
 # For each flight in the vector 'flight.ids'
 # Make figures and output a PDF file (you can change the name).
-pdf("flights_illustrations_04.pdf")
+pdf("flights_illustrations_original_subset.pdf")
 for(i in 1:length(flight.ids)){
   f.id <- flight.ids[i]
   pts <- points_all[(points_all$flight_id == f.id),]
