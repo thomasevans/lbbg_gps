@@ -2,6 +2,10 @@
 # for the lesser black-backed gulls.
 
 
+# If needed, install required packages or libraries to run this script:
+install.packages(c("RColorBrewer", "maps", "shape"))
+
+
 # Load data ------
 # Set working directory
 # NB this should be changed to the location where you have
@@ -32,7 +36,7 @@ load("flight_subset_altitude_points.RData")
 
 
 # For testing (if de-bugging/ modifying the function 'map.flight.id' below)
-flight.id <- 23470
+flight.id <- 34145
 points <- points_all[(points_all$flight_id == flight.id),]
 flight.details <- flight.info[(flight.info$flight_id == flight.id),]
 
@@ -144,7 +148,6 @@ map.flight.id <- function(flight.id = NULL,
   # Add scale bar
   # perhaps include alpha channel?
   # distance in km...
-  # library(maps)
   ax.lim <- par("usr")
   x.len <- ax.lim[2] - ax.lim[1]
   y.len <- ax.lim[4] - ax.lim[3]
@@ -202,7 +205,7 @@ map.flight.id <- function(flight.id = NULL,
   par(mar=c(0,4,0,4))         
   
   # Speed over time
-  plot(speed_2d~date_time,
+  plot(speed_2d ~ date_time,
        #        xlab = "Time",
        #        ylab = expression("Speed ms"^{-1}),
        ylab = "",
@@ -215,6 +218,13 @@ map.flight.id <- function(flight.id = NULL,
            y1 = speed_2d + points$speed_accuracy,
            lwd = 1,
            col = "grey70")
+  n <- nrow(points)
+  segments(x0 = date_time[1:(n-1)],
+           x1 = date_time[-1],
+           y0 = speed_2d[1:(n-1)],
+           y1 = speed_2d[-1],
+           lwd = 1,
+           col = "red")
   points(speed_2d ~ date_time, pch = 21, bg = "white")
   
   axis(4, las = 1)              # y-axis
@@ -235,6 +245,12 @@ map.flight.id <- function(flight.id = NULL,
            y1 = points$altitude + points$v_accuracy,
            lwd = 1,
            col = "grey70")
+  segments(x0 = date_time[1:(n-1)],
+           x1 = date_time[-1],
+           y0 = points$altitude[1:(n-1)],
+           y1 = points$altitude[-1],
+           lwd = 1,
+           col = "red")
   points(points$altitude ~ date_time, pch = 21, bg = "white")
   axis(2,las = 1)                # y-axis
   title(ylab = "Height (m)", line = 2.5)
@@ -263,7 +279,7 @@ map.flight.id <- function(flight.id = NULL,
   
 }
 
-
+# Some example sub-sets of flights to map
 flight.ids <- c(414,25476,3388,16014,20533,29451,
                 33976, 34550, 35143, 16336)
 
@@ -277,17 +293,27 @@ flight.ids <- c(16570,16740, 32591, 38508, 16231, 29732,
 flight.ids <- c(37471, 29604, 39428,
                 28481, 19804, 39526,
                 23129, 28499, 30870,
-                3060, )
+                3060)
 flight.ids <- c(34145, 31321, 22953, 5034,
                 24234, 24611, 16641, 25568,
-                16606, 38576, 38660, 39016)
+                16606, 38660, 39016)
 
 
+# 25 Flights with the best continous high resolution data:
+x <- sort(flight.info$interval_max)
+flight.ids <- flight.info$flight_id[flight.info$interval_max < x[26]]
+# summary(flight.ids)
 
 
-pdf("flights_different_conditions_graphs_highres2_whole_vh3-log.pdf")
+# For each flight in the vector 'flight.ids'
+# Make figures and output a PDF file.
+pdf("flights_illustrations_04.pdf")
 for(i in 1:length(flight.ids)){
-  
-  map.flight.id(flight.id = flight.ids[i])
+  f.id <- flight.ids[i]
+  pts <- points_all[(points_all$flight_id == f.id),]
+  flt.info <- flight.info[(flight.info$flight_id == f.id),]
+  map.flight.id(flight.id = f.id,
+                points = pts,
+                flight.details = flt.info)
 }
 dev.off()
