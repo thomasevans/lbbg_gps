@@ -42,9 +42,13 @@ load("flight_subset_altitude_points.RData")
 
 # Function to produce map and plots to illustrate
 # flights by lesser black-backed gulls
+# Option 'map.only' allows for choice of plotting only map (not
+# then including plots for paramaters such as speed and altitude)
 map.flight.id <- function(flight.id = NULL,
                           points = NULL,
-                          flight.details = NULL){
+                          flight.details = NULL,
+                          map.only = FALSE,
+                          head.title = TRUE){
   
   
 
@@ -112,7 +116,9 @@ map.flight.id <- function(flight.id = NULL,
   # Add title indicating which flight it is
   # This is useful if you later want to look at the data for that
   # specific flight
+  if(head.title == TRUE){
   title(main = paste("Flight ID:", flight.id))
+  }
   
   # Add track lines
   n <- length(points$longitude)
@@ -194,6 +200,9 @@ map.flight.id <- function(flight.id = NULL,
   
   
   # Make some plots to show speed and altitude during flight.
+
+  
+  if(map.only == FALSE){
   
   # For plots of velocity and altitude during trip, make sure that
   # date-time is recorded as a date-time object.
@@ -276,6 +285,7 @@ map.flight.id <- function(flight.id = NULL,
   )
   grid()
   title(xlab = "Time", line = 2)
+  }
   
 }
 
@@ -303,4 +313,24 @@ for(i in 1:length(flight.ids)){
                 points = pts,
                 flight.details = flt.info)
 }
+dev.off()
+
+
+
+
+
+# Example figure for Franck Ruffier for CNRS application
+f.id <- 5917
+pts <- points_all[(points_all$flight_id == f.id),]
+flt.info <- flight.info[(flight.info$flight_id == f.id),]
+
+png("flight_example_id_5917.png")
+win.metafile("flight_example_id_5917.wmf")
+pdf("flight_example_id_5917.pdf")
+jpeg("flight_example_id_5917.jpg", quality = 95)
+map.flight.id(flight.id = f.id,
+              points = pts,
+              flight.details = flt.info,
+              map.only = TRUE,
+              head.title = FALSE)
 dev.off()
