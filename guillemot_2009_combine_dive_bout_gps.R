@@ -1,6 +1,7 @@
 # Analysis of dive-bouts from 2009 guillemot GPS + TDR study
 
-
+# Fix working directory if required
+setwd("D:/Dropbox/R_projects/lbbg_gps")
 
 # Import required data ------
 
@@ -29,7 +30,7 @@ gps.points$date_time <- as.POSIXct(gps.points$date_time, tz = "UTC")
 dive.bouts$date_time_start <- as.POSIXct(dive.bouts$date_time_start, tz = "UTC")
 dive.bouts$date_time_end <- as.POSIXct(dive.bouts$date_time_end, tz = "UTC")
 
-
+# getwd()
 # Bathymetry
 # load('bsbd_raster.RData')
 
@@ -288,6 +289,9 @@ names(bout.info) <- c("gps_info", "bath_max_dive_max",
 names(dive.bouts)
 
 
+# Resume here ******* --------
+
+# load("guillemot_2009_combine_dive_bout_gps.RData")
 
 # Histograms of dive info -----
 
@@ -357,6 +361,8 @@ dev.off()
 
 # Plot dive depth vs. bathymetry ------
 pdf("guillemots_dive_water_depth.pdf")
+cairo_pdf("guillemots_dive_water_depth_cairo.pdf")
+
 # png("guillemots_year_dif_bsbd-0.9.3.png")
 # win.metafile("guillemots_year_dif_bsbd-0.9.3.wmf")
 png("guillemots_dive_water_depth.png", width = 1500, height = 1500, res = 200)
@@ -368,10 +374,10 @@ plot(-bout.info$bath.mean , dive.bouts$depth_max_mean,
      xlab = "Water depth (m)",
      ylab = "Dive depth (m)",
      las = 1,
-     cex.axis = 1.2,
+     cex.axis = 1.5,
      cex.main = 1.5,
-     cex.lab = 1.2,
-     main = "Dive depths (bout mean) vs. sea depth"
+     cex.lab = 1.8,
+#      main = "Dive depths (bout mean) vs. sea depth"
      )
 polygon(x = c(0,130,130), y = c(0,130,0),
         col = "light blue",
@@ -387,12 +393,12 @@ abline(a = -15, b = 1, col = "red", lty = 3, lwd = 1)
 abline(a = -30, b = 1, col = "blue", lty = 3, lwd = 1)
 abline(a = -45, b = 1, col = "blue", lty = 3, lwd = 1)
 
-text(x = 40, y = 40, labels = "Bottom", col = "black")
-text(x = 45, y = 30, labels = "+15 m", col = "red")
-text(x = 35, y = 50, labels = "-15 m", col = "red")
-text(x = 50, y = 20, labels = "+30 m", col = "blue")
-text(x = 55, y = 10, labels = "+45 m", col = "blue")
-text(x = 85, y = 45, labels = "50%", col = "black")
+text(x = 40, y = 40, labels = "Bottom", col = "black", cex = 1.5)
+text(x = 45, y = 30, labels = "+15 m", col = "red", cex = 1.5)
+text(x = 35, y = 50, labels = "-15 m", col = "red", cex = 1.5)
+text(x = 50, y = 20, labels = "+30 m", col = "blue", cex = 1.5)
+text(x = 55, y = 10, labels = "+45 m", col = "blue", cex = 1.5)
+text(x = 85, y = 45, labels = "50%", col = "black", cex = 1.5)
 points(-bout.info$bath.mean , dive.bouts$depth_max_mean,
        cex = 1.5)
 box()
