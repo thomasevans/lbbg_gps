@@ -10,7 +10,7 @@
 # All is then ouput to a new table in the database for later use.
 
 # Slight hack to make sure we are using UTC time zone
-Sys.setenv(TZ='UTC')
+Sys.setenv(TZ = 'UTC')
 
 
 # Get data from database
@@ -33,6 +33,12 @@ trip_details <- sqlQuery(gps.db, query="SELECT DISTINCT t.*
                      FROM lund_trips as t
                      ORDER BY trip_id ASC;")
 
+# Check devices are all represented here.
+sort(unique(trip_details$device_info_serial))
+
+
+
+
 # hist(trip_details$gotland_time_prop)
 
 # str(trip_details)
@@ -40,9 +46,11 @@ trip_details <- sqlQuery(gps.db, query="SELECT DISTINCT t.*
 
 # gps_uva_track_session_limited
 track_session <- sqlQuery(gps.db, query="SELECT DISTINCT g.*
-                     FROM gps_uva_track_session_limited as g
+                     FROM gps_ee_track_session_limited as g
                      ORDER BY device_info_serial ASC;")
 
+sort(unique(track_session$device_info_serial))
+#OK
 
 # Weather details, using start time of trips to make
 # join with wind data etc.
@@ -53,6 +61,9 @@ weather <- sqlQuery(gps.db,
 FROM lund_trips INNER JOIN (move_bank_variables_all INNER JOIN (move_bank_ppt_dew_ECMWF INNER JOIN lund_points_sun ON (move_bank_ppt_dew_ECMWF.date_time = lund_points_sun.date_time) AND (move_bank_ppt_dew_ECMWF.device_info_serial = lund_points_sun.device_info_serial)) ON (move_bank_variables_all.device_info_serial = move_bank_ppt_dew_ECMWF.device_info_serial) AND (move_bank_variables_all.date_time = move_bank_ppt_dew_ECMWF.date_time)) ON (lund_trips.start_time = move_bank_variables_all.date_time) AND (lund_trips.device_info_serial = move_bank_variables_all.device_info_serial)
 ORDER BY trip_id ASC;
 ")
+
+
+sort(unique(weather$device_info_serial))
 
 
 
@@ -74,6 +85,8 @@ trip_details <- trip_details[order(trip_details$trip_id),]
 weather <- weather[order(weather$trip_id),]
 
 
+
+
 # Combine two tables
 # First filter so only have trips where we have both trip info
 # and weather details
@@ -84,6 +97,9 @@ all.equal(trip_details$trip_id[filter_trips],weather$trip_id)
 trip_info <- cbind(trip_details[filter_trips,],weather)
 
 str(trip_info)
+
+# Check devices are all still here - YES!!
+sort(unique(trip_info$device_info_serial))
 
 
 # Drops
