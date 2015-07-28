@@ -39,3 +39,5 @@ coastline_polyline
 test.vrt
 glmulti.analysis.mods.back
 glmulti.analysis.modgen.back
+baseraster_5km.grd
+baseraster_5km.gri
