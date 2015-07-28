@@ -21,6 +21,28 @@ bath_raster <- raster("bsbd-0.9.3.grd")
 
 
 
+
+
+
+
+# # base-raster
+# base_raster <- raster(nrows = 31, ncols = 24,
+#                       xmn = 16.5, xmx = 18.5,
+#                       ymn = 56.6, ymx = 58.0,
+# )
+# 
+# 
+# 
+# out.rast <- projectRaster( from = bath_raster , to = base_raster , method = "bilinear" )
+
+
+
+
+
+
+
+
+
 # Make raster layers ----
 
 # Coordinates
