@@ -192,6 +192,10 @@ base_raster <- raster(nrows = 31, ncols = 24,
                       ymn = 56.6, ymx = 58.0,
 )
 
+writeRaster(base_raster, "baseraster_5km.grd", format = "raster")
+
+
+
 # Prepare raster layers for GPS point subsets -----
 # 2014 + surface points
 xy.2014.surface <- cbind(points.2014.surface$long,
@@ -522,6 +526,37 @@ title(main = "Difference 2014-2009 - surface only", line = 3)
 map.scale(x= 17.1, y = 56.9, ratio = FALSE)
 plot(gadm, col="grey", bg = NA, add = T)
 box(,col="grey50",lwd=2)
+axis(side=(2), las=1, col="grey50", col.axis="grey50")
+axis(side=(3), las=1, col="grey50", col.axis="grey50")
+title(xlab = "Difference (2014 vs. 2009): -ve (less)  +ve (more)", line = 0)
+mtext("Depth (m)",
+      side = 4,
+      line = 1,
+      las = 2,
+      at = 57.5)
+dev.off()
+
+
+
+
+# BLAM poster version (2015)
+cairo_pdf("guillemots_year_dif_bsbd-0.9.3_cairo_2.pdf")
+par(mfrow=c(1,1))
+par( mar = c(5, 4, 4, 5))
+plot(gadm, col=NA, bg = "light blue",xlim = c(16.9, 18.1),
+     ylim = c(56.8, 57.65), cex = 1.5)
+plot(bath_raster, colNA = "black", col = bath.col,
+     add = TRUE , breaks = bath.break.points,
+     xlim = c(16.8, 18.3), ylim = c(56.8, 57.8),
+     , cex = 1.5)
+plot(dif_raster, add = T,
+     breaks = break.points,
+     col = col.dif.transp,
+     horizontal = TRUE)
+# title(main = "Difference 2014-2009 - surface only", line = 3)
+map.scale(x = 17.1, y = 56.9, ratio = FALSE)
+plot(gadm, col = "grey", bg = NA, add = T)
+box(col="grey50",lwd=2)
 axis(side=(2), las=1, col="grey50", col.axis="grey50")
 axis(side=(3), las=1, col="grey50", col.axis="grey50")
 title(xlab = "Difference (2014 vs. 2009): -ve (less)  +ve (more)", line = 0)
