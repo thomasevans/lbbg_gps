@@ -34,7 +34,7 @@ f.na <- is.na(gps.points$longitude) | is.na(gps.points$latitude) | is.na(gps.poi
 
 # Convert to spatial object
 library("maptools")
-
+cite("maptools")
 pos.sp <- SpatialPoints(pos[!f.na,],
                         proj4string = 
                           CRS("+proj=longlat +datum=WGS84"))
