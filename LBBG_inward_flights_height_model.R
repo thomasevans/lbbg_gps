@@ -134,8 +134,8 @@ hist(head_tail_abs)
 head_tail_abs_z <- scale(head_tail_abs)
 hist(head_tail_abs_z)
 
-
-
+va <- flights.df$head_speed_median
+  
 # Flight distance
 dist_km <- flights.df$dist_a_b/1000
 hist(dist_km)  # distances in km
@@ -155,7 +155,10 @@ alt_data_df <- cbind.data.frame(
   cloud_tot_z,
   alt_med_ln,
   alt_med_ln_z,
-  flights.df$device_info_serial)
+  flights.df$device_info_serial,
+  va,
+  flights.df$ground_speed_median,
+  flights.df$alt_new_median)
 
 names(alt_data_df) <- c(
   "dist_km",
@@ -168,7 +171,10 @@ names(alt_data_df) <- c(
   "cloud_tot_z",
   "alt_med_ln",
   "alt_med_ln_z",
-  "device_info_serial"
+  "device_info_serial",
+  "va",
+  "vg",
+  "alt_med"
   )
 
 # Exclude any NA rows
@@ -224,8 +230,159 @@ mod_02  <-  lme(alt_med_ln ~
                 data = alt_data_df,
                 method = "ML"
 )
+summary(mod_02)
 
 
+
+# Some new stuff for flight lab meeting -------
+
+
+vg vs va
+plot(alt_data_df$va~alt_data_df$vg,
+     xlab = "Vg", ylab = "Va")
+abline(lm(alt_data_df$va~alt_data_df$vg), lwd = 3, col = "blue")
+abline(h = mean(alt_data_df$va), lwd = 3, lty = 2, col = "black")
+lw1 <- loess(alt_data_df$va~alt_data_df$vg)
+j <- order(alt_data_df$vg)
+lines(alt_data_df$vg[j],lw1$fitted[j],col="red",lwd=3)
+# lines(loess(alt_data_df$va~alt_data_df$vg, span = 0.4 ))
+# ?loess
+library(lme4)
+# mod.7<-g<lmer(got_eps~stage+cloud+temp+ppt+sunrise_prox+(1|ring_number),family=binomial(link='logit'), data=trips)
+
+
+mod.1  <-  glmer(alt_med ~
+                  (dist_km_z) + (head_tail.type + head_tail_abs)^2 +
+                  (side.type + side_abs)^2 +
+                (1|device_info_serial),
+                data = alt_data_df
+)
+summary(mod.1)
+
+str(alt_data_df$side.type)
+
+# Illustrate this model
+# First make sure to use the standardized model to allow for comparison
+library(arm)
+stdz.mod.7<-standardize(mod.1, standardize.y=FALSE)
+# Check this looks sensible
+summary(stdz.mod.7)
+
+# Get confidence intervals for coeficients
+stdz.mod.7.ci.Wald <- confint(stdz.mod.7, method="Wald")
+
+# Need this package for plots:
+library(lattice)
+
+# I worked this out based on code here:
+# http://www.ashander.info/posts/2015/04/D-RUG-mixed-effects-viz/
+
+# Make a data.frame of the CI
+ci_dat <-stdz.mod.7.ci.Wald
+ci_dat <- cbind(ci_dat, mean=rowMeans(ci_dat))
+ci_df <- data.frame(coef = row.names(ci_dat), ci_dat)
+names(ci_df)[2:3] <- c('lwr', 'upr')
+
+# View current coeficient names:
+ci_df$coef
+
+# Make a new vector of coeficient names (need to change these to what is
+# sensible based on the model)
+ci_df$coef_new <- c("(intercept)", "Distance", "Head-tail - type (tail)",
+                    "Head-tail - abs", "Side - type (left)", "Side - abs",
+                    "Head-tail abs*type (tail)", "Side abs*type (left)")
+
+# If you want the coeficients displayed in a different order to the current
+# Here we sort them in order of the coeficient value
+ci_df_sort <- ci_df[order(ci_df$mean),]
+ci_df_sort$coef_new <- factor(ci_df_sort$coef_new, levels = unique(ci_df_sort$coef_new))
+
+
+# Plot the figure
+lattice::dotplot(coef_new ~ mean, ci_df_sort,
+                 #                  cexl.lab = 1.5, cex.axis = 1.5,
+                 xlab = list("Effect (altitude)",cex=1.3),
+                 panel = function(x, y) {
+                   panel.segments(ci_df_sort$lwr, y, ci_df_sort$upr, y, lwd =2)
+                   panel.xyplot(x, y, pch=18, cex = 1.2, col = "black")
+                   panel.abline(v=0, lty=2)
+                 },scales=list(y=list(cex=1.2), x = list(cex = 1.2))
+)
+
+library(MuMIn)
+r1<-r.squaredGLMM(stdz.mod.7)
+r1
+
+
+
+# Same for Va ----
+library(lme4)
+# mod.7<-g<lmer(got_eps~stage+cloud+temp+ppt+sunrise_prox+(1|ring_number),family=binomial(link='logit'), data=trips)
+
+
+mod.1  <-  glmer(va ~
+                   (dist_km_z) + (head_tail.type + head_tail_abs)^2 +
+                   (side.type + side_abs)^2 +
+                   (1|device_info_serial),
+                 data = alt_data_df
+)
+summary(mod.1)
+
+# Illustrate this model
+# First make sure to use the standardized model to allow for comparison
+library(arm)
+stdz.mod.7<-standardize(mod.1, standardize.y=FALSE)
+# Check this looks sensible
+summary(stdz.mod.7)
+
+# Get confidence intervals for coeficients
+stdz.mod.7.ci.Wald <- confint(stdz.mod.7, method="Wald")
+
+# Need this package for plots:
+library(lattice)
+
+# I worked this out based on code here:
+# http://www.ashander.info/posts/2015/04/D-RUG-mixed-effects-viz/
+
+# Make a data.frame of the CI
+ci_dat <-stdz.mod.7.ci.Wald
+ci_dat <- cbind(ci_dat, mean=rowMeans(ci_dat))
+ci_df <- data.frame(coef = row.names(ci_dat), ci_dat)
+names(ci_df)[2:3] <- c('lwr', 'upr')
+
+# View current coeficient names:
+ci_df$coef
+
+# Make a new vector of coeficient names (need to change these to what is
+# sensible based on the model)
+ci_df$coef_new <- c("(intercept)", "Distance", "Head-tail - type (tail)",
+                    "Head-tail - abs", "Side - type (left)", "Side - abs",
+                    "Head-tail abs*type (tail)", "Side abs*type (left)")
+
+# If you want the coeficients displayed in a different order to the current
+# Here we sort them in order of the coeficient value
+ci_df_sort <- ci_df[order(ci_df$mean),]
+ci_df_sort$coef_new <- factor(ci_df_sort$coef_new, levels = unique(ci_df_sort$coef_new))
+
+
+# Plot the figure
+lattice::dotplot(coef_new ~ mean, ci_df_sort, #xlim = c(-3,2),
+                 #                  cexl.lab = 1.5, cex.axis = 1.5,
+                 xlab = list("Effect on (Va)",cex=1.3),
+                 panel = function(x, y) {
+                   panel.segments(ci_df_sort$lwr, y, ci_df_sort$upr, y, lwd =2)
+                   panel.xyplot(x, y, pch=18, cex = 1.2, col = "black")
+                   panel.abline(v=0, lty=2)
+                 },scales=list(y=list(cex=1.2), x = list(cex = 1.2))
+)
+
+library(MuMIn)
+r1<-r.squaredGLMM(stdz.mod.7)
+r1
+
+
+
+# Old stuff below here ------
 
 
 
