@@ -2,6 +2,9 @@
 # You are welcome to use parts of this code, but please give credit when using it extensively.
 # Code available at https://github.com/thomasevans/lbbg_gps
 
+# This script was copied to the 'seabird_flights' R project. That version should be newer.
+
+
 # Description ------
 # In this script we perform a statistical analysis of the environmental
 # factors determining lesser black-backed gull flight height, focussing
